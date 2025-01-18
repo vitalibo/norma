@@ -75,6 +75,30 @@ class NumberRule(Rule):
         return numeric_series
 
 
+class BooleanRule(Rule):
+    """
+    A rule that casts a column to a boolean type.
+    In case of casting errors, the rule will add the appropriate error message.
+    """
+
+    def __init__(self, error_type: str, error_msg: str) -> None:
+        self.error_type = error_type
+        self.error_msg = error_msg
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        def replace(regex, value):
+            return pd.to_numeric(series.str.replace(regex, value, case=False, regex=True), errors='coerce')
+
+        series = df[column].astype('string')
+        true_series = replace(r'^(true|t|yes|y)$', '1')
+        false_series = replace(r'^(false|f|no|n)$', '0')
+        bool_series = true_series.combine_first(false_series).astype('boolean')
+        boolmask = bool_series.isna() & df[column].notna()
+
+        error_state.add_errors(boolmask, column, {'type': self.error_type, 'msg': self.error_msg})
+        return bool_series
+
+
 def required() -> Rule:
     """
     Checks if the input is missing.
@@ -221,4 +245,77 @@ def int_parsing():
         dtype='Int64',
         error_type='int_parsing',
         error_msg='Input should be a valid integer, unable to parse value as an integer'
+    )
+
+
+def float_parsing():
+    """
+    Checks if the input can be parsed as a float.
+    The rule modifies the original column to cast it to a float type.
+    """
+
+    return NumberRule(
+        dtype='Float64',
+        error_type='float_parsing',
+        error_msg='Input should be a valid float, unable to parse value as a float'
+    )
+
+
+def string_parsing():
+    """
+    The rule modifies the original column to cast it to a string type.
+    """
+
+    class _StringRule(Rule):
+        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+            return df[column].astype('string')
+
+    return _StringRule()
+
+
+def boolean_parsing():
+    """
+    Checks if the input can be parsed as a boolean.
+    The rule modifies the original column to cast it to a boolean type.
+    """
+
+    return BooleanRule(
+        error_type='boolean_parsing',
+        error_msg='Input should be a valid boolean, unable to parse value as a boolean'
+    )
+
+
+def min_length(value: int) -> Rule:
+    """
+    Checks if the input has a minimum length.
+    """
+
+    return MaskRule(
+        lambda df, col: df[col].str.len() < value,
+        error_type='min_length',
+        error_msg=f'Input should have a minimum length of {value}'
+    )
+
+
+def max_length(value: int) -> Rule:
+    """
+    Checks if the input has a maximum length.
+    """
+
+    return MaskRule(
+        lambda df, col: df[col].str.len() > value,
+        error_type='max_length',
+        error_msg=f'Input should have a maximum length of {value}'
+    )
+
+
+def pattern(regex: str) -> Rule:
+    """
+    Checks if the input matches a given regex pattern.
+    """
+
+    return MaskRule(
+        lambda df, col: ~df[col].str.match(regex, na=False),
+        error_type='pattern',
+        error_msg=f'Input should match the pattern {regex}'
     )
