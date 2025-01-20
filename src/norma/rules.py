@@ -4,6 +4,31 @@ from typing import Callable, Dict, Any
 
 import pandas as pd
 
+__all__ = [
+    'MaskRule',
+    'required',
+    'equal_to',
+    'eq',
+    'not_equal_to',
+    'ne',
+    'greater_than',
+    'gt',
+    'greater_than_equal',
+    'ge',
+    'less_than',
+    'lt',
+    'less_than_equal',
+    'le',
+    'multiple_of',
+    'int_parsing',
+    'float_parsing',
+    'string_parsing',
+    'boolean_parsing',
+    'min_length',
+    'max_length',
+    'pattern',
+]
+
 
 class ErrorState:
     """
@@ -11,8 +36,8 @@ class ErrorState:
     """
 
     def __init__(self, index: pd.Index) -> None:
-        self.errors = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         self.masks = defaultdict(lambda: pd.Series(False, index=index))
+        self.errors = {}
 
     def add_errors(self, boolmask: pd.Series, column: str, details: Dict[str, str]) -> None:
         """
@@ -20,6 +45,10 @@ class ErrorState:
         """
 
         for index in boolmask[boolmask].index:
+            if index not in self.errors:
+                self.errors[index] = {column: {'details': list()}}
+            elif column not in self.errors[index]:
+                self.errors[index][column] = {'details': list()}
             self.errors[index][column]['details'].append(details)
         self.masks[column] = self.masks[column] | boolmask.astype(bool)
 

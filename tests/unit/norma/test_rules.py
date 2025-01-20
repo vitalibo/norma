@@ -54,7 +54,7 @@ def assert_has_error(error_state, details):
 
 def assert_no_error(error_state, details):
     assert error_state.masks['col'].equals(pd.Series([False]))
-    assert error_state.errors[0] == {}
+    assert len(error_state.errors) == 0
 
 
 @pytest.mark.parametrize('value, dtype, assert_error', [*[
