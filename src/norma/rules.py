@@ -1,6 +1,6 @@
 import inspect
 from collections import defaultdict
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Union
 
 import pandas as pd
 
@@ -253,7 +253,7 @@ def le(value: Any) -> Rule:
     return less_than_equal(value)
 
 
-def multiple_of(value: int | float) -> Rule:
+def multiple_of(value: Union[int, float]) -> Rule:
     """
     Checks if the input is a multiple of a given value.
     """
