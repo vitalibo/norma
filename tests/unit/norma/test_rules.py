@@ -52,9 +52,9 @@ def assert_has_error(error_state, details):
     assert error_state.errors[0]['col']['details'] == details
 
 
-def assert_no_error(error_state, details):
+def assert_no_error(error_state, details):  # pylint: disable=unused-argument
     assert error_state.masks['col'].equals(pd.Series([False]))
-    assert len(error_state.errors) == 0
+    assert len(error_state.errors) == 0  # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
 
 
 @pytest.mark.parametrize('value, dtype, assert_error', [*[
@@ -103,7 +103,7 @@ def test_required(value, dtype, assert_error):
     ]
 ]])
 def test_equal_to(value, dtype, equal_to, assert_error):
-    df = pd.DataFrame({'col': [value]})
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.equal_to(equal_to)
 
@@ -125,7 +125,7 @@ def test_equal_to(value, dtype, equal_to, assert_error):
     ]
 ]])
 def test_not_equal_to(value, dtype, not_equal_to, assert_error):
-    df = pd.DataFrame({'col': [value]})
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.not_equal_to(not_equal_to)
 
@@ -148,7 +148,7 @@ def test_not_equal_to(value, dtype, not_equal_to, assert_error):
     ]
 ]])
 def test_greater_than(value, dtype, greater_than, assert_error):
-    df = pd.DataFrame({'col': [value]})
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.greater_than(greater_than)
 
@@ -171,7 +171,7 @@ def test_greater_than(value, dtype, greater_than, assert_error):
     ]
 ]])
 def test_greater_than_equal(value, dtype, greater_than_equal, assert_error):
-    df = pd.DataFrame({'col': [value]})
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.greater_than_equal(greater_than_equal)
 
@@ -196,7 +196,7 @@ def test_greater_than_equal(value, dtype, greater_than_equal, assert_error):
     ]
 ]])
 def test_less_than(value, dtype, less_than, assert_error):
-    df = pd.DataFrame({'col': [value]})
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.less_than(less_than)
 
@@ -219,7 +219,7 @@ def test_less_than(value, dtype, less_than, assert_error):
     ]
 ]])
 def test_less_than_equal(value, dtype, less_than_equal, assert_error):
-    df = pd.DataFrame({'col': [value]})
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.less_than_equal(less_than_equal)
 
@@ -244,7 +244,7 @@ def test_less_than_equal(value, dtype, less_than_equal, assert_error):
     ]
 ]])
 def test_multiple_of(value, dtype, multiple_of, assert_error):
-    df = pd.DataFrame({'col': [value]})
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.multiple_of(multiple_of)
 
@@ -346,7 +346,7 @@ def test_string_parsing(in_value, in_dtype, out_value, assert_error):
 
     actual = rule.verify(df, column='col', error_state=error_state)
 
-    pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype="string[python]", name='col'))
+    pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='string[python]', name='col'))
     assert_error(error_state, [])
 
 

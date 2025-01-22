@@ -1,0 +1,182 @@
+[MASTER]
+extension-pkg-allow-list =
+    math,
+    numpy,
+    pydantic
+jobs = 2
+persistent = no
+ignore-paths =
+    .*/run.py,
+
+[REPORTS]
+output-format = colorized
+reports = no
+score = no
+msg-template = {path}:{line} [{msg_id}] {msg} ({symbol})
+
+[MESSAGES CONTROL]
+enable =
+    all
+disable =
+    missing-module-docstring,
+    missing-function-docstring,
+    wrong-spelling-in-comment,
+    wrong-spelling-in-docstring,
+    suppressed-message,
+    locally-disabled,
+    file-ignored,
+    no-else-return,
+    duplicate-code,
+    fixme,
+
+[REFACTORING]
+max-nested-blocks = 3
+never-returning-functions =
+    sys.exit
+
+[LOGGING]
+logging-format-style = old
+logging-modules = logging
+
+[MISCELLANEOUS]
+notes =
+    FIXME,
+    TODO,
+
+[TYPECHECK]
+contextmanager-decorators =
+    contextlib.contextmanager,
+generated-members =
+    typing.Final
+ignore-mixin-members = yes
+ignore-none = yes
+ignore-on-opaque-inference = yes
+ignored-classes =
+    optparse.Values,
+    thread._local,
+    _thread._local
+ignored-modules =
+missing-member-hint = yes
+missing-member-hint-distance = 1
+missing-member-max-choices = 1
+signature-mutators =
+
+[VARIABLES]
+additional-builtins =
+allow-global-unused-variables = yes
+allowed-redefined-builtins =
+callbacks =
+    cb_,
+    _cb
+dummy-variables-rgx = _|dummy
+ignored-argument-names = _.*|^ignored_?|^unused_?|args|kwargs
+init-import = yes
+redefining-builtins-modules =
+    six.moves,
+    past.builtins,
+    future.builtins,
+    builtins,
+    io,
+
+[FORMAT]
+expected-line-ending-format = LF
+ignore-long-lines = ^\s*(# )?<?https?://\S+>?$
+indent-after-paren = 4
+indent-string = '    '
+max-line-length = 120
+max-module-lines = 1000
+single-line-class-stmt = no
+single-line-if-stmt = no
+
+[SIMILARITIES]
+ignore-comments = yes
+ignore-docstrings = yes
+ignore-imports = yes
+ignore-signatures = no
+min-similarity-lines = 10
+
+[BASIC]
+argument-naming-style = snake_case
+attr-naming-style = snake_case
+bad-names =
+    foo,
+    bar,
+    baz,
+class-attribute-naming-style = snake_case
+class-const-naming-style = UPPER_CASE
+class-naming-style = PascalCase
+const-naming-style = UPPER_CASE
+docstring-min-length = -1
+function-naming-style = snake_case
+good-names =
+    i,
+    j,
+    k,
+    f,
+    n,
+    x,
+    y,
+    z,
+    e,
+    ex,
+    df,
+    sc,
+    os,
+    s3,
+    dt,
+    id,
+    db,
+    of,
+    kv,
+    _
+include-naming-hint = no
+inlinevar-naming-style = snake_case
+method-naming-style = snake_case
+module-naming-style = snake_case
+name-group =
+no-docstring-rgx = ^_
+property-classes = abc.abstractproperty
+variable-naming-style = snake_case
+
+[STRING]
+check-quote-consistency = yes
+check-str-concat-over-line-jumps = no
+
+[IMPORTS]
+allow-any-import-level =
+allow-wildcard-with-all = no
+analyse-fallback-blocks = no
+deprecated-modules =
+
+[CLASSES]
+check-protected-access-in-special-methods = no
+defining-attr-methods =
+    __init__,
+    __new__,
+    setUp,
+exclude-protected =
+    _asdict,
+    _fields,
+    _replace,
+    _source,
+    _make
+valid-classmethod-first-arg = cls
+valid-metaclass-classmethod-first-arg = cls
+
+[DESIGN]
+ignored-parents =
+max-args = 5
+max-attributes = 7
+max-bool-expr = 5
+max-branches = 12
+max-locals = 15
+max-parents = 7
+max-public-methods = 20
+max-returns = 6
+max-statements = 50
+min-public-methods = 0
+
+[EXCEPTIONS]
+overgeneral-exceptions =
+    builtins.BaseException,
+    builtins.Exception

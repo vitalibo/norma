@@ -1,4 +1,4 @@
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
-from norma.rules import *
-from norma.schema import Schema, Column
+from norma.rules import *  # pylint: disable=unused-wildcard-import
+from norma.schema import Column, Schema  # pylint: disable=unused-import

@@ -1,6 +1,6 @@
 import inspect
 from collections import defaultdict
-from typing import Callable, Dict, Any
+from typing import Any, Callable, Dict
 
 import pandas as pd
 
@@ -46,9 +46,9 @@ class ErrorState:
 
         for index in boolmask[boolmask].index:
             if index not in self.errors:
-                self.errors[index] = {column: {'details': list()}}
+                self.errors[index] = {column: {'details': []}}
             elif column not in self.errors[index]:
-                self.errors[index][column] = {'details': list()}
+                self.errors[index][column] = {'details': []}
             self.errors[index][column]['details'].append(details)
         self.masks[column] = self.masks[column] | boolmask.astype(bool)
 
@@ -259,6 +259,7 @@ def multiple_of(value: int | float) -> Rule:
     """
 
     return MaskRule(
+        # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
         lambda df, col: df[col][df[col].notna()] % value != 0,
         error_type='multiple_of',
         error_msg=f'Input should be a multiple of {value}')

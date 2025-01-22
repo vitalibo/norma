@@ -1,2 +1,7 @@
 pandas==2.2.3
+setuptools==70.2.0
+wheel==0.43.0
+build==1.2.1
+pylint==3.0.3
 pytest==8.3.4
+isort==5.13.2

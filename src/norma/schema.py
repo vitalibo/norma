@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Dict, Union, List, Any
+from typing import Any, Dict, List, Union
 
 import pandas as pd
 
 import norma.rules
-from norma.rules import Rule, ErrorState
+from norma.rules import ErrorState, Rule
 
 __all__ = ['Column', 'Schema']
 
@@ -15,7 +15,7 @@ class Column:
     A class to represent a column in a DataFrame.
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-locals
             self,
             dtype: type | str,
             *,
@@ -91,7 +91,7 @@ class Schema:
                 if series is not None:
                     df[column] = series
 
-        for index in error_state.errors:
+        for index in error_state.errors:  # pylint: disable=consider-using-dict-items
             for column in error_state.errors[index]:
                 error_state.errors[index][column]['original'] = original_df.loc[index, column]
 
