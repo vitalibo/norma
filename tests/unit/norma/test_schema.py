@@ -1,4 +1,4 @@
-import unittest.mock
+from unittest import mock
 
 import numpy as np
 import pandas
@@ -6,7 +6,7 @@ import pytest
 
 import norma
 from norma import rules
-from norma.schema import Column
+from norma.schema import Column, Schema
 
 
 @pytest.mark.parametrize('kwargs, expected', [
@@ -35,14 +35,14 @@ from norma.schema import Column
     ({'dtype': 'str', 'pattern': 'foo'}, lambda mock_rules: [mock_rules.string_parsing(), mock_rules.pattern('foo')]),
 ])
 def test_column(kwargs, expected):
-    with unittest.mock.patch('norma.rules') as mock_rules:
+    with mock.patch('norma.rules') as mock_rules:
         column = Column(**kwargs)
 
         assert column.rules == expected(mock_rules)
 
 
 def test_column_rule():
-    with unittest.mock.patch('norma.rules') as mock_rules:
+    with mock.patch('norma.rules') as mock_rules:
         rule = rules.equal_to(10)
         column = Column(str, rules=rule)
 
@@ -50,7 +50,7 @@ def test_column_rule():
 
 
 def test_column_rules():
-    with unittest.mock.patch('norma.rules') as mock_rules:
+    with mock.patch('norma.rules') as mock_rules:
         rule1 = rules.equal_to(10)
         rule2 = rules.not_equal_to(22)
         column = Column(str, rules=[rule1, rule2])
@@ -122,4 +122,50 @@ def test_schema_validate():
                 }
             }
         }
+    ]
+
+
+def test_schema_from_json_schema():
+    json_schema = {
+        '$id': 'https://norma.github.com/dataframe.schema.json',
+        '$schema': 'https://json-schema.org/draft/2020-12/schema',
+        'title': 'DataFrame',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'string',
+                'description': 'The person\'s full name.',
+                'minLength': 3,
+                'maxLength': 256,
+                'pattern': '^[A-Za-z ]+$'
+            },
+            'age': {
+                'description': 'Age in years which must be equal to or greater than zero.',
+                'type': 'integer',
+                'minimum': 0,
+                'maximum': 120
+            },
+            'height': {
+                'description': 'Height in meters which must be greater than 0.5 and less than 3.0.',
+                'type': 'number',
+                'exclusiveMinimum': 0.5,
+                'exclusiveMaximum': 3.0
+            },
+            'disabled': {
+                'description': 'A boolean flag to indicate if the person is disabled.',
+                'type': 'boolean'
+            }
+        },
+        'required': ['name', 'age', 'disabled']
+    }
+
+    with mock.patch('norma.schema.Column') as mock_column:
+        actual = Schema.from_json_schema(json_schema)
+
+    assert actual.columns.keys() == {'name', 'age', 'height', 'disabled'}
+    assert mock_column.mock_calls == [
+        mock.call('string', nullable=False, min_length=3, max_length=256, pattern='^[A-Za-z ]+$'),
+        mock.call('integer', nullable=False, ge=0, le=120),
+        mock.call('number', nullable=True, gt=0.5, lt=3.0),
+        mock.call('boolean', nullable=False)
     ]

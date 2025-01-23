@@ -37,6 +37,7 @@ class Column:
             'integer': norma.rules.int_parsing,
             'float': norma.rules.float_parsing,
             'double': norma.rules.float_parsing,
+            'number': norma.rules.float_parsing,
             'string': norma.rules.string_parsing,
             'str': norma.rules.string_parsing,
             'boolean': norma.rules.boolean_parsing,
@@ -103,4 +104,26 @@ class Schema:
 
     @staticmethod
     def from_json_schema(json_schema: Dict) -> Schema:
-        pass
+        known = {
+            'minimum': 'ge',
+            'maximum': 'le',
+            'exclusiveMinimum': 'gt',
+            'exclusiveMaximum': 'lt',
+            'multipleOf': 'multiple_of',
+            'minLength': 'min_length',
+            'maxLength': 'max_length',
+            'pattern': 'pattern',
+        }
+
+        return Schema({
+            field: Column(
+                properties['type'],
+                nullable=field not in json_schema.get('required', []),
+                **{
+                    known[key]: value
+                    for key, value in properties.items()
+                    if key in known
+                }
+            )
+            for field, properties in json_schema['properties'].items()
+        })
