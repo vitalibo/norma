@@ -206,6 +206,42 @@ def test_schema_validate_forbidden_extra():
     ]
 
 
+def test_schema_validate_default_factory():
+    schema = norma.schema.Schema({
+        'col1': Column(str, default_factory=lambda x: x['col2'].str.upper()),
+        'col2': Column(str, pattern='bar|qux', default='<default>')
+    })
+    df = pandas.DataFrame({
+        'col1': ['foo', None, 'baz', None],
+        'col2': ['bar', 'qux', None, None]
+    })
+
+    actual = schema.validate(df)
+
+    assert actual.to_dict(orient='records') == [
+        {
+            'col1': 'foo',
+            'col2': 'bar',
+            'errors': None
+        },
+        {
+            'col1': 'QUX',
+            'col2': 'qux',
+            'errors': None
+        },
+        {
+            'col1': 'baz',
+            'col2': '<default>',
+            'errors': None
+        },
+        {
+            'col1': '<DEFAULT>',
+            'col2': '<default>',
+            'errors': None
+        }
+    ]
+
+
 def test_schema_from_json_schema():
     json_schema = {
         '$id': 'https://norma.github.com/dataframe.schema.json',

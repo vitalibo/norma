@@ -330,7 +330,7 @@ def min_length(value: int) -> Rule:
     """
 
     return MaskRule(
-        lambda df, col: df[col].str.len() < value,
+        lambda df, col: df[col][df[col].notna()].str.len() < value,
         error_type='min_length',
         error_msg=f'Input should have a minimum length of {value}'
     )
@@ -342,7 +342,7 @@ def max_length(value: int) -> Rule:
     """
 
     return MaskRule(
-        lambda df, col: df[col].str.len() > value,
+        lambda df, col: df[col][df[col].notna()].str.len() > value,
         error_type='max_length',
         error_msg=f'Input should have a maximum length of {value}'
     )
@@ -354,7 +354,7 @@ def pattern(regex: str) -> Rule:
     """
 
     return MaskRule(
-        lambda df, col: ~df[col].str.match(regex, na=False),
+        lambda df, col: ~df[col][df[col].notna()].str.match(regex, na=False),
         error_type='pattern',
         error_msg=f'Input should match the pattern {regex}'
     )

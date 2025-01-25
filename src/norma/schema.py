@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -31,7 +31,9 @@ class Column:
             multiple_of: Any = None,
             min_length: int = None,
             max_length: int = None,
-            pattern: str = None
+            pattern: str = None,
+            default: Any = None,
+            default_factory: Callable[[pd.DataFrame], Any] = None,
     ) -> None:
         dtype_rules = {
             'int': norma.rules.int_parsing,
@@ -70,6 +72,12 @@ class Column:
         if rules is not None:
             self.rules.extend([rules] if isinstance(rules, Rule) else rules)
 
+        if default is not None and default_factory is not None:
+            raise ValueError("Cannot specify both 'default' and 'default_factory'")
+
+        self.default = default
+        self.default_factory = default_factory
+
 
 class Schema:
     """
@@ -81,7 +89,7 @@ class Schema:
             columns: Dict[str, Column],
             allow_extra: bool = False
     ) -> None:
-        self.columns = {k: v.rules for k, v in columns.items()}
+        self.columns = columns
         self.allow_extra = allow_extra
 
     def validate(self, df: pd.DataFrame, error_column: str = 'errors') -> pd.DataFrame:
@@ -93,7 +101,7 @@ class Schema:
 
         error_state = ErrorState(df.index)
         for column in original_df.columns:
-            rules = self.columns.get(column, [])
+            rules = self.columns[column].rules if column in self.columns else []
             if not self.allow_extra:
                 rules.append(
                     norma.rules.extra_forbidden(self.columns.keys()))
@@ -109,6 +117,14 @@ class Schema:
 
         for column in error_state.masks:
             df.loc[error_state.masks[column], column] = None
+
+        for column in self.columns:
+            if self.columns[column].default is not None:
+                df[column] = df[column].fillna(self.columns[column].default)
+
+        for column in self.columns:
+            if self.columns[column].default_factory is not None:
+                df[column] = df[column].fillna(self.columns[column].default_factory(df))
 
         df[error_column] = df.index.map(error_state.errors)
         df[error_column] = df[error_column].replace(np.nan, None)
