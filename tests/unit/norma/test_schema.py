@@ -1,6 +1,5 @@
 from unittest import mock
 
-import numpy as np
 import pandas
 import pytest
 
@@ -105,7 +104,7 @@ def test_schema_validate():
         {
             'col1': 2,
             'col2': 'bar',
-            'errors': np.nan
+            'errors': None
         },
         {
             'col1': None,
@@ -119,6 +118,88 @@ def test_schema_validate():
                         }
                     ],
                     'original': 'unknown'
+                }
+            }
+        }
+    ]
+
+
+def test_schema_validate_allow_extra():
+    schema = norma.schema.Schema(
+        {
+            'col1': Column(str),
+            'col2': Column(str)
+        },
+        allow_extra=True
+    )
+    df = pandas.DataFrame({
+        'col1': ['foo', 'baz'],
+        'col2': ['bar', 'qux'],
+        'col3': ['qux', 123]
+    })
+
+    actual = schema.validate(df)
+
+    assert actual.to_dict(orient='records') == [
+        {
+            'col1': 'foo',
+            'col2': 'bar',
+            'col3': 'qux',
+            'errors': None
+        },
+        {
+            'col1': 'baz',
+            'col2': 'qux',
+            'col3': 123,
+            'errors': None
+        }
+    ]
+
+
+def test_schema_validate_forbidden_extra():
+    schema = norma.schema.Schema(
+        {
+            'col1': Column(str),
+            'col2': Column(str)
+        },
+        allow_extra=False
+    )
+    df = pandas.DataFrame({
+        'col1': ['foo', 'baz'],
+        'col2': ['bar', 'qux'],
+        'col3': ['qux', 123]
+    })
+
+    actual = schema.validate(df)
+
+    assert actual.to_dict(orient='records') == [
+        {
+            'col1': 'foo',
+            'col2': 'bar',
+            'errors': {
+                'col3': {
+                    'details': [
+                        {
+                            'msg': 'Extra inputs are not permitted',
+                            'type': 'extra_forbidden'
+                        }
+                    ],
+                    'original': 'qux'
+                }
+            }
+        },
+        {
+            'col1': 'baz',
+            'col2': 'qux',
+            'errors': {
+                'col3': {
+                    'details': [
+                        {
+                            'msg': 'Extra inputs are not permitted',
+                            'type': 'extra_forbidden'
+                        }
+                    ],
+                    'original': 123
                 }
             }
         }
@@ -156,7 +237,8 @@ def test_schema_from_json_schema():
                 'type': 'boolean'
             }
         },
-        'required': ['name', 'age', 'disabled']
+        'required': ['name', 'age', 'disabled'],
+        'additionalProperties': False
     }
 
     with mock.patch('norma.schema.Column') as mock_column:
@@ -169,3 +251,4 @@ def test_schema_from_json_schema():
         mock.call('number', nullable=True, gt=0.5, lt=3.0),
         mock.call('boolean', nullable=False)
     ]
+    assert actual.allow_extra is False

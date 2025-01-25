@@ -473,3 +473,30 @@ def test_pattern(value, dtype, regex, assert_error):
 
     assert actual is not None
     assert_error(error_state, [{'type': 'pattern', 'msg': f'Input should match the pattern {regex}'}])
+
+
+def test_extra_forbidden():
+    df = pd.DataFrame({'col1': [1], 'col2': [1.1]})
+    error_state = rules.ErrorState(df.index)
+    rule = rules.extra_forbidden({'col2'})
+
+    actual = rule.verify(df, column='col1', error_state=error_state)
+
+    assert actual is None
+    assert list(df.columns) == ['col2']
+    assert 'col1' not in error_state.masks
+    assert error_state.errors[0]['col1']['details'] == \
+           [{'type': 'extra_forbidden', 'msg': 'Extra inputs are not permitted'}]
+
+
+def test_extra_forbidden_allowed():
+    df = pd.DataFrame({'col1': [1], 'col2': [1.1]})
+    error_state = rules.ErrorState(df.index)
+    rule = rules.extra_forbidden({'col1', 'col2'})
+
+    actual = rule.verify(df, column='col1', error_state=error_state)
+
+    assert actual is not None
+    assert list(df.columns) == ['col1', 'col2']
+    assert 'col1' not in error_state.masks
+    assert len(error_state.errors) == 0  # pylint: disable=use-implicit-booleaness-not-comparison-to-zero

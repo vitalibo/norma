@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
+import numpy as np
 import pandas as pd
 
 import norma.rules
@@ -75,8 +76,13 @@ class Schema:
     A class to represent a schema for a DataFrame.
     """
 
-    def __init__(self, columns: Dict[str, Column]) -> None:
-        self.columns = columns
+    def __init__(
+            self,
+            columns: Dict[str, Column],
+            allow_extra: bool = False
+    ) -> None:
+        self.columns = {k: v.rules for k, v in columns.items()}
+        self.allow_extra = allow_extra
 
     def validate(self, df: pd.DataFrame, error_column: str = 'errors') -> pd.DataFrame:
         """
@@ -86,8 +92,13 @@ class Schema:
         original_df = df.copy()
 
         error_state = ErrorState(df.index)
-        for column in self.columns:
-            for rule in self.columns[column].rules:
+        for column in original_df.columns:
+            rules = self.columns.get(column, [])
+            if not self.allow_extra:
+                rules.append(
+                    norma.rules.extra_forbidden(self.columns.keys()))
+
+            for rule in rules:
                 series = rule.verify(df, column=column, error_state=error_state)
                 if series is not None:
                     df[column] = series
@@ -100,7 +111,10 @@ class Schema:
             df.loc[error_state.masks[column], column] = None
 
         df[error_column] = df.index.map(error_state.errors)
-        return df[original_df.columns.tolist() + [error_column]]
+        df[error_column] = df[error_column].replace(np.nan, None)
+
+        out_cols = original_df.columns if self.allow_extra else self.columns.keys()
+        return df[list(out_cols) + [error_column]]
 
     @staticmethod
     def from_json_schema(json_schema: Dict) -> Schema:
@@ -115,15 +129,18 @@ class Schema:
             'pattern': 'pattern',
         }
 
-        return Schema({
-            field: Column(
-                properties['type'],
-                nullable=field not in json_schema.get('required', []),
-                **{
-                    known[key]: value
-                    for key, value in properties.items()
-                    if key in known
-                }
-            )
-            for field, properties in json_schema['properties'].items()
-        })
+        return Schema(
+            {
+                field: Column(
+                    properties['type'],
+                    nullable=field not in json_schema.get('required', []),
+                    **{
+                        known[key]: value
+                        for key, value in properties.items()
+                        if key in known
+                    }
+                )
+                for field, properties in json_schema['properties'].items()
+            },
+            allow_extra=json_schema.get('additionalProperties', False)
+        )

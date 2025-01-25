@@ -1,6 +1,6 @@
 import inspect
 from collections import defaultdict
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Union
 
 import pandas as pd
 
@@ -58,7 +58,7 @@ class Rule:
     Defines the interface for a rule that can be applied to a DataFrame.
     """
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
         """
         Verify the DataFrame and return a validated Series.
         """
@@ -358,3 +358,26 @@ def pattern(regex: str) -> Rule:
         error_type='pattern',
         error_msg=f'Input should match the pattern {regex}'
     )
+
+
+def extra_forbidden(allowed: Iterable[str]) -> Rule:
+    """
+    A rule that forbids extra columns in the DataFrame.
+    """
+
+    class _ExtraRule(Rule):
+
+        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
+            if column in allowed:
+                return df[column]
+
+            error_state.add_errors(
+                pd.Series(True, index=df.index), column,
+                {'type': 'extra_forbidden', 'msg': 'Extra inputs are not permitted'}
+            )
+
+            del error_state.masks[column]
+            df.drop(column, axis=1, inplace=True)
+            return None
+
+    return _ExtraRule()
