@@ -57,8 +57,8 @@ def assert_no_error(error_state, details):  # pylint: disable=unused-argument
     assert len(error_state.errors) == 0  # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
 
 
-@pytest.mark.parametrize('value, dtype, assert_error', [*[
-    (*params, assert_has_error)
+@pytest.mark.parametrize('col, value, dtype, assert_error', [*[
+    ('col', *params, assert_has_error)
     for params in [
         (None, 'object'),
         (np.nan, 'object'),
@@ -70,7 +70,9 @@ def assert_no_error(error_state, details):  # pylint: disable=unused-argument
         (None, str),
     ]
 ], *[
-    (*params, assert_no_error)
+    ('col2', 1, 'int64', assert_has_error),
+], *[
+    ('col', *params, assert_no_error)
     for params in [
         (1, 'int64'),
         (1.0, 'float64'),
@@ -80,8 +82,8 @@ def assert_no_error(error_state, details):  # pylint: disable=unused-argument
         (pd.Timedelta('1 days'), 'timedelta64[ns]'),
     ]
 ]])
-def test_required(value, dtype, assert_error):
-    df = pd.DataFrame({'col': [value]}, dtype=dtype)
+def test_required(col, value, dtype, assert_error):
+    df = pd.DataFrame({col: [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.required()
 

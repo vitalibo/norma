@@ -133,10 +133,19 @@ def required() -> Rule:
     Checks if the input is missing.
     """
 
-    return MaskRule(
-        lambda df, col: df[col].isna(),
-        error_type='missing',
-        error_msg='Field required')
+    class _RequiredRule(Rule):
+
+        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+            details = {'type': 'missing', 'msg': 'Field required'}
+
+            if column not in df.columns:
+                error_state.add_errors(pd.Series(True, index=df.index), column, details)
+                return pd.Series(dtype='string', index=df.index)
+
+            error_state.add_errors(df[column].isna(), column, details)
+            return df[column]
+
+    return _RequiredRule()
 
 
 def equal_to(value: Any) -> Rule:
