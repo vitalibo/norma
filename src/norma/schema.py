@@ -32,6 +32,8 @@ class Column:
             min_length: int = None,
             max_length: int = None,
             pattern: str = None,
+            isin: List[Any] = None,
+            notin: List[Any] = None,
             default: Any = None,
             default_factory: Callable[[pd.DataFrame], Any] = None,
     ) -> None:
@@ -67,6 +69,8 @@ class Column:
             *apply_if(min_length, norma.rules.min_length),
             *apply_if(max_length, norma.rules.max_length),
             *apply_if(pattern, norma.rules.pattern),
+            *apply_if(isin, norma.rules.isin),
+            *apply_if(notin, norma.rules.notin),
         ]
 
         if rules is not None:
@@ -143,6 +147,8 @@ class Schema:
             'minLength': 'min_length',
             'maxLength': 'max_length',
             'pattern': 'pattern',
+            'default': 'default',
+            'enum': 'isin',
         }
 
         return Schema(

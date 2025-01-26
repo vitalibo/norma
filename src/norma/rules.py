@@ -381,3 +381,27 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
             return None
 
     return _ExtraRule()
+
+
+def isin(values: Iterable[Any]) -> Rule:
+    """
+    Checks if the input is in a given list of values.
+    """
+
+    return MaskRule(
+        lambda df, col: ~df[col][df[col].notna()].isin(values),
+        error_type='isin',
+        error_msg=f'Input should be in {values}'
+    )
+
+
+def notin(values: Iterable[Any]) -> Rule:
+    """
+    Checks if the input is not in a given list of values.
+    """
+
+    return MaskRule(
+        lambda df, col: df[col][df[col].notna()].isin(values),
+        error_type='notin',
+        error_msg=f'Input should not be in {values}'
+    )

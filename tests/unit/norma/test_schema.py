@@ -9,29 +9,31 @@ from norma.schema import Column, Schema
 
 
 @pytest.mark.parametrize('kwargs, expected', [
-    ({'dtype': int}, lambda mock_rules: [mock_rules.int_parsing()]),
-    ({'dtype': 'int'}, lambda mock_rules: [mock_rules.int_parsing()]),
-    ({'dtype': 'integer'}, lambda mock_rules: [mock_rules.int_parsing()]),
-    ({'dtype': float}, lambda mock_rules: [mock_rules.float_parsing()]),
-    ({'dtype': 'float'}, lambda mock_rules: [mock_rules.float_parsing()]),
-    ({'dtype': 'double'}, lambda mock_rules: [mock_rules.float_parsing()]),
-    ({'dtype': str}, lambda mock_rules: [mock_rules.string_parsing()]),
-    ({'dtype': 'string'}, lambda mock_rules: [mock_rules.string_parsing()]),
-    ({'dtype': 'str'}, lambda mock_rules: [mock_rules.string_parsing()]),
-    ({'dtype': bool}, lambda mock_rules: [mock_rules.boolean_parsing()]),
-    ({'dtype': 'boolean'}, lambda mock_rules: [mock_rules.boolean_parsing()]),
-    ({'dtype': 'bool'}, lambda mock_rules: [mock_rules.boolean_parsing()]),
-    ({'dtype': 'bool', 'nullable': False}, lambda mock_rules: [mock_rules.required(), mock_rules.boolean_parsing()]),
-    ({'dtype': 'str', 'eq': 'foo'}, lambda mock_rules: [mock_rules.string_parsing(), mock_rules.equal_to('foo')]),
-    ({'dtype': 'str', 'ne': 'foo'}, lambda mock_rules: [mock_rules.string_parsing(), mock_rules.not_equal_to('foo')]),
-    ({'dtype': 'int', 'gt': 10}, lambda mock_rules: [mock_rules.int_parsing(), mock_rules.greater_than(10)]),
-    ({'dtype': 'int', 'lt': 10}, lambda mock_rules: [mock_rules.int_parsing(), mock_rules.less_than(10)]),
-    ({'dtype': 'int', 'ge': 10}, lambda mock_rules: [mock_rules.int_parsing(), mock_rules.greater_than_equal(10)]),
-    ({'dtype': 'int', 'le': 10}, lambda mock_rules: [mock_rules.int_parsing(), mock_rules.less_than_equal(10)]),
-    ({'dtype': 'int', 'multiple_of': 10}, lambda mock_rules: [mock_rules.int_parsing(), mock_rules.multiple_of(10)]),
-    ({'dtype': 'str', 'min_length': 10}, lambda mock_rules: [mock_rules.string_parsing(), mock_rules.min_length(10)]),
-    ({'dtype': 'str', 'max_length': 10}, lambda mock_rules: [mock_rules.string_parsing(), mock_rules.max_length(10)]),
-    ({'dtype': 'str', 'pattern': 'foo'}, lambda mock_rules: [mock_rules.string_parsing(), mock_rules.pattern('foo')]),
+    ({'dtype': int}, lambda x: [x.int_parsing()]),
+    ({'dtype': 'int'}, lambda x: [x.int_parsing()]),
+    ({'dtype': 'integer'}, lambda x: [x.int_parsing()]),
+    ({'dtype': float}, lambda x: [x.float_parsing()]),
+    ({'dtype': 'float'}, lambda x: [x.float_parsing()]),
+    ({'dtype': 'double'}, lambda x: [x.float_parsing()]),
+    ({'dtype': str}, lambda x: [x.string_parsing()]),
+    ({'dtype': 'string'}, lambda x: [x.string_parsing()]),
+    ({'dtype': 'str'}, lambda x: [x.string_parsing()]),
+    ({'dtype': bool}, lambda x: [x.boolean_parsing()]),
+    ({'dtype': 'boolean'}, lambda x: [x.boolean_parsing()]),
+    ({'dtype': 'bool'}, lambda x: [x.boolean_parsing()]),
+    ({'dtype': 'bool', 'nullable': False}, lambda x: [x.required(), x.boolean_parsing()]),
+    ({'dtype': 'str', 'eq': 'foo'}, lambda x: [x.string_parsing(), x.equal_to('foo')]),
+    ({'dtype': 'str', 'ne': 'foo'}, lambda x: [x.string_parsing(), x.not_equal_to('foo')]),
+    ({'dtype': 'int', 'gt': 10}, lambda x: [x.int_parsing(), x.greater_than(10)]),
+    ({'dtype': 'int', 'lt': 10}, lambda x: [x.int_parsing(), x.less_than(10)]),
+    ({'dtype': 'int', 'ge': 10}, lambda x: [x.int_parsing(), x.greater_than_equal(10)]),
+    ({'dtype': 'int', 'le': 10}, lambda x: [x.int_parsing(), x.less_than_equal(10)]),
+    ({'dtype': 'int', 'multiple_of': 10}, lambda x: [x.int_parsing(), x.multiple_of(10)]),
+    ({'dtype': 'str', 'min_length': 10}, lambda x: [x.string_parsing(), x.min_length(10)]),
+    ({'dtype': 'str', 'max_length': 10}, lambda x: [x.string_parsing(), x.max_length(10)]),
+    ({'dtype': 'str', 'pattern': 'foo'}, lambda x: [x.string_parsing(), x.pattern('foo')]),
+    ({'dtype': 'str', 'isin': ['foo', 'bar']}, lambda x: [x.string_parsing(), x.isin(['foo', 'bar'])]),
+    ({'dtype': 'str', 'notin': ['foo', 'bar']}, lambda x: [x.string_parsing(), x.notin(['foo', 'bar'])]),
 ])
 def test_column(kwargs, expected):
     with mock.patch('norma.rules') as mock_rules:
@@ -260,7 +262,8 @@ def test_schema_from_json_schema():
                 'description': 'Age in years which must be equal to or greater than zero.',
                 'type': 'integer',
                 'minimum': 0,
-                'maximum': 120
+                'maximum': 120,
+                'enum': [0, 1, 2, 3]
             },
             'height': {
                 'description': 'Height in meters which must be greater than 0.5 and less than 3.0.',
@@ -270,7 +273,8 @@ def test_schema_from_json_schema():
             },
             'disabled': {
                 'description': 'A boolean flag to indicate if the person is disabled.',
-                'type': 'boolean'
+                'type': 'boolean',
+                'default': False
             }
         },
         'required': ['name', 'age', 'disabled'],
@@ -283,8 +287,8 @@ def test_schema_from_json_schema():
     assert actual.columns.keys() == {'name', 'age', 'height', 'disabled'}
     assert mock_column.mock_calls == [
         mock.call('string', nullable=False, min_length=3, max_length=256, pattern='^[A-Za-z ]+$'),
-        mock.call('integer', nullable=False, ge=0, le=120),
+        mock.call('integer', nullable=False, ge=0, le=120, isin=[0, 1, 2, 3]),
         mock.call('number', nullable=True, gt=0.5, lt=3.0),
-        mock.call('boolean', nullable=False)
+        mock.call('boolean', nullable=False, default=False)
     ]
     assert actual.allow_extra is False

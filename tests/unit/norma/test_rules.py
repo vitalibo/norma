@@ -500,3 +500,53 @@ def test_extra_forbidden_allowed():
     assert list(df.columns) == ['col1', 'col2']
     assert 'col1' not in error_state.masks
     assert len(error_state.errors) == 0  # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
+
+
+@pytest.mark.parametrize('value, dtype, allowed, assert_error', [*[
+    (*params, assert_has_error)
+    for params in [
+        ('abc', 'object', ('abcd', 'efgh')),
+        ('123', 'string[python]', (123, 456)),
+        (123, 'string[python]', (123, 456)),
+    ]
+], *[
+    (*params, assert_no_error)
+    for params in [
+        ('123', 'string[python]', ('123', '456')),
+        ('abc', 'object', ('abc', 'def')),
+    ]
+]])
+def test_isin(value, dtype, allowed, assert_error):
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
+    error_state = rules.ErrorState(df.index)
+    rule = rules.isin(allowed)
+
+    actual = rule.verify(df, column='col', error_state=error_state)
+
+    assert actual is not None
+    assert_error(error_state, [{'type': 'isin', 'msg': f'Input should be in {allowed}'}])
+
+
+@pytest.mark.parametrize('value, dtype, allowed, assert_error', [*[
+    (*params, assert_has_error)
+    for params in [
+        ('abc', 'object', ('abc', 'def')),
+        ('123', 'string[python]', ('123', '456')),
+        (123, 'string[python]', ('123', '456')),
+    ]
+], *[
+    (*params, assert_no_error)
+    for params in [
+        ('123', 'string[python]', ('abc', 'def')),
+        ('abc', 'object', ('123', '456')),
+    ]
+]])
+def test_notin(value, dtype, allowed, assert_error):
+    df = pd.DataFrame({'col': [value]}, dtype=dtype)
+    error_state = rules.ErrorState(df.index)
+    rule = rules.notin(allowed)
+
+    actual = rule.verify(df, column='col', error_state=error_state)
+
+    assert actual is not None
+    assert_error(error_state, [{'type': 'notin', 'msg': f'Input should not be in {allowed}'}])
