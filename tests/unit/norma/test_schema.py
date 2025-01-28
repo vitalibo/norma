@@ -34,6 +34,11 @@ from norma.schema import Column, Schema
     ({'dtype': 'str', 'pattern': 'foo'}, lambda x: [x.string_parsing(), x.pattern('foo')]),
     ({'dtype': 'str', 'isin': ['foo', 'bar']}, lambda x: [x.string_parsing(), x.isin(['foo', 'bar'])]),
     ({'dtype': 'str', 'notin': ['foo', 'bar']}, lambda x: [x.string_parsing(), x.notin(['foo', 'bar'])]),
+    ({'dtype': 'date'}, lambda x: [x.date_parsing()]),
+    ({'dtype': 'datetime'}, lambda x: [x.datetime_parsing()]),
+    ({'dtype': 'timestamp'}, lambda x: [x.timestamp_parsing()]),
+    ({'dtype': 'timestamp[s]'}, lambda x: [x.timestamp_parsing('s')]),
+    ({'dtype': 'timestamp[ms]'}, lambda x: [x.timestamp_parsing('ms')]),
 ])
 def test_column(kwargs, expected):
     with mock.patch('norma.rules') as mock_rules:
@@ -275,6 +280,10 @@ def test_schema_from_json_schema():
                 'description': 'A boolean flag to indicate if the person is disabled.',
                 'type': 'boolean',
                 'default': False
+            },
+            'releaseDate': {
+                'type': 'string',
+                'format': 'date-time'
             }
         },
         'required': ['name', 'age', 'disabled'],
@@ -284,11 +293,12 @@ def test_schema_from_json_schema():
     with mock.patch('norma.schema.Column') as mock_column:
         actual = Schema.from_json_schema(json_schema)
 
-    assert actual.columns.keys() == {'name', 'age', 'height', 'disabled'}
+    assert actual.columns.keys() == {'name', 'age', 'height', 'disabled', 'releaseDate'}
     assert mock_column.mock_calls == [
         mock.call('string', nullable=False, min_length=3, max_length=256, pattern='^[A-Za-z ]+$'),
         mock.call('integer', nullable=False, ge=0, le=120, isin=[0, 1, 2, 3]),
         mock.call('number', nullable=True, gt=0.5, lt=3.0),
-        mock.call('boolean', nullable=False, default=False)
+        mock.call('boolean', nullable=False, default=False),
+        mock.call('datetime', nullable=True)
     ]
     assert actual.allow_extra is False

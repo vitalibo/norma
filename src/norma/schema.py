@@ -47,6 +47,11 @@ class Column:
             'str': norma.rules.string_parsing,
             'boolean': norma.rules.boolean_parsing,
             'bool': norma.rules.boolean_parsing,
+            'date': norma.rules.date_parsing,
+            'datetime': norma.rules.datetime_parsing,
+            'timestamp': norma.rules.timestamp_parsing,
+            'timestamp[s]': lambda: norma.rules.timestamp_parsing('s'),
+            'timestamp[ms]': lambda: norma.rules.timestamp_parsing('ms'),
         }
 
         dtype = dtype.__name__ if isinstance(dtype, type) else dtype
@@ -151,10 +156,19 @@ class Schema:
             'enum': 'isin',
         }
 
+        complex_types = {
+            ('string', 'date'): 'date',
+            ('string', 'date-time'): 'datetime'
+        }
+
         return Schema(
             {
                 field: Column(
-                    properties['type'],
+                    complex_types.get(
+                        (properties.get('type'), properties.get('format')),
+                        properties.get('type')
+                    ),
+
                     nullable=field not in json_schema.get('required', []),
                     **{
                         known[key]: value

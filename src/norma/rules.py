@@ -128,6 +128,27 @@ class BooleanRule(Rule):
         return bool_series
 
 
+class DatetimeRule(Rule):
+    """
+    A rule that casts a column to a datetime type.
+    """
+
+    def __init__(self, dtype: Optional[str], unit: Optional[str], error_type: str, error_msg: str) -> None:
+        self.dtype = dtype
+        self.unit = unit
+        self.error_type = error_type
+        self.error_msg = error_msg
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        datetime_series = pd.to_datetime(df[column], unit=self.unit, errors='coerce')
+        if self.dtype is not None:
+            datetime_series = pd.Series(datetime_series.values.astype(self.dtype), name=column)
+        boolmask = datetime_series.isna() & df[column].notna()
+
+        error_state.add_errors(boolmask, column, {'type': self.error_type, 'msg': self.error_msg})
+        return datetime_series
+
+
 def required() -> Rule:
     """
     Checks if the input is missing.
@@ -321,6 +342,45 @@ def boolean_parsing():
     return BooleanRule(
         error_type='boolean_parsing',
         error_msg='Input should be a valid boolean, unable to parse value as a boolean'
+    )
+
+
+def datetime_parsing() -> Rule:
+    """
+    Checks if the input can be parsed as a datetime.
+    """
+
+    return DatetimeRule(
+        dtype=None, unit=None,
+        error_type='datetime_parsing',
+        error_msg='Input should be a valid datetime, unable to parse value as a datetime'
+    )
+
+
+def timestamp_parsing(unit: str = 's') -> Rule:
+    """
+    Checks if the input can be parsed as a datetime.
+    """
+
+    if unit not in ['s', 'ms', 'us', 'ns']:
+        raise ValueError('unit should be one of "s", "ms", "us", "ns"')
+
+    return DatetimeRule(
+        dtype=f'datetime64[{unit}]', unit=unit,
+        error_type='timestamp_parsing',
+        error_msg='Input should be a valid epoch timestamp, unable to parse value as a epoch timestamp'
+    )
+
+
+def date_parsing() -> Rule:
+    """
+    Checks if the input can be parsed as a date.
+    """
+
+    return DatetimeRule(
+        dtype='datetime64[D]', unit=None,
+        error_type='date_parsing',
+        error_msg='Input should be a valid date, unable to parse value as a date'
     )
 
 
