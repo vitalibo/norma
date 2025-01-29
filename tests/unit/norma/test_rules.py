@@ -494,7 +494,7 @@ def test_timestamp_parsing(in_value, in_dtype, out_value, unit, assert_error):
     actual = rule.verify(df, column='col', error_state=error_state)
 
     pd.testing.assert_series_equal(
-        actual, pd.Series([out_value], dtype=f'datetime64[{unit.get('unit', 's')}]', name='col'))
+        actual, pd.Series([out_value], dtype=f'datetime64[{unit.get("unit", "s")}]', name='col'))
     assert_error(error_state, [
         {
             'type': 'timestamp_parsing',
