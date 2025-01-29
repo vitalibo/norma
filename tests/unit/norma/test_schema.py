@@ -39,6 +39,7 @@ from norma.schema import Column, Schema
     ({'dtype': 'timestamp'}, lambda x: [x.timestamp_parsing()]),
     ({'dtype': 'timestamp[s]'}, lambda x: [x.timestamp_parsing('s')]),
     ({'dtype': 'timestamp[ms]'}, lambda x: [x.timestamp_parsing('ms')]),
+    ({'dtype': 'time'}, lambda x: [x.time_parsing()]),
 ])
 def test_column(kwargs, expected):
     with mock.patch('norma.rules') as mock_rules:

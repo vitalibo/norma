@@ -53,7 +53,7 @@ def assert_has_error(error_state, details):
 
 
 def assert_no_error(error_state, details):  # pylint: disable=unused-argument
-    assert error_state.masks['col'].equals(pd.Series([False]))
+    assert error_state.masks['col'].equals(pd.Series([False] * error_state.masks['col'].shape[0]))
     assert len(error_state.errors) == 0  # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
 
 
@@ -432,6 +432,36 @@ def test_date_parsing(in_value, in_dtype, out_value, assert_error):
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='datetime64[s]', name='col'))
     assert_error(error_state, [
         {'type': 'date_parsing', 'msg': 'Input should be a valid date, unable to parse value as a date'}
+    ])
+
+
+@pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
+    (*params, assert_has_error)
+    for params in [
+        (['foo'], 'object', [None]),
+        ([True], 'boolean', [None])
+    ]
+], *[
+    (*params, assert_no_error)
+    for params in [
+        (['12:34:56'], 'string[python]', ['12:34:56.000000']),
+        (['12:34:56.123'], 'string[python]', ['12:34:56.123000']),
+        (['12:34:56+03:00'], 'string[python]', ['12:34:56.000000+0300']),
+        (['12:34:56.123+02:00'], 'string[python]', ['12:34:56.123000+0200']),
+        (['12:34:56', '12:34:56+03:00'], 'string[python]', ['12:34:56.000000+0000', '12:34:56.000000+0300']),
+        (['12:34:56.123', '12:34:56.123-05:00'], 'string[python]', ['12:34:56.123000+0000', '12:34:56.123000-0500']),
+    ]
+]])
+def test_time_parsing(in_value, in_dtype, out_value, assert_error):
+    df = pd.DataFrame({'col': in_value}, dtype=in_dtype)
+    error_state = rules.ErrorState(df.index)
+    rule = rules.time_parsing()
+
+    actual = rule.verify(df, column='col', error_state=error_state)
+
+    pd.testing.assert_series_equal(actual, pd.Series(out_value, dtype='string[python]', name='col'))
+    assert_error(error_state, [
+        {'type': 'time_parsing', 'msg': 'Input should be a valid time, unable to parse value as a time'}
     ])
 
 

@@ -24,9 +24,16 @@ __all__ = [
     'float_parsing',
     'string_parsing',
     'boolean_parsing',
+    'datetime_parsing',
+    'timestamp_parsing',
+    'date_parsing',
+    'time_parsing',
     'min_length',
     'max_length',
     'pattern',
+    'extra_forbidden',
+    'isin',
+    'notin',
 ]
 
 
@@ -382,6 +389,40 @@ def date_parsing() -> Rule:
         error_type='date_parsing',
         error_msg='Input should be a valid date, unable to parse value as a date'
     )
+
+
+def time_parsing() -> Rule:
+    """
+    Checks if the input can be parsed as a time.
+    """
+
+    class _TimeRule(Rule):
+        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+            time_s, time_ms, time_s_tz, time_ms_tz = (
+                pd.to_datetime(df[column], errors='coerce', format=fstr)
+                for fstr in ['%H:%M:%S', '%H:%M:%S.%f', '%H:%M:%S%z', '%H:%M:%S.%f%z']
+            )
+
+            time_tz = time_s_tz.combine_first(time_ms_tz)
+            has_series_tz = time_tz.notna().any()
+            strformat = '%H:%M:%S.%f+0000' if has_series_tz else '%H:%M:%S.%f'
+            time_series = time_s.combine_first(time_ms).dt.strftime(strformat).astype('string')
+
+            if has_series_tz:
+                time_tz = time_tz.map(lambda x: x.strftime('%H:%M:%S.%f%z') if pd.notnull(x) else None)
+                time_series = time_series.combine_first(time_tz.astype('string'))
+
+            boolmask = time_series.isna() & df[column].notna()
+            error_state.add_errors(
+                boolmask, column, {
+                    'type': 'time_parsing',
+                    'msg': 'Input should be a valid time, unable to parse value as a time'
+                }
+            )
+
+            return time_series
+
+    return _TimeRule()
 
 
 def min_length(value: int) -> Rule:

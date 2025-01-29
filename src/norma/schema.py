@@ -52,6 +52,7 @@ class Column:
             'timestamp': norma.rules.timestamp_parsing,
             'timestamp[s]': lambda: norma.rules.timestamp_parsing('s'),
             'timestamp[ms]': lambda: norma.rules.timestamp_parsing('ms'),
+            'time': norma.rules.time_parsing,
         }
 
         dtype = dtype.__name__ if isinstance(dtype, type) else dtype
@@ -158,7 +159,8 @@ class Schema:
 
         complex_types = {
             ('string', 'date'): 'date',
-            ('string', 'date-time'): 'datetime'
+            ('string', 'date-time'): 'datetime',
+            ('string', 'time'): 'time',
         }
 
         return Schema(
