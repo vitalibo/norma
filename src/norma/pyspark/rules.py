@@ -1,10 +1,39 @@
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 
-from pyspark.sql import Column
+from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
 
 
+class ErrorState:
+    """
+    A class to represent the state of errors in a DataFrame.
+    """
+
+    def __init__(self, error_column: str):
+        self.error_column = error_column
+
+    def add_errors(self, boolmask: Column, column: str, details: Dict[str, str]):
+        details_col = fn.when(
+            boolmask, fn.struct(*[
+                fn.lit(v).alias(k)
+                for k, v in details.items()
+            ])
+        )
+
+        name = f'{self.error_column}_{column}'
+        return name, fn.array_append(fn.col(name), details_col)
+
+
 class Rule:
+    """
+    A rule to validate a column in a DataFrame.
+    """
+
+    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        pass
+
+
+class MaskRule(Rule):
     """
     A rule to validate a column in a DataFrame.
     """
@@ -14,19 +43,16 @@ class Rule:
         self.error_type = error_type
         self.error_msg = error_msg
 
-    def expr(self, col: str):
-        return fn.when(
-            self.condition_func(col),
-            fn.struct(
-                fn.lit(self.error_type).alias('type'),
-                fn.lit(self.error_msg).alias('msg')))
-
-    def cast(self, col: Column):
-        return col
+    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        return df.withColumn(
+            *error_state.add_errors(
+                self.condition_func(column), column, {'type': self.error_type, 'msg': self.error_msg}
+            )
+        )
 
 
 def required():
-    return Rule(
+    return MaskRule(
         lambda col: fn.col(col).isNull(),
         error_type='required',
         error_msg='Input is required'
@@ -34,7 +60,7 @@ def required():
 
 
 def equal_to(value: Any) -> Rule:
-    return Rule(
+    return MaskRule(
         lambda col: fn.col(col) != fn.lit(value),
         error_type='equal_to',
         error_msg=f'Input should be equal to {value}'
@@ -46,7 +72,7 @@ def eq(value: Any) -> Rule:
 
 
 def not_equal_to(value: Any) -> Rule:
-    return Rule(
+    return MaskRule(
         lambda col: fn.col(col) == fn.lit(value),
         error_type='not_equal_to',
         error_msg=f'Input should not be equal to {value}'
@@ -58,7 +84,7 @@ def ne(value: Any) -> Rule:
 
 
 def greater_than(value: Any) -> Rule:
-    return Rule(
+    return MaskRule(
         lambda col: fn.col(col) <= fn.lit(value),
         error_type='greater_than',
         error_msg=f'Input should be greater than {value}'
@@ -66,7 +92,7 @@ def greater_than(value: Any) -> Rule:
 
 
 def multiple_of(value: Any) -> Rule:
-    return Rule(
+    return MaskRule(
         # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
         lambda col: (fn.col(col) % fn.lit(value)) != 0,
         error_type='multiple_of',
@@ -75,7 +101,7 @@ def multiple_of(value: Any) -> Rule:
 
 
 def pattern(value: str) -> Rule:
-    return Rule(
+    return MaskRule(
         lambda col: ~fn.col(col).rlike(value),
         error_type='pattern',
         error_msg=f'Input should match the pattern {value}'
@@ -84,23 +110,29 @@ def pattern(value: str) -> Rule:
 
 def int_parsing() -> Rule:
     class _IntParsingRule(Rule):
-        def cast(self, col: Column):
-            return col.cast('int')
+        def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            return (
+                df
+                .withColumn(column, fn.col(column).cast('int'))
+                .withColumn(
+                    *error_state.add_errors(
+                        fn.col(column).isNull() & fn.col(f"{column}_bak").isNotNull(),
+                        column,
+                        details={
+                            'type': 'int_parsing',
+                            'msg': 'Input should be a valid integer, unable to parse value as an integer'
+                        }
+                    )
+                )
+            )
 
-    return _IntParsingRule(
-        lambda col: fn.col(col).cast('int').isNull(),
-        error_type='int_parsing',
-        error_msg='Input should be a valid integer, unable to parse value as an integer'
-    )
+    return _IntParsingRule()
 
 
 def string_parsing() -> Rule:
-    class _StrRule(Rule):
-        def cast(self, col: Column):
-            return col.cast('string')
+    class _StrParsingRule(Rule):
+        def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            return df \
+                .withColumn(column, fn.col(column).cast('string'))
 
-    return _StrRule(
-        lambda col: fn.col(col).isNull(),
-        error_type='string_parsing',
-        error_msg='Input should be a valid string, unable to parse value as a string'
-    )
+    return _StrParsingRule()

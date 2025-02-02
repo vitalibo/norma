@@ -4,7 +4,7 @@ import pyspark.sql.functions as fn
 from pyspark.sql import DataFrame
 
 import norma.pyspark.rules
-from norma.pyspark.rules import Rule
+from norma.pyspark.rules import ErrorState, Rule
 
 
 class Column:
@@ -58,19 +58,14 @@ class Schema:
         self.allow_extra = allow_extra
 
     def validate(self, df: DataFrame, error_column: str = 'errors') -> DataFrame:
+        error_state = ErrorState(error_column)
         for column in self.columns:
             df = df \
                 .withColumn(f'{column}_bak', fn.col(column)) \
                 .withColumn(f'{error_column}_{column}', fn.array())
 
-            col = fn.col(column)
             for rule in self.columns[column].rules:
-                col = rule.cast(col)
-
-                df = df \
-                    .withColumn(f'{error_column}_{column}',
-                                fn.array_append(fn.col(f'{error_column}_{column}'), rule.expr(column))) \
-                    .withColumn(column, col)
+                df = rule.verify(df, column, error_state)
 
         df = df.withColumn(error_column, fn.struct(*[
             fn.struct(
