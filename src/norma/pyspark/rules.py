@@ -1,9 +1,12 @@
-from typing import Callable, Any
+from typing import Any, Callable
 
 from pyspark.sql import functions as fn
 
 
 class Rule:
+    """
+    A rule to validate a column in a DataFrame.
+    """
 
     def __init__(self, condition_func: Callable, error_type: str, error_msg: str):
         self.condition_func = condition_func
@@ -60,6 +63,7 @@ def greater_than(value: Any) -> Rule:
 
 def multiple_of(value: Any) -> Rule:
     return Rule(
+        # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
         lambda col: (fn.col(col) % fn.lit(value)) != 0,
         error_type='multiple_of',
         error_msg=f'Input should be a multiple of {value}'

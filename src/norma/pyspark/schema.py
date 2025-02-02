@@ -1,4 +1,4 @@
-from typing import Union, List, Dict
+from typing import Dict, List, Union
 
 import pyspark.sql.functions as fn
 from pyspark.sql import DataFrame
@@ -7,17 +7,24 @@ from norma.pyspark.rules import Rule
 
 
 class Column:
+    """
+    A column in a DataFrame schema.
+    """
 
     def __init__(
             self,
-            dtype: type | str,
+            dtype: Union[type, str],
             *,
             rules: Union[Rule, List[Rule], None] = None
     ) -> None:
+        self.dtype = dtype
         self.rules = [rules] if isinstance(rules, Rule) else rules
 
 
 class Schema:
+    """
+    A schema for a DataFrame.
+    """
 
     def __init__(
             self,
@@ -35,23 +42,23 @@ class Schema:
                         rule.expr(column)
                         for rule in self.columns[column].rules
                     ]),
-                    lambda x: fn.isnotnull(x)
-                ).alias("details"),
-                fn.col(column).alias("original"),
+                    fn.isnotnull,
+                ).alias('details'),
+                fn.col(column).alias('original'),
             ).alias(column) for column in self.columns
         ]))
 
         df = df.select(
             *[
                 fn.when(
-                    fn.array_size(fn.col(f"{error_column}.{column}.details")) > 0, None
+                    fn.array_size(fn.col(f'{error_column}.{column}.details')) > 0, None
                 ).otherwise(fn.col(column)).alias(column)
                 for column in self.columns
             ],
             fn.struct(*[
                 fn.when(
-                    fn.array_size(fn.col(f"{error_column}.{column}.details")) > 0,
-                    fn.col(f"{error_column}.{column}")
+                    fn.array_size(fn.col(f'{error_column}.{column}.details')) > 0,
+                    fn.col(f'{error_column}.{column}')
                 ).otherwise(fn.lit(None)).alias(column)
                 for column in self.columns
             ]).alias(error_column)
