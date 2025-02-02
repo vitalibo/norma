@@ -1,5 +1,6 @@
 from typing import Any, Callable
 
+from pyspark.sql import Column
 from pyspark.sql import functions as fn
 
 
@@ -19,6 +20,9 @@ class Rule:
             fn.struct(
                 fn.lit(self.error_type).alias('type'),
                 fn.lit(self.error_msg).alias('msg')))
+
+    def cast(self, col: Column):
+        return col
 
 
 def required():
@@ -75,4 +79,28 @@ def pattern(value: str) -> Rule:
         lambda col: ~fn.col(col).rlike(value),
         error_type='pattern',
         error_msg=f'Input should match the pattern {value}'
+    )
+
+
+def int_parsing() -> Rule:
+    class _IntParsingRule(Rule):
+        def cast(self, col: Column):
+            return col.cast('int')
+
+    return _IntParsingRule(
+        lambda col: fn.col(col).cast('int').isNull(),
+        error_type='int_parsing',
+        error_msg='Input should be a valid integer, unable to parse value as an integer'
+    )
+
+
+def string_parsing() -> Rule:
+    class _StrRule(Rule):
+        def cast(self, col: Column):
+            return col.cast('string')
+
+    return _StrRule(
+        lambda col: fn.col(col).isNull(),
+        error_type='string_parsing',
+        error_msg='Input should be a valid string, unable to parse value as a string'
     )

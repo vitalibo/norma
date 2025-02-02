@@ -50,13 +50,22 @@ def test_schema_validate(spark):
             }
         },
         {
-            'col1': '2',
+            'col1': 2,
             'col2': 'bar',
             'errors': {}
         },
         {
-            'col1': 'unknown',
             'col2': 'bar',
-            'errors': {}
+            'errors': {
+                'col1': {
+                    'details': [
+                        {
+                            'msg': 'Input should be a valid integer, unable to parse value as an integer',
+                            'type': 'int_parsing'
+                        }
+                    ],
+                    'original': 'unknown'
+                }
+            }
         }
     ]
