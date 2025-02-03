@@ -208,7 +208,7 @@ def int_parsing() -> Rule:
                 .withColumn(column, fn.col(column).cast('int'))
                 .withColumn(
                     *error_state.add_errors(
-                        fn.col(column).isNull() & fn.col(f"{column}_bak").isNotNull(),
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(),
                         column,
                         details={
                             'type': 'int_parsing',
@@ -229,7 +229,7 @@ def float_parsing():
                 .withColumn(column, fn.col(column).cast('float'))
                 .withColumn(
                     *error_state.add_errors(
-                        fn.col(column).isNull() & fn.col(f"{column}_bak").isNotNull(),
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(),
                         column,
                         details={
                             'type': 'float_parsing',
@@ -259,7 +259,7 @@ def boolean_parsing():
                 .withColumn(column, fn.col(column).cast('boolean'))
                 .withColumn(
                     *error_state.add_errors(
-                        fn.col(column).isNull() & fn.col(f"{column}_bak").isNotNull(),
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(),
                         column,
                         details={
                             'type': 'boolean_parsing',
@@ -315,7 +315,7 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
             for col in extra_columns:
                 df = (
                     df
-                    .withColumnRenamed(col, f"{col}_bak")
+                    .withColumnRenamed(col, f'{col}_bak')
                     .withColumn(
                         *error_state.add_errors(
                             fn.lit(True), col,
