@@ -61,16 +61,20 @@ class Schema:
         error_state = ErrorState(error_column)
         for column in self.columns:
             df = df \
-                .withColumn(f'{column}_bak', fn.col(column)) \
                 .withColumn(f'{error_column}_{column}', fn.array())
 
-            for rule in self.columns[column].rules:
+            rules = self.columns[column].rules if column in self.columns else []
+            if not self.allow_extra:
+                rules.append(
+                    norma.pyspark.rules.extra_forbidden(self.columns.keys()))
+
+            for rule in rules:
                 df = rule.verify(df, column, error_state)
 
         df = df.withColumn(error_column, fn.struct(*[
             fn.struct(
                 fn.filter(fn.col(f'{error_column}_{column}'), fn.isnotnull).alias('details'),
-                fn.col(f'{column}_bak').alias('original'),
+                fn.col(column if column in df.columns else f'{column}_bak').alias('original'),
             ).alias(column) for column in self.columns
         ]))
 

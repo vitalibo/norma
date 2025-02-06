@@ -311,23 +311,23 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
 
     class _ExtraRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-            extra_columns = set(df.columns) - set(allowed)
-            for col in extra_columns:
-                df = (
-                    df
-                    .withColumnRenamed(col, f'{col}_bak')
-                    .withColumn(
-                        *error_state.add_errors(
-                            fn.lit(True), col,
-                            details={
-                                'type': 'extra_forbidden',
-                                'msg': 'Extra inputs are not permitted'
-                            }
-                        )
+            if column in allowed:
+                return df
+
+            return (
+                df
+                .withColumnRenamed(column, f'{column}_bak')
+                .withColumn(column, fn.lit(None).cast('string'))
+                .withColumn(
+                    *error_state.add_errors(
+                        fn.lit(True), column,
+                        details={
+                            'type': 'extra_forbidden',
+                            'msg': 'Extra inputs are not permitted'
+                        }
                     )
                 )
-
-            return df
+            )
 
     return _ExtraRule()
 
