@@ -205,6 +205,7 @@ def int_parsing() -> Rule:
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
                 df
+                .withColumn(f"{column}_bak", fn.col(column))
                 .withColumn(column, fn.col(column).cast('int'))
                 .withColumn(
                     *error_state.add_errors(
@@ -226,6 +227,7 @@ def float_parsing():
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
                 df
+                .withColumn(f"{column}_bak", fn.col(column))
                 .withColumn(column, fn.col(column).cast('float'))
                 .withColumn(
                     *error_state.add_errors(
@@ -246,6 +248,7 @@ def string_parsing() -> Rule:
     class _StrParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return df \
+                .withColumn(f"{column}_bak", fn.col(column)) \
                 .withColumn(column, fn.col(column).cast('string'))
 
     return _StrParsingRule()
@@ -256,6 +259,7 @@ def boolean_parsing():
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
                 df
+                .withColumn(f"{column}_bak", fn.col(column))
                 .withColumn(column, fn.col(column).cast('boolean'))
                 .withColumn(
                     *error_state.add_errors(

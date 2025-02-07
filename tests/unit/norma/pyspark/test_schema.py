@@ -24,6 +24,8 @@ def test_schema_validate(spark):
 
     assert list(map(json.loads, actual.toJSON().collect())) == [
         {
+            'col1': None,
+            'col2': None,
             'errors': {
                 'col1': {
                     'details': [
@@ -55,6 +57,7 @@ def test_schema_validate(spark):
             'errors': {}
         },
         {
+            'col1': None,
             'col2': 'bar',
             'errors': {
                 'col1': {

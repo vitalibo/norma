@@ -74,7 +74,7 @@ class Schema:
         df = df.withColumn(error_column, fn.struct(*[
             fn.struct(
                 fn.filter(fn.col(f'{error_column}_{column}'), fn.isnotnull).alias('details'),
-                fn.col(column if column in df.columns else f'{column}_bak').alias('original'),
+                fn.col(f'{column}_bak' if f'{column}_bak' in df.columns else column).alias('original'),
             ).alias(column) for column in self.columns
         ]))
 
@@ -85,13 +85,19 @@ class Schema:
                 ).otherwise(fn.col(column)).alias(column)
                 for column in self.columns
             ],
-            fn.struct(*[
-                fn.when(
-                    fn.array_size(fn.col(f'{error_column}.{column}.details')) > 0,
-                    fn.col(f'{error_column}.{column}')
-                ).otherwise(fn.lit(None)).alias(column)
-                for column in self.columns
-            ]).alias(error_column)
+            fn.map_filter(
+                fn.map_from_arrays(
+                    fn.array(*[fn.lit(column) for column in self.columns]),
+                    fn.array(*[
+                        fn.when(
+                            fn.array_size(fn.col(f'{error_column}.{column}.details')) > 0,
+                            fn.col(f'{error_column}.{column}')
+                        ).otherwise(fn.lit(None)).alias(column)
+                        for column in self.columns
+                    ])
+                ).alias(error_column),
+                lambda k, v: fn.isnotnull(v)
+            ).alias(error_column)
         )
 
         return df
