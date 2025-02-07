@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, Iterable
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
+from pyspark.sql.types import NumericType
 
 
 class ErrorState:
@@ -192,7 +193,17 @@ def le(value: Any) -> Rule:
 
 
 def multiple_of(value: Any) -> Rule:
-    return MaskRule(
+    if not isinstance(value, (int, float)):
+        raise ValueError('value should be an integer or a float')
+
+    class _MultipleOfRule(MaskRule):
+        def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            if not isinstance(df.schema[column].dataType, NumericType):
+                raise ValueError('multiple_of rule can only be applied to numeric columns')
+
+            return super().verify(df, column, error_state)
+
+    return _MultipleOfRule(
         # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
         lambda col: (fn.col(col) % fn.lit(value)) != 0,
         error_type='multiple_of',
@@ -205,7 +216,7 @@ def int_parsing() -> Rule:
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
                 df
-                .withColumn(f"{column}_bak", fn.col(column))
+                .withColumn(f'{column}_bak', fn.col(column))
                 .withColumn(column, fn.col(column).cast('int'))
                 .withColumn(
                     *error_state.add_errors(
@@ -227,7 +238,7 @@ def float_parsing():
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
                 df
-                .withColumn(f"{column}_bak", fn.col(column))
+                .withColumn(f'{column}_bak', fn.col(column))
                 .withColumn(column, fn.col(column).cast('float'))
                 .withColumn(
                     *error_state.add_errors(
@@ -248,7 +259,7 @@ def string_parsing() -> Rule:
     class _StrParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return df \
-                .withColumn(f"{column}_bak", fn.col(column)) \
+                .withColumn(f'{column}_bak', fn.col(column)) \
                 .withColumn(column, fn.col(column).cast('string'))
 
     return _StrParsingRule()
@@ -259,7 +270,7 @@ def boolean_parsing():
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
                 df
-                .withColumn(f"{column}_bak", fn.col(column))
+                .withColumn(f'{column}_bak', fn.col(column))
                 .withColumn(column, fn.col(column).cast('boolean'))
                 .withColumn(
                     *error_state.add_errors(
@@ -316,23 +327,15 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
     class _ExtraRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             if column in allowed:
-                return df
+                return df.withColumn(*error_state.add_errors(fn.lit(False), column, details=details))
 
             return (
                 df
                 .withColumnRenamed(column, f'{column}_bak')
-                .withColumn(column, fn.lit(None).cast('string'))
-                .withColumn(
-                    *error_state.add_errors(
-                        fn.lit(True), column,
-                        details={
-                            'type': 'extra_forbidden',
-                            'msg': 'Extra inputs are not permitted'
-                        }
-                    )
-                )
+                .withColumn(*error_state.add_errors(fn.lit(True), column, details=details))
             )
 
+    details = {'type': 'extra_forbidden', 'msg': 'Extra inputs are not permitted'}
     return _ExtraRule()
 
 
