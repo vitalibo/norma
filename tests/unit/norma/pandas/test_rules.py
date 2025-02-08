@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from norma import rules
+from norma.pandas import rules
 
 
 def test_error_state_add_errors():

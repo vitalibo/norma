@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, List, Union
 import numpy as np
 import pandas as pd
 
-import norma.rules
-from norma.rules import ErrorState, Rule
+import norma.pandas.rules
+from norma.pandas.rules import ErrorState, Rule
 
 __all__ = ['Column', 'Schema']
 
@@ -38,21 +38,21 @@ class Column:
             default_factory: Callable[[pd.DataFrame], Any] = None,
     ) -> None:
         dtype_rules = {
-            'int': norma.rules.int_parsing,
-            'integer': norma.rules.int_parsing,
-            'float': norma.rules.float_parsing,
-            'double': norma.rules.float_parsing,
-            'number': norma.rules.float_parsing,
-            'string': norma.rules.string_parsing,
-            'str': norma.rules.string_parsing,
-            'boolean': norma.rules.boolean_parsing,
-            'bool': norma.rules.boolean_parsing,
-            'date': norma.rules.date_parsing,
-            'datetime': norma.rules.datetime_parsing,
-            'timestamp': norma.rules.timestamp_parsing,
-            'timestamp[s]': lambda: norma.rules.timestamp_parsing('s'),
-            'timestamp[ms]': lambda: norma.rules.timestamp_parsing('ms'),
-            'time': norma.rules.time_parsing,
+            'int': norma.pandas.rules.int_parsing,
+            'integer': norma.pandas.rules.int_parsing,
+            'float': norma.pandas.rules.float_parsing,
+            'double': norma.pandas.rules.float_parsing,
+            'number': norma.pandas.rules.float_parsing,
+            'string': norma.pandas.rules.string_parsing,
+            'str': norma.pandas.rules.string_parsing,
+            'boolean': norma.pandas.rules.boolean_parsing,
+            'bool': norma.pandas.rules.boolean_parsing,
+            'date': norma.pandas.rules.date_parsing,
+            'datetime': norma.pandas.rules.datetime_parsing,
+            'timestamp': norma.pandas.rules.timestamp_parsing,
+            'timestamp[s]': lambda: norma.pandas.rules.timestamp_parsing('s'),
+            'timestamp[ms]': lambda: norma.pandas.rules.timestamp_parsing('ms'),
+            'time': norma.pandas.rules.time_parsing,
         }
 
         dtype = dtype.__name__ if isinstance(dtype, type) else dtype
@@ -63,20 +63,20 @@ class Column:
             return (rule(condition),) if condition else ()
 
         self.rules = [
-            *apply_if(not nullable, lambda x: norma.rules.required()),
+            *apply_if(not nullable, lambda x: norma.pandas.rules.required()),
             dtype_rules[dtype](),
-            *apply_if(eq, norma.rules.equal_to),
-            *apply_if(ne, norma.rules.not_equal_to),
-            *apply_if(gt, norma.rules.greater_than),
-            *apply_if(lt, norma.rules.less_than),
-            *apply_if(ge, norma.rules.greater_than_equal),
-            *apply_if(le, norma.rules.less_than_equal),
-            *apply_if(multiple_of, norma.rules.multiple_of),
-            *apply_if(min_length, norma.rules.min_length),
-            *apply_if(max_length, norma.rules.max_length),
-            *apply_if(pattern, norma.rules.pattern),
-            *apply_if(isin, norma.rules.isin),
-            *apply_if(notin, norma.rules.notin),
+            *apply_if(eq, norma.pandas.rules.equal_to),
+            *apply_if(ne, norma.pandas.rules.not_equal_to),
+            *apply_if(gt, norma.pandas.rules.greater_than),
+            *apply_if(lt, norma.pandas.rules.less_than),
+            *apply_if(ge, norma.pandas.rules.greater_than_equal),
+            *apply_if(le, norma.pandas.rules.less_than_equal),
+            *apply_if(multiple_of, norma.pandas.rules.multiple_of),
+            *apply_if(min_length, norma.pandas.rules.min_length),
+            *apply_if(max_length, norma.pandas.rules.max_length),
+            *apply_if(pattern, norma.pandas.rules.pattern),
+            *apply_if(isin, norma.pandas.rules.isin),
+            *apply_if(notin, norma.pandas.rules.notin),
         ]
 
         if rules is not None:
@@ -114,7 +114,7 @@ class Schema:
             rules = self.columns[column].rules if column in self.columns else []
             if not self.allow_extra:
                 rules.append(
-                    norma.rules.extra_forbidden(self.columns.keys()))
+                    norma.pandas.rules.extra_forbidden(self.columns.keys()))
 
             for rule in rules:
                 series = rule.verify(df, column=column, error_state=error_state)

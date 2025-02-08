@@ -4,8 +4,8 @@ import pandas
 import pytest
 
 import norma
-from norma import rules
-from norma.schema import Column, Schema
+from norma.pandas import rules
+from norma.pandas.schema import Column, Schema
 
 
 @pytest.mark.parametrize('kwargs, expected', [
@@ -42,14 +42,14 @@ from norma.schema import Column, Schema
     ({'dtype': 'time'}, lambda x: [x.time_parsing()]),
 ])
 def test_column(kwargs, expected):
-    with mock.patch('norma.rules') as mock_rules:
+    with mock.patch('norma.pandas.rules') as mock_rules:
         column = Column(**kwargs)
 
         assert column.rules == expected(mock_rules)
 
 
 def test_column_rule():
-    with mock.patch('norma.rules') as mock_rules:
+    with mock.patch('norma.pandas.rules') as mock_rules:
         rule = rules.equal_to(10)
         column = Column(str, rules=rule)
 
@@ -57,7 +57,7 @@ def test_column_rule():
 
 
 def test_column_rules():
-    with mock.patch('norma.rules') as mock_rules:
+    with mock.patch('norma.pandas.rules') as mock_rules:
         rule1 = rules.equal_to(10)
         rule2 = rules.not_equal_to(22)
         column = Column(str, rules=[rule1, rule2])
@@ -66,7 +66,7 @@ def test_column_rules():
 
 
 def test_schema_validate():
-    schema = norma.schema.Schema({
+    schema = norma.pandas.schema.Schema({
         'col1': Column(int, rules=[
             rules.greater_than(1),
             rules.multiple_of(2)
@@ -133,7 +133,7 @@ def test_schema_validate():
 
 
 def test_schema_validate_allow_extra():
-    schema = norma.schema.Schema(
+    schema = norma.pandas.schema.Schema(
         {
             'col1': Column(str),
             'col2': Column(str)
@@ -165,7 +165,7 @@ def test_schema_validate_allow_extra():
 
 
 def test_schema_validate_forbidden_extra():
-    schema = norma.schema.Schema(
+    schema = norma.pandas.schema.Schema(
         {
             'col1': Column(str),
             'col2': Column(str)
@@ -215,7 +215,7 @@ def test_schema_validate_forbidden_extra():
 
 
 def test_schema_validate_default_factory():
-    schema = norma.schema.Schema({
+    schema = norma.pandas.schema.Schema({
         'col1': Column(str, default_factory=lambda x: x['col2'].str.upper()),
         'col2': Column(str, pattern='bar|qux', default='<default>')
     })
@@ -291,7 +291,7 @@ def test_schema_from_json_schema():
         'additionalProperties': False
     }
 
-    with mock.patch('norma.schema.Column') as mock_column:
+    with mock.patch('norma.pandas.schema.Column') as mock_column:
         actual = Schema.from_json_schema(json_schema)
 
     assert actual.columns.keys() == {'name', 'age', 'height', 'disabled', 'releaseDate'}
