@@ -5,8 +5,8 @@ from unittest import mock
 import pytest
 from pyxis.pyspark import StructType
 
-from norma.pyspark import rules
-from norma.pyspark.rules import ErrorState
+from norma.engines.pyspark import rules
+from norma.engines.pyspark.rules import ErrorState
 
 
 def generate_test(value):

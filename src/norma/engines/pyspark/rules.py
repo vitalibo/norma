@@ -4,8 +4,11 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
 from pyspark.sql.types import NumericType
 
+from norma.rules import ErrorState as IErrorState
+from norma.rules import Rule
 
-class ErrorState:
+
+class ErrorState(IErrorState):
     """
     A class to represent the state of errors in a DataFrame.
     """
@@ -25,21 +28,13 @@ class ErrorState:
         return name, fn.array_append(fn.col(name), details_col)
 
 
-class Rule:
-    """
-    A rule to validate a column in a DataFrame.
-    """
-
-    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        pass
-
-
 class MaskRule(Rule):
     """
     A rule to validate a column in a DataFrame.
     """
 
     def __init__(self, condition_func: Callable, error_type: str, error_msg: str):
+        super().__init__()
         self.condition_func = condition_func
         self.error_type = error_type
         self.error_msg = error_msg
@@ -255,7 +250,7 @@ def float_parsing():
     return _FloatParsingRule()
 
 
-def string_parsing() -> Rule:
+def str_parsing() -> Rule:
     class _StrParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return df \
@@ -265,7 +260,7 @@ def string_parsing() -> Rule:
     return _StrParsingRule()
 
 
-def boolean_parsing():
+def bool_parsing():
     class _BoolParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
@@ -311,11 +306,11 @@ def max_length(value: int) -> Rule:
     )
 
 
-def pattern(value: str) -> Rule:
+def pattern(regex: str) -> Rule:
     return MaskRule(
-        lambda col: ~fn.col(col).rlike(value),
+        lambda col: ~fn.col(col).rlike(regex),
         error_type='pattern',
-        error_msg=f'Input should match the pattern {value}'
+        error_msg=f'Input should match the pattern {regex}'
     )
 
 

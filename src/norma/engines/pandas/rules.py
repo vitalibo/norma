@@ -4,6 +4,9 @@ from typing import Any, Callable, Dict, Iterable, Optional, Union
 
 import pandas as pd
 
+from norma.rules import ErrorState as IErrorState
+from norma.rules import Rule
+
 __all__ = [
     'MaskRule',
     'required',
@@ -22,8 +25,8 @@ __all__ = [
     'multiple_of',
     'int_parsing',
     'float_parsing',
-    'string_parsing',
-    'boolean_parsing',
+    'str_parsing',
+    'bool_parsing',
     'datetime_parsing',
     'timestamp_parsing',
     'date_parsing',
@@ -37,7 +40,7 @@ __all__ = [
 ]
 
 
-class ErrorState:
+class ErrorState(IErrorState):
     """
     A class that holds the error state of the DataFrame.
     """
@@ -58,17 +61,6 @@ class ErrorState:
                 self.errors[index][column] = {'details': []}
             self.errors[index][column]['details'].append(details)
         self.masks[column] = self.masks[column] | boolmask.astype(bool)
-
-
-class Rule:
-    """
-    Defines the interface for a rule that can be applied to a DataFrame.
-    """
-
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
-        """
-        Verify the DataFrame and return a validated Series.
-        """
 
 
 class MaskRule(Rule):
@@ -328,7 +320,7 @@ def float_parsing():
     )
 
 
-def string_parsing():
+def str_parsing():
     """
     The rule modifies the original column to cast it to a string type.
     """
@@ -340,7 +332,7 @@ def string_parsing():
     return _StringRule()
 
 
-def boolean_parsing():
+def bool_parsing():
     """
     Checks if the input can be parsed as a boolean.
     The rule modifies the original column to cast it to a boolean type.

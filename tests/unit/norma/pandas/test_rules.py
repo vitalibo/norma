@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from norma.pandas import rules
+from norma.engines.pandas import rules
 
 
 def test_error_state_add_errors():
@@ -344,7 +344,7 @@ def test_float_parsing(in_value, in_dtype, out_value, out_dtype, assert_error):
 def test_string_parsing(in_value, in_dtype, out_value, assert_error):
     df = pd.DataFrame({'col': [in_value]}, dtype=in_dtype)
     error_state = rules.ErrorState(df.index)
-    rule = rules.string_parsing()
+    rule = rules.str_parsing()
 
     actual = rule.verify(df, column='col', error_state=error_state)
 
@@ -393,7 +393,7 @@ def test_string_parsing(in_value, in_dtype, out_value, assert_error):
 def test_boolean_parsing(in_value, in_dtype, out_value, assert_error):
     df = pd.DataFrame({'col': [in_value]}, dtype=in_dtype)
     error_state = rules.ErrorState(df.index)
-    rule = rules.boolean_parsing()
+    rule = rules.bool_parsing()
 
     actual = rule.verify(df, column='col', error_state=error_state)
 

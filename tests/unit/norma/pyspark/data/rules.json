@@ -5123,7 +5123,7 @@
         },
         "when": {
           "args": {
-            "value": "[a-z]+"
+            "regex": "[a-z]+"
           }
         },
         "then": {
@@ -5193,7 +5193,7 @@
         },
         "when": {
           "args": {
-            "value": "[a-z]+"
+            "regex": "[a-z]+"
           }
         },
         "then": {
@@ -5263,7 +5263,7 @@
         },
         "when": {
           "args": {
-            "value": "[0-9]+"
+            "regex": "[0-9]+"
           }
         },
         "then": {
@@ -5336,7 +5336,7 @@
         },
         "when": {
           "args": {
-            "value": "[a-z]+"
+            "regex": "[a-z]+"
           }
         },
         "then": {
@@ -5409,7 +5409,7 @@
         },
         "when": {
           "args": {
-            "value": "[0-9]+"
+            "regex": "[0-9]+"
           }
         },
         "then": {
@@ -7326,7 +7326,7 @@
     ]
   },
   {
-    "test": "boolean_parsing",
+    "test": "bool_parsing",
     "cases": [
       {
         "description": "cast(null as boolean) => null",
@@ -8648,7 +8648,7 @@
     ]
   },
   {
-    "test": "string_parsing",
+    "test": "str_parsing",
     "cases": [
       {
         "description": "cast(null as string) => null",
