@@ -1,7 +1,9 @@
+import json
 from unittest import mock
 
 import pandas
 import pytest
+from pyspark.sql import functions as fn
 
 import norma
 from norma import rules
@@ -90,13 +92,44 @@ def test_schema_validate_allow_extra():
             'col1': 'foo',
             'col2': 'bar',
             'col3': 'qux',
-            'errors': None
+            'errors': {}
         },
         {
             'col1': 'baz',
             'col2': 'qux',
             'col3': 123,
-            'errors': None
+            'errors': {}
+        }
+    ]
+
+
+def test_schema_validate_allow_extra_pyspark(spark_session):
+    schema = norma.schema.Schema(
+        {
+            'col1': Column(str),
+            'col2': Column(str)
+        },
+        allow_extra=True
+    )
+    df = spark_session.createDataFrame([
+        ('foo', 'bar', 'qux'),
+        ('baz', 'qux', '123')
+    ], ['col1', 'col2', 'col3'])
+
+    actual = schema.validate(df)
+
+    assert list(map(json.loads, actual.toJSON().collect())) == [
+        {
+            'col1': 'foo',
+            'col2': 'bar',
+            'col3': 'qux',
+            'errors': {}
+        },
+        {
+            'col1': 'baz',
+            'col2': 'qux',
+            'col3': '123',
+            'errors': {}
         }
     ]
 
@@ -147,6 +180,129 @@ def test_schema_validate_forbidden_extra():
                     'original': 123
                 }
             }
+        }
+    ]
+
+
+def test_schema_validate_forbidden_extra_pyspark(spark_session):
+    schema = norma.schema.Schema(
+        {
+            'col1': Column(str),
+            'col2': Column(str)
+        },
+        allow_extra=False
+    )
+    df = spark_session.createDataFrame([
+        ('foo', 'bar', 'qux'),
+        ('baz', 'qux', '123')
+    ], ['col1', 'col2', 'col3'])
+
+    actual = schema.validate(df)
+
+    assert list(map(json.loads, actual.toJSON().collect())) == [
+        {
+            'col1': 'foo',
+            'col2': 'bar',
+            'errors': {
+                'col3': {
+                    'details': [
+                        {
+                            'msg': 'Extra inputs are not permitted',
+                            'type': 'extra_forbidden'
+                        }
+                    ],
+                    'original': 'qux'
+                }
+            }
+        },
+        {
+            'col1': 'baz',
+            'col2': 'qux',
+            'errors': {
+                'col3': {
+                    'details': [
+                        {
+                            'msg': 'Extra inputs are not permitted',
+                            'type': 'extra_forbidden'
+                        }
+                    ],
+                    'original': '123'
+                }
+            }
+        }
+    ]
+
+
+def test_schema_validate_default_pandas():
+    schema = norma.schema.Schema({
+        'col1': Column(str, default_factory=lambda x: x['col2'].str.upper()),
+        'col2': Column(str, pattern='bar|qux', default='<default>')
+    })
+    df = pandas.DataFrame({
+        'col1': ['foo', None, 'baz', None],
+        'col2': ['bar', 'qux', None, None]
+    })
+
+    actual = schema.validate(df)
+
+    assert actual.to_dict(orient='records') == [
+        {
+            'col1': 'foo',
+            'col2': 'bar',
+            'errors': {}
+        },
+        {
+            'col1': 'QUX',
+            'col2': 'qux',
+            'errors': {}
+        },
+        {
+            'col1': 'baz',
+            'col2': '<default>',
+            'errors': {}
+        },
+        {
+            'col1': '<DEFAULT>',
+            'col2': '<default>',
+            'errors': {}
+        }
+    ]
+
+
+def test_schema_validate_default_pyspark(spark_session):
+    schema = norma.schema.Schema({
+        'col1': Column(str, default_factory=lambda x: fn.upper(fn.col('col2'))),
+        'col2': Column(str, pattern='bar|qux', default='<default>')
+    })
+    df = spark_session.createDataFrame([
+        ('foo', 'bar'),
+        (None, 'qux'),
+        ('baz', None),
+        (None, None)
+    ], ['col1', 'col2'])
+
+    actual = schema.validate(df)
+
+    assert list(map(json.loads, actual.toJSON().collect())) == [
+        {
+            'col1': 'foo',
+            'col2': 'bar',
+            'errors': {}
+        },
+        {
+            'col1': 'QUX',
+            'col2': 'qux',
+            'errors': {}
+        },
+        {
+            'col1': 'baz',
+            'col2': '<default>',
+            'errors': {}
+        },
+        {
+            'col1': '<DEFAULT>',
+            'col2': '<default>',
+            'errors': {}
         }
     ]
 

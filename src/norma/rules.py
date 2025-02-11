@@ -42,31 +42,31 @@ def required() -> Rule:
 
 
 def equal_to(eq: Any) -> Rule:
-    return RuleProxy('equal_to', value=eq)
+    return RuleProxy('equal_to', eq=eq)
 
 
 def not_equal_to(ne: Any) -> Rule:
-    return RuleProxy('not_equal_to', value=ne)
+    return RuleProxy('not_equal_to', ne=ne)
 
 
 def greater_than(gt: Any) -> Rule:
-    return RuleProxy('greater_than', value=gt)
+    return RuleProxy('greater_than', gt=gt)
 
 
 def greater_than_equal(ge: Any) -> Rule:
-    return RuleProxy('greater_than_equal', value=ge)
+    return RuleProxy('greater_than_equal', ge=ge)
 
 
 def less_than(lt: Any) -> Rule:
-    return RuleProxy('less_than', value=lt)
+    return RuleProxy('less_than', lt=lt)
 
 
 def less_than_equal(le: Any) -> Rule:
-    return RuleProxy('less_than_equal', value=le)
+    return RuleProxy('less_than_equal', le=le)
 
 
 def multiple_of(multiple: Union[int, float]) -> Rule:
-    return RuleProxy('multiple_of', value=multiple)
+    return RuleProxy('multiple_of', multiple=multiple)
 
 
 def min_length(value: int) -> Rule:
@@ -82,11 +82,11 @@ def pattern(regex: str) -> Rule:
 
 
 def isin(values: Iterable[Any]) -> Rule:
-    return RuleProxy('isin', value=values)
+    return RuleProxy('isin', values=values)
 
 
 def notin(values: Iterable[Any]) -> Rule:
-    return RuleProxy('notin', value=values)
+    return RuleProxy('notin', values=values)
 
 
 def int_parsing() -> Rule:
@@ -115,11 +115,3 @@ def date_parsing() -> Rule:
 
 def extra_forbidden(allowed: Iterable[str]) -> Rule:
     return RuleProxy('extra_forbidden', 0, allowed=allowed)
-
-
-def default(value: Any) -> Rule:
-    return RuleProxy('default', 10, value=value)
-
-
-def default_factory(factory: Any) -> Rule:
-    return RuleProxy('default_factory', 10, factory=factory)

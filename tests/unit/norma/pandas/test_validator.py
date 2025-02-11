@@ -1,26 +1,23 @@
 import pandas
 
 from norma.engines.pandas import rules, validator
+from norma.schema import Column, Schema
 
 
 def test_schema_validate():
-    schema = {
-        'col1': [
-            rules.int_parsing(),
+    schema = Schema({
+        'col1': Column(int, rules=[
             rules.greater_than(1),
             rules.multiple_of(2)
-        ],
-        'col2': [
-            rules.str_parsing(),
-            rules.pattern('^bar$')
-        ]
-    }
+        ]),
+        'col2': Column(str, rules=rules.pattern('^bar$'))
+    })
     df = pandas.DataFrame({
         'col1': [1, '2', 'unknown'],
         'col2': ['foo', 'bar', 'bar']
     })
 
-    actual = validator.validate(schema, df, False)
+    actual = validator.validate(schema, df)
 
     assert actual.to_dict(orient='records') == [
         {
@@ -54,7 +51,7 @@ def test_schema_validate():
         {
             'col1': 2,
             'col2': 'bar',
-            'errors': None
+            'errors': {}
         },
         {
             'col1': None,

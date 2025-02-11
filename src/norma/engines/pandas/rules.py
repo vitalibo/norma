@@ -7,38 +7,6 @@ import pandas as pd
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
-__all__ = [
-    'MaskRule',
-    'required',
-    'equal_to',
-    'eq',
-    'not_equal_to',
-    'ne',
-    'greater_than',
-    'gt',
-    'greater_than_equal',
-    'ge',
-    'less_than',
-    'lt',
-    'less_than_equal',
-    'le',
-    'multiple_of',
-    'int_parsing',
-    'float_parsing',
-    'str_parsing',
-    'bool_parsing',
-    'datetime_parsing',
-    'timestamp_parsing',
-    'date_parsing',
-    'time_parsing',
-    'min_length',
-    'max_length',
-    'pattern',
-    'extra_forbidden',
-    'isin',
-    'notin',
-]
-
 
 class ErrorState(IErrorState):
     """
@@ -168,133 +136,85 @@ def required() -> Rule:
     return _RequiredRule()
 
 
-def equal_to(value: Any) -> Rule:
+def equal_to(eq: Any) -> Rule:
     """
     Checks if the input is equal to a given value.
     """
 
     return MaskRule(
-        lambda df, col: df[col][df[col].notna()] != value,
+        lambda df, col: df[col][df[col].notna()] != eq,
         error_type='equal_to',
-        error_msg=f'Input should be equal to {value}')
+        error_msg=f'Input should be equal to {eq}')
 
 
-def eq(value: Any) -> Rule:
-    """
-    Alias for equal_to.
-    """
-
-    return equal_to(value)
-
-
-def not_equal_to(value: Any) -> Rule:
+def not_equal_to(ne: Any) -> Rule:
     """
     Checks if the input is not equal to a given value.
     """
 
     return MaskRule(
-        lambda df, col: df[col][df[col].notna()] == value,
+        lambda df, col: df[col][df[col].notna()] == ne,
         error_type='not_equal_to',
-        error_msg=f'Input should not be equal to {value}')
+        error_msg=f'Input should not be equal to {ne}')
 
 
-def ne(value: Any) -> Rule:
-    """
-    Alias for not_equal_to.
-    """
-
-    return not_equal_to(value)
-
-
-def greater_than(value: Any) -> Rule:
+def greater_than(gt: Any) -> Rule:
     """
     Checks if the input is greater than a given value.
     """
 
     return MaskRule(
-        lambda df, col: df[col][df[col].notna()] <= value,
+        lambda df, col: df[col][df[col].notna()] <= gt,
         error_type='greater_than',
-        error_msg=f'Input should be greater than {value}')
+        error_msg=f'Input should be greater than {gt}')
 
 
-def gt(value: Any) -> Rule:
-    """
-    Alias for greater_than.
-    """
-
-    return greater_than(value)
-
-
-def greater_than_equal(value: Any) -> Rule:
+def greater_than_equal(ge: Any) -> Rule:
     """
     Checks if the input is greater than or equal to a given value.
     """
 
     return MaskRule(
-        lambda df, col: df[col][df[col].notna()] < value,
+        lambda df, col: df[col][df[col].notna()] < ge,
         error_type='greater_than_equal',
-        error_msg=f'Input should be greater than or equal to {value}')
+        error_msg=f'Input should be greater than or equal to {ge}')
 
 
-def ge(value: Any) -> Rule:
-    """
-    Alias for greater_than_equal.
-    """
-
-    return greater_than_equal(value)
-
-
-def less_than(value: Any) -> Rule:
+def less_than(lt: Any) -> Rule:
     """
     Checks if the input is less than a given value.
     """
 
     return MaskRule(
-        lambda df, col: df[col][df[col].notna()] >= value,
+        lambda df, col: df[col][df[col].notna()] >= lt,
         error_type='less_than',
-        error_msg=f'Input should be less than {value}')
+        error_msg=f'Input should be less than {lt}')
 
 
-def lt(value: Any) -> Rule:
-    """
-    Alias for less_than.
-    """
-
-    return less_than(value)
-
-
-def less_than_equal(value: Any) -> Rule:
+def less_than_equal(le: Any) -> Rule:
     """
     Checks if the input is less than or equal to a given value.
     """
 
     return MaskRule(
-        lambda df, col: df[col][df[col].notna()] > value,
+        lambda df, col: df[col][df[col].notna()] > le,
         error_type='less_than_equal',
-        error_msg=f'Input should be less than or equal to {value}')
+        error_msg=f'Input should be less than or equal to {le}')
 
 
-def le(value: Any) -> Rule:
-    """
-    Alias for less_than_equal.
-    """
-
-    return less_than_equal(value)
-
-
-def multiple_of(value: Union[int, float]) -> Rule:
+def multiple_of(multiple: Union[int, float]) -> Rule:
     """
     Checks if the input is a multiple of a given value.
     """
 
     return MaskRule(
         # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
-        lambda df, col: df[col][df[col].notna()] % value != 0,
+        lambda df, col: df[col][df[col].notna()] % multiple != 0,
         error_type='multiple_of',
-        error_msg=f'Input should be a multiple of {value}')
+        error_msg=f'Input should be a multiple of {multiple}')
 
 
-def int_parsing():
+def int_parsing() -> Rule:
     """
     Checks if the input can be parsed as an integer.
     The rule modifies the original column to cast it to an integer type.
@@ -307,7 +227,7 @@ def int_parsing():
     )
 
 
-def float_parsing():
+def float_parsing() -> Rule:
     """
     Checks if the input can be parsed as a float.
     The rule modifies the original column to cast it to a float type.
@@ -320,7 +240,7 @@ def float_parsing():
     )
 
 
-def str_parsing():
+def str_parsing() -> Rule:
     """
     The rule modifies the original column to cast it to a string type.
     """
@@ -332,7 +252,7 @@ def str_parsing():
     return _StringRule()
 
 
-def bool_parsing():
+def bool_parsing() -> Rule:
     """
     Checks if the input can be parsed as a boolean.
     The rule modifies the original column to cast it to a boolean type.

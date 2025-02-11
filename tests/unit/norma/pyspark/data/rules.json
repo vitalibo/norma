@@ -240,7 +240,7 @@
         },
         "when": {
           "args": {
-            "value": "foo"
+            "eq": "foo"
           }
         },
         "then": {
@@ -310,7 +310,7 @@
         },
         "when": {
           "args": {
-            "value": "foo"
+            "eq": "foo"
           }
         },
         "then": {
@@ -380,7 +380,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "eq": 1
           }
         },
         "then": {
@@ -450,7 +450,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "eq": 1.5
           }
         },
         "then": {
@@ -520,7 +520,7 @@
         },
         "when": {
           "args": {
-            "value": true
+            "eq": true
           }
         },
         "then": {
@@ -590,7 +590,7 @@
         },
         "when": {
           "args": {
-            "value": "bar"
+            "eq": "bar"
           }
         },
         "then": {
@@ -663,7 +663,7 @@
         },
         "when": {
           "args": {
-            "value": 2
+            "eq": 2
           }
         },
         "then": {
@@ -736,7 +736,7 @@
         },
         "when": {
           "args": {
-            "value": 2.5
+            "eq": 2.5
           }
         },
         "then": {
@@ -809,7 +809,7 @@
         },
         "when": {
           "args": {
-            "value": false
+            "eq": false
           }
         },
         "then": {
@@ -887,7 +887,7 @@
         },
         "when": {
           "args": {
-            "value": "bar"
+            "ne": "bar"
           }
         },
         "then": {
@@ -957,7 +957,7 @@
         },
         "when": {
           "args": {
-            "value": "bar"
+            "ne": "bar"
           }
         },
         "then": {
@@ -1027,7 +1027,7 @@
         },
         "when": {
           "args": {
-            "value": 2
+            "ne": 2
           }
         },
         "then": {
@@ -1097,7 +1097,7 @@
         },
         "when": {
           "args": {
-            "value": 2.5
+            "ne": 2.5
           }
         },
         "then": {
@@ -1167,7 +1167,7 @@
         },
         "when": {
           "args": {
-            "value": false
+            "ne": false
           }
         },
         "then": {
@@ -1237,7 +1237,7 @@
         },
         "when": {
           "args": {
-            "value": "foo"
+            "ne": "foo"
           }
         },
         "then": {
@@ -1310,7 +1310,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "ne": 1
           }
         },
         "then": {
@@ -1383,7 +1383,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "ne": 1.5
           }
         },
         "then": {
@@ -1456,7 +1456,7 @@
         },
         "when": {
           "args": {
-            "value": true
+            "ne": true
           }
         },
         "then": {
@@ -1534,7 +1534,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "gt": 1
           }
         },
         "then": {
@@ -1604,7 +1604,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "gt": 1
           }
         },
         "then": {
@@ -1677,7 +1677,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "gt": 1
           }
         },
         "then": {
@@ -1750,7 +1750,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "gt": 1
           }
         },
         "then": {
@@ -1820,7 +1820,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "gt": 1.5
           }
         },
         "then": {
@@ -1890,7 +1890,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "gt": "b"
           }
         },
         "then": {
@@ -1960,7 +1960,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "gt": "b"
           }
         },
         "then": {
@@ -2033,7 +2033,7 @@
         },
         "when": {
           "args": {
-            "value": false
+            "gt": false
           }
         },
         "then": {
@@ -2108,7 +2108,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "ge": 1
           }
         },
         "then": {
@@ -2178,7 +2178,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "ge": 1
           }
         },
         "then": {
@@ -2251,7 +2251,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "ge": 1
           }
         },
         "then": {
@@ -2321,7 +2321,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "ge": 1
           }
         },
         "then": {
@@ -2391,7 +2391,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "ge": 1.5
           }
         },
         "then": {
@@ -2461,7 +2461,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "ge": 1.5
           }
         },
         "then": {
@@ -2531,7 +2531,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "ge": "b"
           }
         },
         "then": {
@@ -2604,7 +2604,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "ge": "b"
           }
         },
         "then": {
@@ -2674,7 +2674,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "ge": "b"
           }
         },
         "then": {
@@ -2749,7 +2749,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "lt": 1
           }
         },
         "then": {
@@ -2819,7 +2819,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "lt": 1
           }
         },
         "then": {
@@ -2889,7 +2889,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "lt": 1.5
           }
         },
         "then": {
@@ -2959,7 +2959,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "lt": 1
           }
         },
         "then": {
@@ -3032,7 +3032,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "lt": 1
           }
         },
         "then": {
@@ -3105,7 +3105,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "lt": "b"
           }
         },
         "then": {
@@ -3175,7 +3175,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "lt": "b"
           }
         },
         "then": {
@@ -3248,7 +3248,7 @@
         },
         "when": {
           "args": {
-            "value": false
+            "lt": false
           }
         },
         "then": {
@@ -3326,7 +3326,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "le": 1
           }
         },
         "then": {
@@ -3396,7 +3396,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "le": 1
           }
         },
         "then": {
@@ -3466,7 +3466,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "le": 1
           }
         },
         "then": {
@@ -3536,7 +3536,7 @@
         },
         "when": {
           "args": {
-            "value": 1
+            "le": 1
           }
         },
         "then": {
@@ -3609,7 +3609,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "le": 1.5
           }
         },
         "then": {
@@ -3679,7 +3679,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "le": 1.5
           }
         },
         "then": {
@@ -3749,7 +3749,7 @@
         },
         "when": {
           "args": {
-            "value": 1.5
+            "le": 1.5
           }
         },
         "then": {
@@ -3822,7 +3822,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "le": "b"
           }
         },
         "then": {
@@ -3892,7 +3892,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "le": "b"
           }
         },
         "then": {
@@ -3962,7 +3962,7 @@
         },
         "when": {
           "args": {
-            "value": "b"
+            "le": "b"
           }
         },
         "then": {
@@ -4040,7 +4040,7 @@
         },
         "when": {
           "args": {
-            "value": 3
+            "multiple": 3
           }
         },
         "then": {
@@ -4110,7 +4110,7 @@
         },
         "when": {
           "args": {
-            "value": 3
+            "multiple": 3
           }
         },
         "then": {
@@ -4180,7 +4180,7 @@
         },
         "when": {
           "args": {
-            "value": 3
+            "multiple": 3
           }
         },
         "then": {
@@ -4253,7 +4253,7 @@
         },
         "when": {
           "args": {
-            "value": 3
+            "multiple": 3
           }
         },
         "then": {
@@ -4323,7 +4323,7 @@
         },
         "when": {
           "args": {
-            "value": 2.5
+            "multiple": 2.5
           }
         },
         "then": {
@@ -4393,7 +4393,7 @@
         },
         "when": {
           "args": {
-            "value": 2.5
+            "multiple": 2.5
           }
         },
         "then": {
@@ -4466,7 +4466,7 @@
         },
         "when": {
           "args": {
-            "value": 3
+            "multiple": 3
           }
         },
         "then": {
@@ -4504,7 +4504,7 @@
         },
         "when": {
           "args": {
-            "value": "a"
+            "multiple": "a"
           }
         },
         "then": {

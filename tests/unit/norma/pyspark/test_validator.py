@@ -1,20 +1,17 @@
 import json
 
 from norma.engines.pyspark import rules, validator
+from norma.schema import Column, Schema
 
 
 def test_schema_validate(spark_session):
-    schema = {
-        'col1': [
-            rules.int_parsing(),
+    schema = Schema({
+        'col1': Column(int, rules=[
             rules.greater_than(1),
             rules.multiple_of(2)
-        ],
-        'col2': [
-            rules.str_parsing(),
-            rules.pattern('^bar$')
-        ]
-    }
+        ]),
+        'col2': Column(str, rules=rules.pattern('^bar$'))
+    })
 
     df = spark_session.createDataFrame([
         (1, 'foo'),
@@ -22,7 +19,7 @@ def test_schema_validate(spark_session):
         ('unknown', 'bar')
     ], ['col1', 'col2'])
 
-    actual = validator.validate(schema, df, False)
+    actual = validator.validate(schema, df)
 
     assert list(map(json.loads, actual.toJSON().collect())) == [
         {

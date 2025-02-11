@@ -47,7 +47,7 @@ class MaskRule(Rule):
         )
 
 
-def required():
+def required() -> Rule:
     """
     Checks if the input is missing.
     """
@@ -67,128 +67,80 @@ def required():
     return _RequiredRule()
 
 
-def equal_to(value: Any) -> Rule:
+def equal_to(eq: Any) -> Rule:
     """
     Checks if the input is equal to a given value.
     """
 
     return MaskRule(
-        lambda col: fn.col(col) != fn.lit(value),
+        lambda col: fn.col(col) != fn.lit(eq),
         error_type='equal_to',
-        error_msg=f'Input should be equal to {value}'
+        error_msg=f'Input should be equal to {eq}'
     )
 
 
-def eq(value: Any) -> Rule:
-    """
-    Alias for equal_to.
-    """
-
-    return equal_to(value)
-
-
-def not_equal_to(value: Any) -> Rule:
+def not_equal_to(ne: Any) -> Rule:
     """
     Checks if the input is not equal to a given value.
     """
 
     return MaskRule(
-        lambda col: fn.col(col) == fn.lit(value),
+        lambda col: fn.col(col) == fn.lit(ne),
         error_type='not_equal_to',
-        error_msg=f'Input should not be equal to {value}'
+        error_msg=f'Input should not be equal to {ne}'
     )
 
 
-def ne(value: Any) -> Rule:
-    """
-    Alias for not_equal_to.
-    """
-
-    return not_equal_to(value)
-
-
-def greater_than(value: Any) -> Rule:
+def greater_than(gt: Any) -> Rule:
     """
     Checks if the input is greater than a given value.
     """
 
     return MaskRule(
-        lambda col: fn.col(col) <= fn.lit(value),
+        lambda col: fn.col(col) <= fn.lit(gt),
         error_type='greater_than',
-        error_msg=f'Input should be greater than {value}'
+        error_msg=f'Input should be greater than {gt}'
     )
 
 
-def gt(value: Any) -> Rule:
-    """
-    Alias for greater_than.
-    """
-
-    return greater_than(value)
-
-
-def greater_than_equal(value: Any) -> Rule:
+def greater_than_equal(ge: Any) -> Rule:
     """
     Checks if the input is greater than or equal to a given value.
     """
 
     return MaskRule(
-        lambda col: fn.col(col) < fn.lit(value),
+        lambda col: fn.col(col) < fn.lit(ge),
         error_type='greater_than_equal',
-        error_msg=f'Input should be greater than or equal to {value}'
+        error_msg=f'Input should be greater than or equal to {ge}'
     )
 
 
-def ge(value: Any) -> Rule:
-    """
-    Alias for greater_than_equal.
-    """
-
-    return greater_than_equal(value)
-
-
-def less_than(value: Any) -> Rule:
+def less_than(lt: Any) -> Rule:
     """
     Checks if the input is less than a given value.
     """
 
     return MaskRule(
-        lambda col: fn.col(col) >= fn.lit(value),
+        lambda col: fn.col(col) >= fn.lit(lt),
         error_type='less_than',
-        error_msg=f'Input should be less than {value}'
+        error_msg=f'Input should be less than {lt}'
     )
 
 
-def lt(value: Any) -> Rule:
-    """
-    Alias for less_than.
-    """
-
-    return less_than(value)
-
-
-def less_than_equal(value: Any) -> Rule:
+def less_than_equal(le: Any) -> Rule:
     """
     Checks if the input is less than or equal to a given value.
     """
 
     return MaskRule(
-        lambda col: fn.col(col) > fn.lit(value),
+        lambda col: fn.col(col) > fn.lit(le),
         error_type='less_than_equal',
-        error_msg=f'Input should be less than or equal to {value}'
+        error_msg=f'Input should be less than or equal to {le}'
     )
 
 
-def le(value: Any) -> Rule:
-    """
-    Alias for less_than_equal.
-    """
-
-    return less_than_equal(value)
-
-
-def multiple_of(value: Any) -> Rule:
-    if not isinstance(value, (int, float)):
+def multiple_of(multiple: Any) -> Rule:
+    if not isinstance(multiple, (int, float)):
         raise ValueError('value should be an integer or a float')
 
     class _MultipleOfRule(MaskRule):
@@ -200,9 +152,9 @@ def multiple_of(value: Any) -> Rule:
 
     return _MultipleOfRule(
         # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
-        lambda col: (fn.col(col) % fn.lit(value)) != 0,
+        lambda col: (fn.col(col) % fn.lit(multiple)) != 0,
         error_type='multiple_of',
-        error_msg=f'Input should be a multiple of {value}'
+        error_msg=f'Input should be a multiple of {multiple}'
     )
 
 
@@ -260,7 +212,7 @@ def str_parsing() -> Rule:
     return _StrParsingRule()
 
 
-def bool_parsing():
+def bool_parsing() -> Rule:
     class _BoolParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
             return (
@@ -280,6 +232,14 @@ def bool_parsing():
             )
 
     return _BoolParsingRule()
+
+
+def date_parsing() -> Rule:
+    raise NotImplemented
+
+
+def datetime_parsing() -> Rule:
+    raise NotImplemented
 
 
 def min_length(value: int) -> Rule:

@@ -79,8 +79,6 @@ class Column:
                     (norma.rules.pattern, pattern),
                     (norma.rules.isin, isin),
                     (norma.rules.notin, notin),
-                    (norma.rules.default, default),
-                    (norma.rules.default_factory, default_factory),
                 ] if value is not None
             ]
         }
@@ -96,6 +94,8 @@ class Column:
                 defined_rules[str(rule)] = rule
 
         self.rules = sorted(defined_rules.values(), key=lambda x: x.priority)
+        self.default = default
+        self.default_factory = default_factory
 
 
 class Schema:
@@ -112,21 +112,14 @@ class Schema:
         self.allow_extra = allow_extra
 
     def validate(self, df: T, error_col: str = 'errors') -> T:
-        def resolve(_rules, rule):
-            if isinstance(rule, norma.rules.RuleProxy):
-                return getattr(_rules, rule.name)(**rule.kwargs)
-            return rule
-
         # pylint: disable=import-outside-toplevel
         if PandasDataFrame and isinstance(df, PandasDataFrame):
-            from norma.engines.pandas import rules, validator
-            columns = {key: [resolve(rules, rule) for rule in col.rules] for key, col in self.columns.items()}
-            return validator.validate(columns, df, self.allow_extra, error_col)
+            from norma.engines.pandas import validator
+            return validator.validate(self, df, error_col)
 
         elif PySparkDataFrame and isinstance(df, PySparkDataFrame):
-            from norma.engines.pyspark import rules, validator
-            columns = {key: [resolve(rules, rule) for rule in col.rules] for key, col in self.columns.items()}
-            return validator.validate(columns, df, self.allow_extra, error_col)
+            from norma.engines.pyspark import validator
+            return validator.validate(self, df, error_col)
 
         else:
             raise NotImplementedError('unsupported engine')
