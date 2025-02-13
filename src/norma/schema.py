@@ -1,26 +1,33 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Union
-
-import numpy as np
-import pandas as pd
+from typing import Any, Callable, Dict, List, TypeVar, Union
 
 import norma.rules
-from norma.rules import ErrorState, Rule
+from norma.rules import Rule
 
-__all__ = ['Column', 'Schema']
+try:
+    from pandas import DataFrame as PandasDataFrame
+except ImportError:
+    PandasDataFrame = None
+
+try:
+    from pyspark.sql import DataFrame as PySparkDataFrame
+except ImportError:
+    PySparkDataFrame = None
+
+T = TypeVar('T')
 
 
 class Column:
     """
-    A class to represent a column in a DataFrame.
+    Column definition for data validation
     """
 
     def __init__(  # pylint: disable=too-many-arguments,too-many-locals
             self,
-            dtype: type | str,
+            dtype: Union[type, str],
             *,
-            rules: Union[Rule, List[Rule], None] = None,
+            rules: Union[norma.rules.Rule, List[norma.rules.Rule], None] = None,
             nullable: bool = True,
             eq: Any = None,
             ne: Any = None,
@@ -28,70 +35,72 @@ class Column:
             lt: Any = None,
             ge: Any = None,
             le: Any = None,
-            multiple_of: Any = None,
-            min_length: int = None,
-            max_length: int = None,
-            pattern: str = None,
-            isin: List[Any] = None,
-            notin: List[Any] = None,
+            multiple_of: Union[int, float, None] = None,
+            min_length: Union[int, None] = None,
+            max_length: Union[int, None] = None,
+            pattern: Union[str, None] = None,
+            isin: Union[List[Any], None] = None,
+            notin: Union[List[Any], None] = None,
             default: Any = None,
-            default_factory: Callable[[pd.DataFrame], Any] = None,
+            default_factory: Union[Callable, None] = None,
     ) -> None:
-        dtype_rules = {
-            'int': norma.rules.int_parsing,
-            'integer': norma.rules.int_parsing,
-            'float': norma.rules.float_parsing,
-            'double': norma.rules.float_parsing,
-            'number': norma.rules.float_parsing,
-            'string': norma.rules.string_parsing,
-            'str': norma.rules.string_parsing,
-            'boolean': norma.rules.boolean_parsing,
-            'bool': norma.rules.boolean_parsing,
-            'date': norma.rules.date_parsing,
-            'datetime': norma.rules.datetime_parsing,
-            'timestamp': norma.rules.timestamp_parsing,
-            'timestamp[s]': lambda: norma.rules.timestamp_parsing('s'),
-            'timestamp[ms]': lambda: norma.rules.timestamp_parsing('ms'),
-            'time': norma.rules.time_parsing,
+        dtype_parsing = {
+            alias: parsing for parsing, aliases in {
+                norma.rules.int_parsing: ['int', 'integer'],
+                norma.rules.float_parsing: ['float', 'double', 'number'],
+                norma.rules.str_parsing: ['string', 'str'],
+                norma.rules.bool_parsing: ['boolean', 'bool'],
+                norma.rules.datetime_parsing: ['datetime'],
+                norma.rules.date_parsing: ['date'],
+            }.items() for alias in aliases
         }
 
         dtype = dtype.__name__ if isinstance(dtype, type) else dtype
-        if dtype not in dtype_rules:
-            raise ValueError(f"Unsupported dtype '{dtype}'")
-
-        def apply_if(condition, rule):
-            return (rule(condition),) if condition else ()
-
-        self.rules = [
-            *apply_if(not nullable, lambda x: norma.rules.required()),
-            dtype_rules[dtype](),
-            *apply_if(eq, norma.rules.equal_to),
-            *apply_if(ne, norma.rules.not_equal_to),
-            *apply_if(gt, norma.rules.greater_than),
-            *apply_if(lt, norma.rules.less_than),
-            *apply_if(ge, norma.rules.greater_than_equal),
-            *apply_if(le, norma.rules.less_than_equal),
-            *apply_if(multiple_of, norma.rules.multiple_of),
-            *apply_if(min_length, norma.rules.min_length),
-            *apply_if(max_length, norma.rules.max_length),
-            *apply_if(pattern, norma.rules.pattern),
-            *apply_if(isin, norma.rules.isin),
-            *apply_if(notin, norma.rules.notin),
-        ]
-
-        if rules is not None:
-            self.rules.extend([rules] if isinstance(rules, Rule) else rules)
+        if dtype not in dtype_parsing:
+            raise ValueError(f"unsupported dtype '{dtype}'")
 
         if default is not None and default_factory is not None:
-            raise ValueError("Cannot specify both 'default' and 'default_factory'")
+            raise ValueError('default and default_factory cannot be used together')
 
+        defined_rules = {
+            rule.name: rule for rule in [
+                rule_definition(value) for rule_definition, value in [
+                    (lambda _: norma.rules.required(), True if not nullable else None),
+                    (lambda _: dtype_parsing[dtype](), True),
+                    (norma.rules.equal_to, eq),
+                    (norma.rules.not_equal_to, ne),
+                    (norma.rules.greater_than, gt),
+                    (norma.rules.greater_than_equal, ge),
+                    (norma.rules.less_than, lt),
+                    (norma.rules.less_than_equal, le),
+                    (norma.rules.multiple_of, multiple_of),
+                    (norma.rules.min_length, min_length),
+                    (norma.rules.max_length, max_length),
+                    (norma.rules.pattern, pattern),
+                    (norma.rules.isin, isin),
+                    (norma.rules.notin, notin),
+                ] if value is not None
+            ]
+        }
+
+        rules = [rules] if isinstance(rules, Rule) else rules
+        for priority, rule in enumerate(rules or []):
+            rule.priority = 6 + (priority + 1) / 10
+            if 'name' in rule.__dict__:
+                if rule.name in defined_rules:
+                    raise ValueError(f"rule '{rule.name}' is already defined")
+                defined_rules[rule.name] = rule
+            else:
+                defined_rules[str(rule)] = rule
+
+        self.rules = sorted(defined_rules.values(), key=lambda x: x.priority)
         self.default = default
         self.default_factory = default_factory
 
 
 class Schema:
     """
-    A class to represent a schema for a DataFrame.
+    Schema definition for data validation
     """
 
     def __init__(
@@ -102,45 +111,18 @@ class Schema:
         self.columns = columns
         self.allow_extra = allow_extra
 
-    def validate(self, df: pd.DataFrame, error_column: str = 'errors') -> pd.DataFrame:
-        """
-        Validate an input DataFrame according to the schema and introduce an error column that contains the errors.
-        """
+    def validate(self, df: T, error_col: str = 'errors') -> T:
+        # pylint: disable=import-outside-toplevel
+        if PandasDataFrame and isinstance(df, PandasDataFrame):
+            from norma.engines.pandas import validator
+            return validator.validate(self, df, error_col)
 
-        original_df = df.copy()
+        elif PySparkDataFrame and isinstance(df, PySparkDataFrame):
+            from norma.engines.pyspark import validator
+            return validator.validate(self, df, error_col)
 
-        error_state = ErrorState(df.index)
-        for column in original_df.columns:
-            rules = self.columns[column].rules if column in self.columns else []
-            if not self.allow_extra:
-                rules.append(
-                    norma.rules.extra_forbidden(self.columns.keys()))
-
-            for rule in rules:
-                series = rule.verify(df, column=column, error_state=error_state)
-                if series is not None:
-                    df[column] = series
-
-        for index in error_state.errors:  # pylint: disable=consider-using-dict-items
-            for column in error_state.errors[index]:
-                error_state.errors[index][column]['original'] = original_df.loc[index, column]
-
-        for column in error_state.masks:
-            df.loc[error_state.masks[column], column] = None
-
-        for column in self.columns:
-            if self.columns[column].default is not None:
-                df[column] = df[column].fillna(self.columns[column].default)
-
-        for column in self.columns:
-            if self.columns[column].default_factory is not None:
-                df[column] = df[column].fillna(self.columns[column].default_factory(df))
-
-        df[error_column] = df.index.map(error_state.errors)
-        df[error_column] = df[error_column].replace(np.nan, None)
-
-        out_cols = original_df.columns if self.allow_extra else self.columns.keys()
-        return df[list(out_cols) + [error_column]]
+        else:
+            raise NotImplementedError('unsupported engine')
 
     @staticmethod
     def from_json_schema(json_schema: Dict) -> Schema:
