@@ -235,11 +235,11 @@ def bool_parsing() -> Rule:
 
 
 def date_parsing() -> Rule:
-    raise NotImplemented
+    raise NotImplementedError()
 
 
 def datetime_parsing() -> Rule:
-    raise NotImplemented
+    raise NotImplementedError()
 
 
 def min_length(value: int) -> Rule:

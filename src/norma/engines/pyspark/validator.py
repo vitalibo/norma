@@ -1,15 +1,12 @@
-from typing import Dict
-
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as fn
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, extra_forbidden
-from norma.schema import Schema
 
 
 def validate(
-        schema: Schema, df: DataFrame, error_column: str = 'errors'
+        schema: 'Schema', df: DataFrame, error_column: str = 'errors'
 ) -> DataFrame:
     error_state = ErrorState(error_column)
     original_cols = df.columns

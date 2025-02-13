@@ -1,15 +1,12 @@
-from typing import Dict
-
 import numpy as np
 import pandas as pd
 
 import norma.rules
 from norma.engines.pandas.rules import ErrorState, extra_forbidden
-from norma.schema import Schema
 
 
 def validate(
-        schema: Schema, df: pd.DataFrame, error_column: str = 'errors'
+        schema: 'Schema', df: pd.DataFrame, error_column: str = 'errors'
 ) -> pd.DataFrame:
     original_df = df.copy()
 
