@@ -1,10 +1,10 @@
-import pandas
+import json
 
-from norma.engines.pandas import rules, validator
+from norma.engines.pyspark import rules, validator
 from norma.schema import Column, Schema
 
 
-def test_schema_validate():
+def test_schema_validate(spark_session):
     schema = Schema({
         'col1': Column(int, rules=[
             rules.greater_than(1),
@@ -12,14 +12,16 @@ def test_schema_validate():
         ]),
         'col2': Column(str, rules=rules.pattern('^bar$'))
     })
-    df = pandas.DataFrame({
-        'col1': [1, '2', 'unknown'],
-        'col2': ['foo', 'bar', 'bar']
-    })
+
+    df = spark_session.createDataFrame([
+        (1, 'foo'),
+        ('2', 'bar'),
+        ('unknown', 'bar')
+    ], ['col1', 'col2'])
 
     actual = validator.validate(schema, df)
 
-    assert actual.to_dict(orient='records') == [
+    assert list(map(json.loads, actual.toJSON().collect())) == [
         {
             'col1': None,
             'col2': None,
@@ -35,7 +37,7 @@ def test_schema_validate():
                             'msg': 'Input should be a multiple of 2'
                         }
                     ],
-                    'original': 1
+                    'original': '"1"'
                 },
                 'col2': {
                     'details': [
@@ -44,7 +46,7 @@ def test_schema_validate():
                             'msg': 'Input should match the pattern ^bar$'
                         }
                     ],
-                    'original': 'foo'
+                    'original': '"foo"'
                 }
             }
         },
@@ -60,11 +62,11 @@ def test_schema_validate():
                 'col1': {
                     'details': [
                         {
-                            'type': 'int_parsing',
-                            'msg': 'Input should be a valid integer, unable to parse value as an integer'
+                            'msg': 'Input should be a valid integer, unable to parse value as an integer',
+                            'type': 'int_parsing'
                         }
                     ],
-                    'original': 'unknown'
+                    'original': '"unknown"'
                 }
             }
         }

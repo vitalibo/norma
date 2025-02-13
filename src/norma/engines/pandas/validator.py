@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pandas as pd
 
@@ -26,7 +28,8 @@ def validate(
 
     for index in error_state.errors:  # pylint: disable=consider-using-dict-items
         for column in error_state.errors[index]:
-            error_state.errors[index][column]['original'] = original_df.loc[index, column]
+            error_state.errors[index][column]['original'] = \
+                json.dumps(original_df.loc[index, column], separators=(',', ':'), default=__json_serde)
 
     for column in error_state.masks:
         df.loc[error_state.masks[column], column] = None
@@ -44,3 +47,13 @@ def validate(
 
     out_cols = original_df.columns if schema.allow_extra else schema.columns.keys()
     return df[list(out_cols) + [error_column]]
+
+
+def __json_serde(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+    return str(obj)

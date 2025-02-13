@@ -1,10 +1,10 @@
-import json
+import pandas
 
-from norma.engines.pyspark import rules, validator
+from norma.engines.pandas import rules, validator
 from norma.schema import Column, Schema
 
 
-def test_schema_validate(spark_session):
+def test_schema_validate():
     schema = Schema({
         'col1': Column(int, rules=[
             rules.greater_than(1),
@@ -12,16 +12,14 @@ def test_schema_validate(spark_session):
         ]),
         'col2': Column(str, rules=rules.pattern('^bar$'))
     })
-
-    df = spark_session.createDataFrame([
-        (1, 'foo'),
-        ('2', 'bar'),
-        ('unknown', 'bar')
-    ], ['col1', 'col2'])
+    df = pandas.DataFrame({
+        'col1': [1, '2', 'unknown'],
+        'col2': ['foo', 'bar', 'bar']
+    })
 
     actual = validator.validate(schema, df)
 
-    assert list(map(json.loads, actual.toJSON().collect())) == [
+    assert actual.to_dict(orient='records') == [
         {
             'col1': None,
             'col2': None,
@@ -46,7 +44,7 @@ def test_schema_validate(spark_session):
                             'msg': 'Input should match the pattern ^bar$'
                         }
                     ],
-                    'original': 'foo'
+                    'original': '"foo"'
                 }
             }
         },
@@ -62,11 +60,11 @@ def test_schema_validate(spark_session):
                 'col1': {
                     'details': [
                         {
-                            'msg': 'Input should be a valid integer, unable to parse value as an integer',
-                            'type': 'int_parsing'
+                            'type': 'int_parsing',
+                            'msg': 'Input should be a valid integer, unable to parse value as an integer'
                         }
                     ],
-                    'original': 'unknown'
+                    'original': '"unknown"'
                 }
             }
         }

@@ -1,53 +1,14 @@
 import json
+import os
+from functools import partial
 from unittest import mock
 
-import pandas
+import pandas as pd
+import pyspark.sql.functions as fn  # noqa pylint: disable=unused-import
 import pytest
-from pyspark.sql import functions as fn
 
-import norma
 from norma import rules
 from norma.schema import Column, Schema
-
-
-@pytest.mark.parametrize('kwargs, expected', [
-    ({'dtype': int}, lambda x: [x.int_parsing()]),
-    ({'dtype': 'int'}, lambda x: [x.int_parsing()]),
-    ({'dtype': 'integer'}, lambda x: [x.int_parsing()]),
-    ({'dtype': float}, lambda x: [x.float_parsing()]),
-    ({'dtype': 'float'}, lambda x: [x.float_parsing()]),
-    ({'dtype': 'double'}, lambda x: [x.float_parsing()]),
-    ({'dtype': str}, lambda x: [x.str_parsing()]),
-    ({'dtype': 'string'}, lambda x: [x.str_parsing()]),
-    ({'dtype': 'str'}, lambda x: [x.str_parsing()]),
-    ({'dtype': bool}, lambda x: [x.bool_parsing()]),
-    ({'dtype': 'boolean'}, lambda x: [x.bool_parsing()]),
-    ({'dtype': 'bool'}, lambda x: [x.bool_parsing()]),
-    # ({'dtype': 'bool', 'nullable': False}, lambda x: [x.required(), x.bool_parsing()]),
-    # ({'dtype': 'str', 'eq': 'foo'}, lambda x: [x.str_parsing(), x.equal_to('foo')]),
-    # ({'dtype': 'str', 'ne': 'foo'}, lambda x: [x.str_parsing(), x.not_equal_to('foo')]),
-    # ({'dtype': 'int', 'gt': 10}, lambda x: [x.int_parsing(), x.greater_than(10)]),
-    # ({'dtype': 'int', 'lt': 10}, lambda x: [x.int_parsing(), x.less_than(10)]),
-    # ({'dtype': 'int', 'ge': 10}, lambda x: [x.int_parsing(), x.greater_than_equal(10)]),
-    # ({'dtype': 'int', 'le': 10}, lambda x: [x.int_parsing(), x.less_than_equal(10)]),
-    # ({'dtype': 'int', 'multiple_of': 10}, lambda x: [x.int_parsing(), x.multiple_of(10)]),
-    # ({'dtype': 'str', 'min_length': 10}, lambda x: [x.str_parsing(), x.min_length(10)]),
-    # ({'dtype': 'str', 'max_length': 10}, lambda x: [x.str_parsing(), x.max_length(10)]),
-    # ({'dtype': 'str', 'pattern': 'foo'}, lambda x: [x.str_parsing(), x.pattern('foo')]),
-    # ({'dtype': 'str', 'isin': ['foo', 'bar']}, lambda x: [x.str_parsing(), x.isin(['foo', 'bar'])]),
-    # ({'dtype': 'str', 'notin': ['foo', 'bar']}, lambda x: [x.str_parsing(), x.notin(['foo', 'bar'])]),
-    # ({'dtype': 'date'}, lambda x: [x.date_parsing()]),
-    # ({'dtype': 'datetime'}, lambda x: [x.datetime_parsing()]),
-    # ({'dtype': 'timestamp'}, lambda x: [x.timestamp_parsing()]),
-    # ({'dtype': 'timestamp[s]'}, lambda x: [x.timestamp_parsing('s')]),
-    # ({'dtype': 'timestamp[ms]'}, lambda x: [x.timestamp_parsing('ms')]),
-    # ({'dtype': 'time'}, lambda x: [x.time_parsing()]),
-])
-def test_column(kwargs, expected):
-    with mock.patch('norma.rules') as mock_rules:
-        column = Column(**kwargs)
-
-        assert column.rules == expected(mock_rules)
 
 
 def test_column_rule():
@@ -69,242 +30,6 @@ def test_column_rules():
         column = Column(str, rules=[rule1, rule2])
 
         assert column.rules == [mock_rules.str_parsing(), rule1, rule2]
-
-
-def test_schema_validate_allow_extra():
-    schema = norma.schema.Schema(
-        {
-            'col1': Column(str),
-            'col2': Column(str)
-        },
-        allow_extra=True
-    )
-    df = pandas.DataFrame({
-        'col1': ['foo', 'baz'],
-        'col2': ['bar', 'qux'],
-        'col3': ['qux', 123]
-    })
-
-    actual = schema.validate(df)
-
-    assert actual.to_dict(orient='records') == [
-        {
-            'col1': 'foo',
-            'col2': 'bar',
-            'col3': 'qux',
-            'errors': {}
-        },
-        {
-            'col1': 'baz',
-            'col2': 'qux',
-            'col3': 123,
-            'errors': {}
-        }
-    ]
-
-
-def test_schema_validate_allow_extra_pyspark(spark_session):
-    schema = norma.schema.Schema(
-        {
-            'col1': Column(str),
-            'col2': Column(str)
-        },
-        allow_extra=True
-    )
-    df = spark_session.createDataFrame([
-        ('foo', 'bar', 'qux'),
-        ('baz', 'qux', '123')
-    ], ['col1', 'col2', 'col3'])
-
-    actual = schema.validate(df)
-
-    assert list(map(json.loads, actual.toJSON().collect())) == [
-        {
-            'col1': 'foo',
-            'col2': 'bar',
-            'col3': 'qux',
-            'errors': {}
-        },
-        {
-            'col1': 'baz',
-            'col2': 'qux',
-            'col3': '123',
-            'errors': {}
-        }
-    ]
-
-
-def test_schema_validate_forbidden_extra():
-    schema = norma.schema.Schema(
-        {
-            'col1': Column(str),
-            'col2': Column(str)
-        },
-        allow_extra=False
-    )
-    df = pandas.DataFrame({
-        'col1': ['foo', 'baz'],
-        'col2': ['bar', 'qux'],
-        'col3': ['qux', 123]
-    })
-
-    actual = schema.validate(df)
-
-    assert actual.to_dict(orient='records') == [
-        {
-            'col1': 'foo',
-            'col2': 'bar',
-            'errors': {
-                'col3': {
-                    'details': [
-                        {
-                            'msg': 'Extra inputs are not permitted',
-                            'type': 'extra_forbidden'
-                        }
-                    ],
-                    'original': 'qux'
-                }
-            }
-        },
-        {
-            'col1': 'baz',
-            'col2': 'qux',
-            'errors': {
-                'col3': {
-                    'details': [
-                        {
-                            'msg': 'Extra inputs are not permitted',
-                            'type': 'extra_forbidden'
-                        }
-                    ],
-                    'original': 123
-                }
-            }
-        }
-    ]
-
-
-def test_schema_validate_forbidden_extra_pyspark(spark_session):
-    schema = norma.schema.Schema(
-        {
-            'col1': Column(str),
-            'col2': Column(str)
-        },
-        allow_extra=False
-    )
-    df = spark_session.createDataFrame([
-        ('foo', 'bar', 'qux'),
-        ('baz', 'qux', '123')
-    ], ['col1', 'col2', 'col3'])
-
-    actual = schema.validate(df)
-
-    assert list(map(json.loads, actual.toJSON().collect())) == [
-        {
-            'col1': 'foo',
-            'col2': 'bar',
-            'errors': {
-                'col3': {
-                    'details': [
-                        {
-                            'msg': 'Extra inputs are not permitted',
-                            'type': 'extra_forbidden'
-                        }
-                    ],
-                    'original': 'qux'
-                }
-            }
-        },
-        {
-            'col1': 'baz',
-            'col2': 'qux',
-            'errors': {
-                'col3': {
-                    'details': [
-                        {
-                            'msg': 'Extra inputs are not permitted',
-                            'type': 'extra_forbidden'
-                        }
-                    ],
-                    'original': '123'
-                }
-            }
-        }
-    ]
-
-
-def test_schema_validate_default_pandas():
-    schema = norma.schema.Schema({
-        'col1': Column(str, default_factory=lambda x: x['col2'].str.upper()),
-        'col2': Column(str, pattern='bar|qux', default='<default>')
-    })
-    df = pandas.DataFrame({
-        'col1': ['foo', None, 'baz', None],
-        'col2': ['bar', 'qux', None, None]
-    })
-
-    actual = schema.validate(df)
-
-    assert actual.to_dict(orient='records') == [
-        {
-            'col1': 'foo',
-            'col2': 'bar',
-            'errors': {}
-        },
-        {
-            'col1': 'QUX',
-            'col2': 'qux',
-            'errors': {}
-        },
-        {
-            'col1': 'baz',
-            'col2': '<default>',
-            'errors': {}
-        },
-        {
-            'col1': '<DEFAULT>',
-            'col2': '<default>',
-            'errors': {}
-        }
-    ]
-
-
-def test_schema_validate_default_pyspark(spark_session):
-    schema = norma.schema.Schema({
-        'col1': Column(str, default_factory=lambda x: fn.upper(fn.col('col2'))),
-        'col2': Column(str, pattern='bar|qux', default='<default>')
-    })
-    df = spark_session.createDataFrame([
-        ('foo', 'bar'),
-        (None, 'qux'),
-        ('baz', None),
-        (None, None)
-    ], ['col1', 'col2'])
-
-    actual = schema.validate(df)
-
-    assert list(map(json.loads, actual.toJSON().collect())) == [
-        {
-            'col1': 'foo',
-            'col2': 'bar',
-            'errors': {}
-        },
-        {
-            'col1': 'QUX',
-            'col2': 'qux',
-            'errors': {}
-        },
-        {
-            'col1': 'baz',
-            'col2': '<default>',
-            'errors': {}
-        },
-        {
-            'col1': '<DEFAULT>',
-            'col2': '<default>',
-            'errors': {}
-        }
-    ]
 
 
 def test_schema_from_json_schema():
@@ -360,3 +85,61 @@ def test_schema_from_json_schema():
         mock.call('datetime', nullable=True)
     ]
     assert actual.allow_extra is False
+
+
+def generate_test(value):
+    def crete_schema(o):
+        return Schema(**{
+            sk: {
+                ck: Column(**{
+                    # pylint: disable=eval-used
+                    k: eval(v['expr'], globals()) if isinstance(v, dict) and 'expr' in v else v
+                    for k, v in cv.items()
+                })
+                for ck, cv in sv.items()
+            } if sk == 'columns' else sv
+            for sk, sv in o.items()
+        })
+
+    @pytest.mark.parametrize('engine, case', [
+        pytest.param(engine, prop, id=f'case #{i} | {engine}: {prop.get("description", "")}')
+        for i, prop in enumerate(value['cases'])
+        for engine in prop['engines']
+    ])
+    def test_func(spark_session, engine, case):
+        {
+            'pandas': test_func_pandas,
+            'pyspark': partial(test_func_pyspark, spark_session)
+        }[engine](case)
+
+    def test_func_pandas(case):
+        df = pd.DataFrame(case['given']['data'])
+
+        schema = (
+            Schema.from_json_schema(case['when']['json_schema'])
+            if 'json_schema' in case['when'] else
+            crete_schema(case['when']['schema'])
+        )
+        actual = schema.validate(df)
+
+        assert actual.to_dict(orient='records') == case['then']['data']
+
+    def test_func_pyspark(spark_session, case):
+        df = spark_session.createDataFrame(case['given']['data'])
+
+        schema = (
+            Schema.from_json_schema(case['when']['json_schema'])
+            if 'json_schema' in case['when'] else
+            crete_schema(case['when']['schema'])
+        )
+        actual = schema.validate(df)
+
+        assert list(map(json.loads, actual.toJSON().collect())) == case['then']['data']
+
+    return test_func
+
+
+with open(os.path.join(os.path.dirname(__file__), 'data/cases.json'), 'r', encoding='utf-8') as f:
+    tests = json.loads(f.read())
+    for test in tests:
+        globals()[f'test_{test["test"]}'] = generate_test(test)

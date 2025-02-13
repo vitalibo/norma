@@ -30,7 +30,7 @@ def validate(
     df = df.withColumn(error_column, fn.struct(*[
         fn.struct(
             fn.filter(fn.col(f'{error_column}_{column}'), fn.isnotnull).alias('details'),
-            fn.col(f'{column}_bak' if f'{column}_bak' in df.columns else column).alias('original'),
+            __origin(df, column).alias('original'),
         ).alias(column) for column in columns_with_extra
     ]))
 
@@ -66,3 +66,15 @@ def validate(
     if not schema.allow_extra:
         return df.select(*list(schema.columns.keys()), error_column)
     return df.select(*original_cols, error_column)
+
+
+def __origin(df: DataFrame, column):
+    column = f'{column}_bak' if f'{column}_bak' in df.columns else column
+    dtype = df.schema[column].dataType.typeName()
+
+    if dtype in ('string',):
+        return fn.concat(fn.lit('"'), fn.col(column), fn.lit('"'))
+    elif dtype in ('array', 'map', 'struct'):
+        return fn.to_json(fn.col(column))
+
+    return fn.col(column).cast('string')
