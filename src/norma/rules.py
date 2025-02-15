@@ -36,6 +36,9 @@ class RuleProxy(Rule):
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         raise NotImplementedError('use engine-specific implementation')
 
+    def __repr__(self):
+        return f'{self.name}({", ".join([f"{k}={v}" for k, v in self.kwargs.items()])})'
+
 
 def required() -> Rule:
     return RuleProxy('required', 0)

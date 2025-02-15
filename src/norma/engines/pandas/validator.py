@@ -7,13 +7,13 @@ import norma.rules
 from norma.engines.pandas.rules import ErrorState, extra_forbidden
 
 
-def validate(
+def validate(  # pylint: disable=too-many-branches)
         schema: 'Schema', df: pd.DataFrame, error_column: str = 'errors'
 ) -> pd.DataFrame:
     original_df = df.copy()
 
     error_state = ErrorState(df.index)
-    for column in original_df.columns:
+    for column in set(list(original_df.columns) + list(schema.columns.keys())):
         rules = schema.columns[column].rules if column in schema.columns else []
         if not schema.allow_extra:
             rules.append(extra_forbidden(schema.columns.keys()))
@@ -28,8 +28,11 @@ def validate(
 
     for index in error_state.errors:  # pylint: disable=consider-using-dict-items
         for column in error_state.errors[index]:
-            error_state.errors[index][column]['original'] = \
-                json.dumps(original_df.loc[index, column], separators=(',', ':'), default=__json_serde)
+            if column in original_df.columns:
+                error_state.errors[index][column]['original'] = \
+                    json.dumps(original_df.loc[index, column], separators=(',', ':'), default=__json_serde)
+            else:
+                error_state.errors[index][column]['original'] = 'null'
 
     for column in error_state.masks:
         df.loc[error_state.masks[column], column] = None
@@ -50,6 +53,8 @@ def validate(
 
 
 def __json_serde(obj):
+    if pd.isna(obj):
+        return None
     if isinstance(obj, np.integer):
         return int(obj)
     if isinstance(obj, np.floating):

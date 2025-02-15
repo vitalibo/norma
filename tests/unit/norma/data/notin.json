@@ -1,0 +1,286 @@
+[
+  {
+    "description": "column is null, ignored",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "not": {
+              "enum": [
+                "foo",
+                "bar",
+                "baz"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "'qux' not in ['foo', 'bar', 'baz']",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "qux"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "not": {
+              "enum": [
+                "foo",
+                "bar",
+                "baz"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "qux",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "'bar' not in ['foo', 'bar', 'baz'], error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "bar"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "not": {
+              "enum": [
+                "foo",
+                "bar",
+                "baz"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "not_enum",
+                  "msg": "Input should not be \"foo\", \"bar\" or \"baz\""
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "123 not in ['foo', 'bar', 'baz']",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "not": {
+              "enum": [
+                "foo",
+                "bar",
+                "baz"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "'FOO' not in ['foo', 'bar', 'baz']",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "FOO"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "not": {
+              "enum": [
+                "foo",
+                "bar",
+                "baz"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "FOO",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "'foo' not in 123, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "not": {
+              "enum": 123
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "values must be a list, tuple, or set"
+      }
+    }
+  },
+  {
+    "description": "'foo' not in null, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col": {
+            "dtype": "str",
+            "rules": {
+              "expr": "rules.notin(None)"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "values must be a list, tuple, or set"
+      }
+    }
+  }
+]

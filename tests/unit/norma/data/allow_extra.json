@@ -1,0 +1,108 @@
+[
+  {
+    "description": "extra fields are allowed",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy",
+          "age": 25
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30,
+          "errors": {}
+        },
+        {
+          "name": "Nancy",
+          "age": 25,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "extra fields forbidden",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy",
+          "age": 25
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "30"
+            }
+          }
+        },
+        {
+          "name": "Nancy",
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "25"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,136 @@
+[
+  {
+    "description": "fill missing values with derived",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": "bar"
+        },
+        {
+          "col1": null,
+          "col2": "qux"
+        },
+        {
+          "col1": "baz",
+          "col2": null
+        },
+        {
+          "col1": null,
+          "col2": null
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col1": {
+            "dtype": "str",
+            "default_factory": {
+              "expr": "lambda x: x['col2'].str.upper()"
+            }
+          },
+          "col2": {
+            "dtype": "str",
+            "pattern": "bar|qux",
+            "default": "<default>"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": "bar",
+          "errors": {}
+        },
+        {
+          "col1": "QUX",
+          "col2": "qux",
+          "errors": {}
+        },
+        {
+          "col1": "baz",
+          "col2": "<default>",
+          "errors": {}
+        },
+        {
+          "col1": "<DEFAULT>",
+          "col2": "<default>",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "fill missing values with derived",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": "bar"
+        },
+        {
+          "col1": null,
+          "col2": "qux"
+        },
+        {
+          "col1": "baz",
+          "col2": null
+        },
+        {
+          "col1": null,
+          "col2": null
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col1": {
+            "dtype": "str",
+            "default_factory": {
+              "expr": "lambda x: fn.upper(fn.col('col2'))"
+            }
+          },
+          "col2": {
+            "dtype": "str",
+            "pattern": "bar|qux",
+            "default": "<default>"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": "bar",
+          "errors": {}
+        },
+        {
+          "col1": "QUX",
+          "col2": "qux",
+          "errors": {}
+        },
+        {
+          "col1": "baz",
+          "col2": "<default>",
+          "errors": {}
+        },
+        {
+          "col1": "<DEFAULT>",
+          "col2": "<default>",
+          "errors": {}
+        }
+      ]
+    }
+  }
+]

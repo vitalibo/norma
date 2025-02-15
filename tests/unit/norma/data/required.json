@@ -1,0 +1,205 @@
+[
+  {
+    "description": "column is not null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy",
+          "age": 25
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30,
+          "errors": {}
+        },
+        {
+          "name": "Nancy",
+          "age": 25,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "column is null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy",
+          "age": null
+        },
+        {
+          "name": null,
+          "age": 25
+        },
+        {
+          "name": null,
+          "age": null
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "age"
+        ]
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30,
+          "errors": {}
+        },
+        {
+          "name": "Nancy",
+          "age": null,
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        },
+        {
+          "name": null,
+          "age": 25,
+          "errors": {
+            "name": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        },
+        {
+          "name": null,
+          "age": null,
+          "errors": {
+            "name": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            },
+            "age": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "column is missing, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "age"
+        ]
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": null,
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

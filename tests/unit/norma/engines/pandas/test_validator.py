@@ -40,8 +40,8 @@ def test_schema_validate():
                 'col2': {
                     'details': [
                         {
-                            'type': 'pattern',
-                            'msg': 'Input should match the pattern ^bar$'
+                            'type': 'string_pattern_mismatch',
+                            'msg': 'String should match pattern "^bar$"'
                         }
                     ],
                     'original': '"foo"'

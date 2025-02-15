@@ -554,7 +554,8 @@ def test_min_length(value, dtype, threshold, assert_error):
     actual = rule.verify(df, column='col', error_state=error_state)
 
     assert actual is not None
-    assert_error(error_state, [{'type': 'min_length', 'msg': f'Input should have a minimum length of {threshold}'}])
+    assert_error(error_state, [{'type': 'string_too_short',
+                                'msg': f'String should have at least {threshold} characters'}])
 
 
 @pytest.mark.parametrize('value, dtype, threshold, assert_error', [*[
@@ -578,7 +579,8 @@ def test_max_length(value, dtype, threshold, assert_error):
     actual = rule.verify(df, column='col', error_state=error_state)
 
     assert actual is not None
-    assert_error(error_state, [{'type': 'max_length', 'msg': f'Input should have a maximum length of {threshold}'}])
+    assert_error(error_state, [{'type': 'string_too_long',
+                                'msg': f'String should have at most {threshold} characters'}])
 
 
 @pytest.mark.parametrize('value, dtype, regex, assert_error', [*[
@@ -602,7 +604,7 @@ def test_pattern(value, dtype, regex, assert_error):
     actual = rule.verify(df, column='col', error_state=error_state)
 
     assert actual is not None
-    assert_error(error_state, [{'type': 'pattern', 'msg': f'Input should match the pattern {regex}'}])
+    assert_error(error_state, [{'type': 'string_pattern_mismatch', 'msg': f'String should match pattern "{regex}"'}])
 
 
 def test_extra_forbidden():
@@ -632,21 +634,21 @@ def test_extra_forbidden_allowed():
     assert len(error_state.errors) == 0  # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
 
 
-@pytest.mark.parametrize('value, dtype, allowed, assert_error', [*[
+@pytest.mark.parametrize('value, dtype, allowed, msg, assert_error', [*[
     (*params, assert_has_error)
     for params in [
-        ('abc', 'object', ('abcd', 'efgh')),
-        ('123', 'string[python]', (123, 456)),
-        (123, 'string[python]', (123, 456)),
+        ('abc', 'object', ('abcd', 'efgh', 'qwerty' ), '"abcd", "efgh" or "qwerty"'),
+        ('123', 'string[python]', (123, 456), '123 or 456'),
+        (123, 'string[python]', (123, 456), '123 or 456'),
     ]
 ], *[
-    (*params, assert_no_error)
+    (*params, None, assert_no_error)
     for params in [
         ('123', 'string[python]', ('123', '456')),
         ('abc', 'object', ('abc', 'def')),
     ]
 ]])
-def test_isin(value, dtype, allowed, assert_error):
+def test_isin(value, dtype, allowed, msg, assert_error):
     df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.isin(allowed)
@@ -654,24 +656,24 @@ def test_isin(value, dtype, allowed, assert_error):
     actual = rule.verify(df, column='col', error_state=error_state)
 
     assert actual is not None
-    assert_error(error_state, [{'type': 'isin', 'msg': f'Input should be in {allowed}'}])
+    assert_error(error_state, [{'type': 'enum', 'msg': f'Input should be {msg}'}])
 
 
-@pytest.mark.parametrize('value, dtype, allowed, assert_error', [*[
+@pytest.mark.parametrize('value, dtype, allowed, msg, assert_error', [*[
     (*params, assert_has_error)
     for params in [
-        ('abc', 'object', ('abc', 'def')),
-        ('123', 'string[python]', ('123', '456')),
-        (123, 'string[python]', ('123', '456')),
+        ('abc', 'object', ('abc', 'def', 'ghi'), '"abc", "def" or "ghi"'),
+        ('123', 'string[python]', ('123', '456'), '"123" or "456"'),
+        (123, 'string[python]', ('123', '456'), '"123" or "456"'),
     ]
 ], *[
-    (*params, assert_no_error)
+    (*params, None, assert_no_error)
     for params in [
         ('123', 'string[python]', ('abc', 'def')),
         ('abc', 'object', ('123', '456')),
     ]
 ]])
-def test_notin(value, dtype, allowed, assert_error):
+def test_notin(value, dtype, allowed, msg, assert_error):
     df = pd.DataFrame({'col': [value]}, dtype=dtype)
     error_state = rules.ErrorState(df.index)
     rule = rules.notin(allowed)
@@ -679,4 +681,4 @@ def test_notin(value, dtype, allowed, assert_error):
     actual = rule.verify(df, column='col', error_state=error_state)
 
     assert actual is not None
-    assert_error(error_state, [{'type': 'notin', 'msg': f'Input should not be in {allowed}'}])
+    assert_error(error_state, [{'type': 'not_enum', 'msg': f'Input should not be {msg}'}])

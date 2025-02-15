@@ -1,0 +1,490 @@
+[
+  {
+    "description": "column is null, ignored",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "Int64"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "integer"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "const": 10
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "'foo' == 'foo'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "const": "foo"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "foo",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "1 == 1",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "const": 1
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "1.5 == 1.5",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1.5
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number",
+            "const": 1.5
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1.5,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "true == true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean",
+            "const": true
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "'foo' == 'bar', error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "const": "bar"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to \"bar\""
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "1 == 2, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "const": 2
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to 2"
+                }
+              ],
+              "original": "1"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "1.5 == 2.5, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1.5
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number",
+            "const": 2.5
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to 2.5"
+                }
+              ],
+              "original": "1.5"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "true == false, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean",
+            "const": false
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to false"
+                }
+              ],
+              "original": "true"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "few columns, errors are raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": 123
+        },
+        {
+          "col1": "foo",
+          "col2": 321
+        },
+        {
+          "col1": "bar",
+          "col2": 123
+        },
+        {
+          "col1": "qux",
+          "col2": 456
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "string",
+            "const": "foo"
+          },
+          "col2": {
+            "type": "integer",
+            "const": 123
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": 123,
+          "errors": {}
+        },
+        {
+          "col1": "foo",
+          "col2": null,
+          "errors": {
+            "col2": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to 123"
+                }
+              ],
+              "original": "321"
+            }
+          }
+        },
+        {
+          "col1": null,
+          "col2": 123,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to \"foo\""
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        },
+        {
+          "col1": null,
+          "col2": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to \"foo\""
+                }
+              ],
+              "original": "\"qux\""
+            },
+            "col2": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to 123"
+                }
+              ],
+              "original": "456"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "any == null, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col": {
+            "dtype": "str",
+            "rules": {
+              "expr": "rules.equal_to(None)"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "comparison value must not be None"
+      }
+    }
+  }
+]

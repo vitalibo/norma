@@ -137,6 +137,11 @@ class Schema:
             'pattern': 'pattern',
             'default': 'default',
             'enum': 'isin',
+            'const': 'eq',
+        }
+        known_not = {
+            'const': 'ne',
+            'enum': 'notin',
         }
 
         complex_types = {
@@ -158,6 +163,11 @@ class Schema:
                         known[key]: value
                         for key, value in properties.items()
                         if key in known
+                    },
+                    **{
+                        known_not[key]: value
+                        for key, value in properties.get('not', {}).items()
+                        if key in known_not
                     }
                 )
                 for field, properties in json_schema['properties'].items()

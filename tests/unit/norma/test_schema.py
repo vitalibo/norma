@@ -6,30 +6,10 @@ from unittest import mock
 import pandas as pd
 import pyspark.sql.functions as fn  # noqa pylint: disable=unused-import
 import pytest
+from pyxis.pyspark import StructType
 
-from norma import rules
+from norma import rules  # noqa pylint: disable=unused-import
 from norma.schema import Column, Schema
-
-
-def test_column_rule():
-    with mock.patch('norma.rules') as mock_rules:
-        mock_rules.str_parsing.return_value.priority = 1
-
-        rule = rules.equal_to(10)
-        column = Column(str, rules=rule)
-
-        assert column.rules == [mock_rules.str_parsing(), rule]
-
-
-def test_column_rules():
-    with mock.patch('norma.rules') as mock_rules:
-        mock_rules.str_parsing.return_value.priority = 1
-
-        rule1 = rules.equal_to(10)
-        rule2 = rules.not_equal_to(22)
-        column = Column(str, rules=[rule1, rule2])
-
-        assert column.rules == [mock_rules.str_parsing(), rule1, rule2]
 
 
 def test_schema_from_json_schema():
@@ -103,7 +83,7 @@ def generate_test(value):
 
     @pytest.mark.parametrize('engine, case', [
         pytest.param(engine, prop, id=f'case #{i} | {engine}: {prop.get("description", "")}')
-        for i, prop in enumerate(value['cases'])
+        for i, prop in enumerate(value)
         for engine in prop['engines']
     ])
     def test_func(spark_session, engine, case):
@@ -113,33 +93,63 @@ def generate_test(value):
         }[engine](case)
 
     def test_func_pandas(case):
-        df = pd.DataFrame(case['given']['data'])
+        if 'schema' in case['given']:
+            df = pd.DataFrame({
+                k: pd.Series([v[k] for v in case['given']['data']], dtype=t)
+                for k, t in case['given']['schema']['pandas'].items()
+            })
+        else:
+            df = pd.DataFrame(case['given']['data'])
+            df = df.convert_dtypes()
 
-        schema = (
-            Schema.from_json_schema(case['when']['json_schema'])
-            if 'json_schema' in case['when'] else
-            crete_schema(case['when']['schema'])
-        )
-        actual = schema.validate(df)
+        with (
+                pytest.raises(Exception, match=case['then']['raises']['match'])
+                if 'raises' in case['then'] else mock.MagicMock()
+        ) as e:
+            schema = (
+                Schema.from_json_schema(case['when']['json_schema'])
+                if 'json_schema' in case['when'] else
+                crete_schema(case['when']['schema'])
+            )
+            actual = schema.validate(df)
 
-        assert actual.to_dict(orient='records') == case['then']['data']
+            assert actual.to_dict(orient='records') == case['then']['data']
+            return
+
+        assert e.type.__name__ == case['then']['raises']['type']
 
     def test_func_pyspark(spark_session, case):
-        df = spark_session.createDataFrame(case['given']['data'])
+        params = {}
+        if 'schema' in case['given']:
+            params['schema'] = StructType.from_json(case['given']['schema']['pyspark'])
 
-        schema = (
-            Schema.from_json_schema(case['when']['json_schema'])
-            if 'json_schema' in case['when'] else
-            crete_schema(case['when']['schema'])
-        )
-        actual = schema.validate(df)
+        df = spark_session.createDataFrame(case['given']['data'], **params)
 
-        assert list(map(json.loads, actual.toJSON().collect())) == case['then']['data']
+        with (
+                pytest.raises(Exception, match=case['then']['raises']['match'])
+                if 'raises' in case['then'] else mock.MagicMock()
+        ) as e:
+            schema = (
+                Schema.from_json_schema(case['when']['json_schema'])
+                if 'json_schema' in case['when'] else
+                crete_schema(case['when']['schema'])
+            )
+            actual = schema.validate(df)
+
+            assert list(map(json.loads, actual.toJSON().collect())) == case['then']['data']
+            return
+
+        assert e.type.__name__ == case['then']['raises']['type']
 
     return test_func
 
 
-with open(os.path.join(os.path.dirname(__file__), 'data/cases.json'), 'r', encoding='utf-8') as f:
-    tests = json.loads(f.read())
-    for test in tests:
-        globals()[f'test_{test["test"]}'] = generate_test(test)
+for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__), 'data')):
+    for file in files:
+        if not file.endswith('.json'):
+            continue
+
+        test = file.split('.')[0]
+        with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+            cases = json.loads(f.read())
+            globals()[f'test_{test}'] = generate_test(cases)

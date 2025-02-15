@@ -1,0 +1,283 @@
+[
+  {
+    "description": "column is null, ignored",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "maxLength": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "len('ab') <= 3",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "ab"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "maxLength": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "ab",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "len('abc') <= 3",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "abc"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "maxLength": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "abc",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "len('abcd') <= 3, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "abcd"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "maxLength": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "string_too_long",
+                  "msg": "String should have at most 3 characters"
+                }
+              ],
+              "original": "\"abcd\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "len('ab') <= -1, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "ab"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "maxLength": -1
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "max_length must be a non-negative integer"
+      }
+    }
+  },
+  {
+    "description": "len('ab') <= 1.2, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "ab"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "maxLength": 1.2
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "max_length must be an integer"
+      }
+    }
+  },
+  {
+    "description": "len('ab') <= null, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "ab"
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col": {
+            "dtype": "str",
+            "rules": {
+              "expr": "rules.max_length(None)"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "max_length must be an integer"
+      }
+    }
+  },
+  {
+    "description": "len(123) <= 3",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "maxLength": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "max_length rule can only be applied to string columns"
+      }
+    }
+  }
+]

@@ -600,7 +600,7 @@
               "errors_col": [
                 {
                   "type": "equal_to",
-                  "msg": "Input should be equal to bar"
+                  "msg": "Input should be equal to \"bar\""
                 }
               ]
             }
@@ -819,7 +819,7 @@
               "errors_col": [
                 {
                   "type": "equal_to",
-                  "msg": "Input should be equal to False"
+                  "msg": "Input should be equal to false"
                 }
               ]
             }
@@ -1247,7 +1247,7 @@
               "errors_col": [
                 {
                   "type": "not_equal_to",
-                  "msg": "Input should not be equal to foo"
+                  "msg": "Input should not be equal to \"foo\""
                 }
               ]
             }
@@ -1466,7 +1466,7 @@
               "errors_col": [
                 {
                   "type": "not_equal_to",
-                  "msg": "Input should not be equal to True"
+                  "msg": "Input should not be equal to true"
                 }
               ]
             }
@@ -1970,7 +1970,7 @@
               "errors_col": [
                 {
                   "type": "greater_than",
-                  "msg": "Input should be greater than b"
+                  "msg": "Input should be greater than \"b\""
                 }
               ]
             }
@@ -2541,7 +2541,7 @@
               "errors_col": [
                 {
                   "type": "greater_than_equal",
-                  "msg": "Input should be greater than or equal to b"
+                  "msg": "Input should be greater than or equal to \"b\""
                 }
               ]
             }
@@ -3185,7 +3185,7 @@
               "errors_col": [
                 {
                   "type": "less_than",
-                  "msg": "Input should be less than b"
+                  "msg": "Input should be less than \"b\""
                 }
               ]
             }
@@ -3258,7 +3258,7 @@
               "errors_col": [
                 {
                   "type": "less_than",
-                  "msg": "Input should be less than False"
+                  "msg": "Input should be less than false"
                 }
               ]
             }
@@ -3972,7 +3972,7 @@
               "errors_col": [
                 {
                   "type": "less_than_equal",
-                  "msg": "Input should be less than or equal to b"
+                  "msg": "Input should be less than or equal to \"b\""
                 }
               ]
             }
@@ -4510,7 +4510,7 @@
         "then": {
           "raises": {
             "type": "ValueError",
-            "match": "value should be an integer or a float"
+            "match": "multiple_of must be an integer or a float"
           }
         }
       }
@@ -4626,8 +4626,8 @@
               "col": "ab",
               "errors_col": [
                 {
-                  "type": "min_length",
-                  "msg": "Input should have a minimum length of 3"
+                  "type": "string_too_short",
+                  "msg": "String should have at least 3 characters"
                 }
               ]
             }
@@ -5054,8 +5054,8 @@
               "col": "abcd",
               "errors_col": [
                 {
-                  "type": "max_length",
-                  "msg": "Input should have a maximum length of 3"
+                  "type": "string_too_long",
+                  "msg": "String should have at most 3 characters"
                 }
               ]
             }
@@ -5272,8 +5272,8 @@
               "col": "abc",
               "errors_col": [
                 {
-                  "type": "pattern",
-                  "msg": "Input should match the pattern [0-9]+"
+                  "type": "string_pattern_mismatch",
+                  "msg": "String should match pattern \"[0-9]+\""
                 }
               ]
             }
@@ -5345,8 +5345,8 @@
               "col": "123",
               "errors_col": [
                 {
-                  "type": "pattern",
-                  "msg": "Input should match the pattern [a-z]+"
+                  "type": "string_pattern_mismatch",
+                  "msg": "String should match pattern \"[a-z]+\""
                 }
               ]
             }
@@ -5715,8 +5715,8 @@
               "col": "baz",
               "errors_col": [
                 {
-                  "type": "isin",
-                  "msg": "Input should be one of ['foo', 'bar']"
+                  "type": "enum",
+                  "msg": "Input should be \"foo\" or \"bar\""
                 }
               ]
             }
@@ -5864,8 +5864,8 @@
               "col": 999,
               "errors_col": [
                 {
-                  "type": "isin",
-                  "msg": "Input should be one of [123, 234]"
+                  "type": "enum",
+                  "msg": "Input should be 123 or 234"
                 }
               ]
             }
@@ -6018,8 +6018,8 @@
               "col": "foo",
               "errors_col": [
                 {
-                  "type": "notin",
-                  "msg": "Input should not be one of ['foo', 'bar']"
+                  "type": "not_enum",
+                  "msg": "Input should not be \"foo\" or \"bar\""
                 }
               ]
             }
@@ -6167,8 +6167,8 @@
               "col": 123,
               "errors_col": [
                 {
-                  "type": "notin",
-                  "msg": "Input should not be one of [123, 234]"
+                  "type": "not_enum",
+                  "msg": "Input should not be 123 or 234"
                 }
               ]
             }

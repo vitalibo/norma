@@ -1,0 +1,328 @@
+[
+  {
+    "description": "column is null, ignored",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "Int64"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "integer"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "multipleOf": 10
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "30 is multiple of 10",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 30
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "multipleOf": 10
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 30,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "33 is multiple of 10, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 33
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "multipleOf": 10
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "multiple_of",
+                  "msg": "Input should be a multiple of 10"
+                }
+              ],
+              "original": "33"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "33 is multiple of 3",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 33
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "multipleOf": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 33,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "7.5 is multiple of 2.5",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 7.5
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number",
+            "multipleOf": 2.5
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 7.5,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "7.500001 is multiple of 2.5, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 7.500001
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number",
+            "multipleOf": 2.5
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "multiple_of",
+                  "msg": "Input should be a multiple of 2.5"
+                }
+              ],
+              "original": "7.500001"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "'abc' is multiple of 3, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "abc"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "multipleOf": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "multiple_of rule can only be applied to numeric columns"
+      }
+    }
+  },
+  {
+    "description": "30 is multiple of 'abc', exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 30
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "multipleOf": "abc"
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "multiple_of must be an integer or a float"
+      }
+    }
+  },
+  {
+    "description": "30 is multiple of null, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 30
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col": {
+            "dtype": "str",
+            "rules": {
+              "expr": "rules.multiple_of(None)"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "multiple_of must not be None"
+      }
+    }
+  }
+]

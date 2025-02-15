@@ -1,0 +1,105 @@
+[
+  {
+    "description": "fill missing values with default",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer",
+            "default": 25
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30,
+          "errors": {}
+        },
+        {
+          "name": "Nancy",
+          "age": 25,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "fill invalid values with default",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": "30"
+        },
+        {
+          "name": "Nancy",
+          "age": "abc"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer",
+            "default": 25
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30,
+          "errors": {}
+        },
+        {
+          "name": "Nancy",
+          "age": 25,
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "int_parsing",
+                  "msg": "Input should be a valid integer, unable to parse value as an integer"
+                }
+              ],
+              "original": "\"abc\""
+            }
+          }
+        }
+      ]
+    }
+  }
+]

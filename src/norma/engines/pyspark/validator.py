@@ -10,7 +10,8 @@ def validate(
 ) -> DataFrame:
     error_state = ErrorState(error_column)
     original_cols = df.columns
-    columns_with_extra = set(schema.columns.keys()) if schema.allow_extra else original_cols
+    columns_with_extra = \
+        set(schema.columns.keys() if schema.allow_extra else original_cols + list(schema.columns.keys()))
 
     for column in columns_with_extra:
         df = df \
@@ -72,9 +73,10 @@ def __origin(df: DataFrame, column):
     column = f'{column}_bak' if f'{column}_bak' in df.columns else column
     dtype = df.schema[column].dataType.typeName()
 
+    null = fn.when(fn.col(column).isNull(), fn.lit('null'))
     if dtype in ('string',):
-        return fn.concat(fn.lit('"'), fn.col(column), fn.lit('"'))
+        return null.otherwise(fn.concat(fn.lit('"'), fn.col(column), fn.lit('"')))
     elif dtype in ('array', 'map', 'struct'):
-        return fn.to_json(fn.col(column))
+        return null.otherwise(fn.to_json(fn.col(column)))
 
-    return fn.col(column).cast('string')
+    return null.otherwise(fn.col(column).cast('string'))

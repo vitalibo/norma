@@ -1,0 +1,619 @@
+[
+  {
+    "description": "column is null, ignored",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "Int64"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "integer"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "exclusiveMinimum": 10
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "2 > 3, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 2
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "exclusiveMinimum": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "greater_than",
+                  "msg": "Input should be greater than 3"
+                }
+              ],
+              "original": "2"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "3 > 3, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 3
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "exclusiveMinimum": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "greater_than",
+                  "msg": "Input should be greater than 3"
+                }
+              ],
+              "original": "3"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "4 > 3",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 4
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "exclusiveMinimum": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 4,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "2.49 > 2.5, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 2.49
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number",
+            "exclusiveMinimum": 2.5
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "greater_than",
+                  "msg": "Input should be greater than 2.5"
+                }
+              ],
+              "original": "2.49"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "2.5 > 2.5, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 2.5
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number",
+            "exclusiveMinimum": 2.5
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "greater_than",
+                  "msg": "Input should be greater than 2.5"
+                }
+              ],
+              "original": "2.5"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "2.51 > 2.5",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 2.51
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number",
+            "exclusiveMinimum": 2.5
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 2.51,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "'b' > 'c', error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "b"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "exclusiveMinimum": "c"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "greater_than",
+                  "msg": "Input should be greater than \"c\""
+                }
+              ],
+              "original": "\"b\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "'c' > 'c', error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "c"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "exclusiveMinimum": "c"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "greater_than",
+                  "msg": "Input should be greater than \"c\""
+                }
+              ],
+              "original": "\"c\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "'d' > 'c'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "d"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "exclusiveMinimum": "c"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "d",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "true > true, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean",
+            "exclusiveMinimum": true
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "greater_than",
+                  "msg": "Input should be greater than true"
+                }
+              ],
+              "original": "true"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "true > false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean",
+            "exclusiveMinimum": false
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "few columns, errors are raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "d",
+          "col2": 4
+        },
+        {
+          "col1": "c",
+          "col2": 2
+        },
+        {
+          "col1": "b",
+          "col2": 3
+        },
+        {
+          "col1": "a",
+          "col2": 1
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "string",
+            "exclusiveMinimum": "b"
+          },
+          "col2": {
+            "type": "integer",
+            "exclusiveMinimum": 2
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": "d",
+          "col2": 4,
+          "errors": {}
+        },
+        {
+          "col1": "c",
+          "col2": null,
+          "errors": {
+            "col2": {
+              "details": [
+                {
+                  "msg": "Input should be greater than 2",
+                  "type": "greater_than"
+                }
+              ],
+              "original": "2"
+            }
+          }
+        },
+        {
+          "col1": null,
+          "col2": 3,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be greater than \"b\"",
+                  "type": "greater_than"
+                }
+              ],
+              "original": "\"b\""
+            }
+          }
+        },
+        {
+          "col1": null,
+          "col2": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be greater than \"b\"",
+                  "type": "greater_than"
+                }
+              ],
+              "original": "\"a\""
+            },
+            "col2": {
+              "details": [
+                {
+                  "msg": "Input should be greater than 2",
+                  "type": "greater_than"
+                }
+              ],
+              "original": "1"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "any == null, exception is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col": {
+            "dtype": "str",
+            "rules": {
+              "expr": "rules.greater_than(None)"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "comparison value must not be None"
+      }
+    }
+  }
+]
