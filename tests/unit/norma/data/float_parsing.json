@@ -1,0 +1,508 @@
+[
+  {
+    "description": "cast(null as float) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123 as float) => 123.0",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123.0,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123.45 as float) => 123.45",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123.45
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123.45,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('123' as float) => 123.0",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "123"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123.0,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('123.45' as float) => 123.45",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "123.45"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123.45,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('foo' as float) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "float_parsing",
+                  "msg": "Input should be a valid number, unable to parse string as a number"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(true as float) => 1.0",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1.0,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(false as float) => 0.0",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": false
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 0.0,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({'foo':'bar'} as float) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "float_type",
+                  "msg": "Input should be a valid number"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([1] as float) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            1
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "float_type",
+                  "msg": "Input should be a valid number"
+                }
+              ],
+              "original": "[1]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(1.23e-5 as float) => 0.0000123",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1.23e-5
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 0.0000123,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1.23e-5' as float) => 0.0000123",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1.23e-5"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 0.0000123,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(1.23, '4.56', {'foo':'bar'}, 'foo' as float) => [1.23, 4.56, null, null] error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1.23
+        },
+        {
+          "col": "4.56"
+        },
+        {
+          "col": {
+            "foo": "bar"
+          }
+        },
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1.23,
+          "errors": {}
+        },
+        {
+          "col": 4.56,
+          "errors": {}
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "float_type",
+                  "msg": "Input should be a valid number"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "float_parsing",
+                  "msg": "Input should be a valid number, unable to parse string as a number"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  }
+]

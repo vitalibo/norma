@@ -1,0 +1,291 @@
+[
+  {
+    "description": "users",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "lastname": "Doe",
+          "age": "29",
+          "sex": "M",
+          "address": "123 Main St, NY",
+          "email": "john.doe@example.com"
+        },
+        {
+          "name": "Jane",
+          "lastname": "Smith",
+          "age": "abc",
+          "sex": "F",
+          "address": "456 Elm St, CA",
+          "email": "jane.smith@example"
+        },
+        {
+          "name": "Robert",
+          "lastname": "Brown",
+          "age": "45",
+          "sex": "M",
+          "address": "789 Oak St",
+          "email": "robert.brown@domain.com"
+        },
+        {
+          "name": "Emily",
+          "lastname": "Davis",
+          "age": "-5",
+          "sex": "F",
+          "address": "321 Pine St, TX",
+          "email": "emily.davis@example.com"
+        },
+        {
+          "name": "Michael",
+          "lastname": "Wilson",
+          "age": "120",
+          "sex": "M",
+          "address": "654 Cedar St, FL",
+          "email": "michael.wilson@.com"
+        },
+        {
+          "name": "Sarah",
+          "lastname": "Miller",
+          "age": "30",
+          "sex": "F",
+          "address": "987 Birch St, WA",
+          "email": "sarah.miller@example.com"
+        },
+        {
+          "name": "A",
+          "lastname": "Entry",
+          "age": "25",
+          "sex": "X",
+          "address": "",
+          "email": "invalid.email.com"
+        },
+        {
+          "name": "Tom",
+          "lastname": "Lee",
+          "age": "NaN",
+          "sex": "M",
+          "address": "741 Maple St, IL",
+          "email": "tom.lee@example.com"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "lastname": {
+            "type": "string",
+            "minLength": 2
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "M",
+              "F"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "minLength": 5
+          },
+          "email": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+          }
+        },
+        "required": [
+          "name",
+          "lastname",
+          "age",
+          "sex",
+          "address",
+          "email"
+        ]
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "lastname": "Doe",
+          "age": 29,
+          "sex": "M",
+          "address": "123 Main St, NY",
+          "email": "john.doe@example.com",
+          "errors": {}
+        },
+        {
+          "name": "Jane",
+          "lastname": "Smith",
+          "age": null,
+          "sex": "F",
+          "address": "456 Elm St, CA",
+          "email": null,
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "int_parsing",
+                  "msg": "Input should be a valid integer, unable to parse string as an integer"
+                }
+              ],
+              "original": "\"abc\""
+            },
+            "email": {
+              "details": [
+                {
+                  "type": "string_pattern_mismatch",
+                  "msg": "String should match pattern \"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\""
+                }
+              ],
+              "original": "\"jane.smith@example\""
+            }
+          }
+        },
+        {
+          "name": "Robert",
+          "lastname": "Brown",
+          "age": 45,
+          "sex": "M",
+          "address": "789 Oak St",
+          "email": "robert.brown@domain.com",
+          "errors": {}
+        },
+        {
+          "name": "Emily",
+          "lastname": "Davis",
+          "age": null,
+          "sex": "F",
+          "address": "321 Pine St, TX",
+          "email": "emily.davis@example.com",
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "greater_than_equal",
+                  "msg": "Input should be greater than or equal to 0"
+                }
+              ],
+              "original": "\"-5\""
+            }
+          }
+        },
+        {
+          "name": "Michael",
+          "lastname": "Wilson",
+          "age": null,
+          "sex": "M",
+          "address": "654 Cedar St, FL",
+          "email": null,
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "less_than_equal",
+                  "msg": "Input should be less than or equal to 100"
+                }
+              ],
+              "original": "\"120\""
+            },
+            "email": {
+              "details": [
+                {
+                  "type": "string_pattern_mismatch",
+                  "msg": "String should match pattern \"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\""
+                }
+              ],
+              "original": "\"michael.wilson@.com\""
+            }
+          }
+        },
+        {
+          "name": "Sarah",
+          "lastname": "Miller",
+          "age": 30,
+          "sex": "F",
+          "address": "987 Birch St, WA",
+          "email": "sarah.miller@example.com",
+          "errors": {}
+        },
+        {
+          "name": null,
+          "lastname": "Entry",
+          "age": 25,
+          "sex": null,
+          "address": null,
+          "email": null,
+          "errors": {
+            "sex": {
+              "details": [
+                {
+                  "type": "enum",
+                  "msg": "Input should be \"M\" or \"F\""
+                }
+              ],
+              "original": "\"X\""
+            },
+            "email": {
+              "details": [
+                {
+                  "type": "string_pattern_mismatch",
+                  "msg": "String should match pattern \"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\""
+                }
+              ],
+              "original": "\"invalid.email.com\""
+            },
+            "name": {
+              "details": [
+                {
+                  "type": "string_too_short",
+                  "msg": "String should have at least 2 characters"
+                }
+              ],
+              "original": "\"A\""
+            },
+            "address": {
+              "details": [
+                {
+                  "type": "string_too_short",
+                  "msg": "String should have at least 5 characters"
+                }
+              ],
+              "original": "\"\""
+            }
+          }
+        },
+        {
+          "name": "Tom",
+          "lastname": "Lee",
+          "age": null,
+          "sex": "M",
+          "address": "741 Maple St, IL",
+          "email": "tom.lee@example.com",
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "int_parsing",
+                  "msg": "Input should be a valid integer, unable to parse string as an integer"
+                }
+              ],
+              "original": "\"NaN\""
+            }
+          }
+        }
+      ]
+    }
+  }
+]

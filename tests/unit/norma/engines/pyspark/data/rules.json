@@ -6688,10 +6688,7 @@
           "data": [
             {
               "col": 1,
-              "col_bak": 1,
-              "errors_col": [
-                null
-              ]
+              "errors_col": []
             }
           ],
           "schema": {
@@ -6704,25 +6701,9 @@
                 "name": "errors_col",
                 "type": {
                   "type": "array",
-                  "elementType": {
-                    "fields": [
-                      {
-                        "name": "type",
-                        "type": "string"
-                      },
-                      {
-                        "name": "msg",
-                        "type": "string"
-                      }
-                    ],
-                    "type": "struct"
-                  },
-                  "containsNull": true
+                  "elementType": "void",
+                  "containsNull": false
                 }
-              },
-              {
-                "name": "col_bak",
-                "type": "integer"
               }
             ]
           }
@@ -6838,7 +6819,7 @@
               "errors_col": [
                 {
                   "type": "int_parsing",
-                  "msg": "Input should be a valid integer, unable to parse value as an integer"
+                  "msg": "Input should be a valid integer, unable to parse string as an integer"
                 }
               ]
             }
@@ -7284,7 +7265,7 @@
               "errors_col": [
                 {
                   "type": "float_parsing",
-                  "msg": "Input should be a valid float, unable to parse value as a float"
+                  "msg": "Input should be a valid number, unable to parse string as a number"
                 }
               ]
             }
@@ -8605,8 +8586,8 @@
               "col_bak": "foo",
               "errors_col": [
                 {
-                  "type": "boolean_parsing",
-                  "msg": "Input should be a valid boolean, unable to parse value as a boolean"
+                  "type": "bool_parsing",
+                  "msg": "Input should be a valid boolean, unable to interpret input"
                 }
               ]
             }
@@ -8683,7 +8664,6 @@
           "data": [
             {
               "col": null,
-              "col_bak": null,
               "errors_col": []
             }
           ],
@@ -8700,10 +8680,6 @@
                   "elementType": "void",
                   "containsNull": false
                 }
-              },
-              {
-                "name": "col_bak",
-                "type": "string"
               }
             ]
           }
@@ -8742,7 +8718,6 @@
           "data": [
             {
               "col": "foo",
-              "col_bak": "foo",
               "errors_col": []
             }
           ],
@@ -8759,10 +8734,6 @@
                   "elementType": "void",
                   "containsNull": false
                 }
-              },
-              {
-                "name": "col_bak",
-                "type": "string"
               }
             ]
           }

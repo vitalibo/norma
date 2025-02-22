@@ -1,0 +1,347 @@
+[
+  {
+    "description": "cast(null as boolean) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('foo' as str) => 'foo'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "foo",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123 as str) => '123'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "123",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123.45 as str) => '123.45'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123.45
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "123.45",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(true as str) => 'true'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "true",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({'foo':'bar'} as str) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "string_type",
+                  "msg": "Input should be a valid string"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([1] as str) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            1
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "string_type",
+                  "msg": "Input should be a valid string"
+                }
+              ],
+              "original": "[1]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(false, 123, '4.56', {'foo':'bar'}, ['foo'] as str) => ['false', '123', '4.56', null, null] error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": false
+        },
+        {
+          "col": 123
+        },
+        {
+          "col": 4.56
+        },
+        {
+          "col": {
+            "foo": "bar"
+          }
+        },
+        {
+          "col": [
+            "foo"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "false",
+          "errors": {}
+        },
+        {
+          "col": "123",
+          "errors": {}
+        },
+        {
+          "col": "4.56",
+          "errors": {}
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "string_type",
+                  "msg": "Input should be a valid string"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "string_type",
+                  "msg": "Input should be a valid string"
+                }
+              ],
+              "original": "[\"foo\"]"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

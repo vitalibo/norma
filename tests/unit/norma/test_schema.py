@@ -93,6 +93,11 @@ def generate_test(value):
         }[engine](case)
 
     def test_func_pandas(case):
+        def json_serde(x):
+            if pd.isna(x):
+                return None
+            return str(x)
+
         if 'schema' in case['given']:
             df = pd.DataFrame({
                 k: pd.Series([v[k] for v in case['given']['data']], dtype=t)
@@ -113,7 +118,7 @@ def generate_test(value):
             )
             actual = schema.validate(df)
 
-            assert actual.to_dict(orient='records') == case['then']['data']
+            assert json.loads(json.dumps(actual.to_dict(orient='records'), default=json_serde)) == case['then']['data']
             return
 
         assert e.type.__name__ == case['then']['raises']['type']

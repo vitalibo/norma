@@ -1,0 +1,263 @@
+[
+  {
+    "description": "cast(null as date) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "object"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('2025-01-23' as date) => date('2025-01-23')",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-01-23"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23 00:00:00",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('2025-01-23' as date) => date('2025-01-23')",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-01-23"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('2025-01-23T12:34:56' as date) => date('2025-01-23')",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-01-23T12:34:56"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23 00:00:00",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('2025-01-23T12:34:56' as date) => date('2025-01-23')",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-01-23T12:34:56"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('foo' as date) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "date_parsing",
+                  "msg": "Input should be a valid date, unable to parse string as a date"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(true as date) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "date_type",
+                  "msg": "Input should be a valid date"
+                }
+              ],
+              "original": "true"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

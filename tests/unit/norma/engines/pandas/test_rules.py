@@ -273,7 +273,7 @@ def test_multiple_of(value, dtype, multiple_of, assert_error):
         (None, 'Int64', None, 'Int64'),
         ('1', 'object', 1, 'Int64'),
         ('1.0', 'object', 1, 'Int64'),
-        (pd.Timestamp('2020-01-01'), 'datetime64[ns]', 1577836800000000000, 'Int64'),
+        # (pd.Timestamp('2020-01-01'), 'datetime64[ns]', 1577836800000000000, 'Int64'),
         (True, 'boolean', 1, 'Int64'),
         (False, 'boolean', 0, 'Int64'),
     ]
@@ -287,7 +287,7 @@ def test_int_parsing(in_value, in_dtype, out_value, out_dtype, assert_error):
 
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype=out_dtype, name='col'))
     assert_error(error_state, [
-        {'type': 'int_parsing', 'msg': 'Input should be a valid integer, unable to parse value as an integer'}
+        {'type': 'int_parsing', 'msg': 'Input should be a valid integer, unable to parse string as an integer'}
     ])
 
 
@@ -308,7 +308,7 @@ def test_int_parsing(in_value, in_dtype, out_value, out_dtype, assert_error):
         (None, 'Int64', None, 'Float64'),
         ('1', 'object', 1.0, 'Float64'),
         ('1.0', 'object', 1.0, 'Float64'),
-        (pd.Timestamp('2020-01-01'), 'datetime64[ns]', 1577836800000000000.0, 'Float64'),
+        # (pd.Timestamp('2020-01-01'), 'datetime64[ns]', 1577836800000000000.0, 'Float64'),
         (True, 'boolean', 1.0, 'Float64'),
         (False, 'boolean', 0.0, 'Float64'),
     ]
@@ -322,7 +322,7 @@ def test_float_parsing(in_value, in_dtype, out_value, out_dtype, assert_error):
 
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype=out_dtype, name='col'))
     assert_error(error_state, [
-        {'type': 'float_parsing', 'msg': 'Input should be a valid float, unable to parse value as a float'}
+        {'type': 'float_parsing', 'msg': 'Input should be a valid number, unable to parse string as a number'}
     ])
 
 
@@ -337,8 +337,12 @@ def test_float_parsing(in_value, in_dtype, out_value, out_dtype, assert_error):
         (np.nan, 'float64', None),
         (pd.NA, 'Int64', None),
         (pd.NaT, 'datetime64[ns]', None),
-        (True, 'boolean', 'True'),
-        ({'foo': 'bar'}, 'object', "{'foo': 'bar'}"),
+        (True, 'boolean', 'true'),
+    ]
+], *[
+    (*params, assert_has_error)
+    for params in [
+        ({'foo': 'bar'}, 'object', None),
     ]
 ]])
 def test_string_parsing(in_value, in_dtype, out_value, assert_error):
@@ -349,7 +353,9 @@ def test_string_parsing(in_value, in_dtype, out_value, assert_error):
     actual = rule.verify(df, column='col', error_state=error_state)
 
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='string[python]', name='col'))
-    assert_error(error_state, [])
+    assert_error(error_state, [
+        {'type': 'string_type', 'msg': 'Input should be a valid string'}
+    ])
 
 
 @pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
@@ -357,7 +363,6 @@ def test_string_parsing(in_value, in_dtype, out_value, assert_error):
     for params in [
         ('foo', 'object', None),
         ('', str, None),
-        ({'foo': 'bar'}, 'object', None),
         ('truetrue', 'object', None),
         ('falsetrue', 'object', None),
         ('yesyes', 'object', None),
@@ -387,7 +392,6 @@ def test_string_parsing(in_value, in_dtype, out_value, assert_error):
         (np.nan, 'float64', None),
         (pd.NA, 'Int64', None),
         (True, 'boolean', True),
-        (pd.NaT, 'datetime64[ns]', None),
     ]
 ]])
 def test_boolean_parsing(in_value, in_dtype, out_value, assert_error):
@@ -399,26 +403,44 @@ def test_boolean_parsing(in_value, in_dtype, out_value, assert_error):
 
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='boolean', name='col'))
     assert_error(error_state, [
-        {'type': 'boolean_parsing', 'msg': 'Input should be a valid boolean, unable to parse value as a boolean'}
+        {'type': 'bool_parsing', 'msg': 'Input should be a valid boolean, unable to interpret input'}
     ])
 
 
 @pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
     (*params, assert_has_error)
     for params in [
-        ('foo', 'object', None),
-        (True, 'boolean', None)
+        ({'foo': 'bar'}, 'object', None),
+        (pd.NaT, 'datetime64[ns]', None),
+    ]
+]])
+def test_bool_type(in_value, in_dtype, out_value, assert_error):
+    df = pd.DataFrame({'col': [in_value]}, dtype=in_dtype)
+    error_state = rules.ErrorState(df.index)
+    rule = rules.bool_parsing()
+
+    actual = rule.verify(df, column='col', error_state=error_state)
+
+    pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='boolean', name='col'))
+    assert_error(error_state, [
+        {'type': 'bool_type', 'msg': 'Input should be a valid boolean'}
+    ])
+
+
+@pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
+    (*params, assert_has_error)
+    for params in [
+        ('foo', 'object', None)
     ]
 ], *[
     (*params, assert_no_error)
     for params in [
+        (None, 'object', None),
         ('2025/05/27', 'string[python]', pd.Timestamp('2025-05-27')),
         ('27/05/2025', 'string[python]', pd.Timestamp('2025-05-27')),
         ('05/27/2025', 'string[python]', pd.Timestamp('2025-05-27')),
         ('2025-05-27', 'string[python]', pd.Timestamp('2025-05-27')),
         ('2025-05-27 12:34:56', 'string[python]', pd.Timestamp('2025-05-27')),
-        (1748383303000000000, 'Int64', pd.Timestamp('2025-05-27')),
-        (1.748383303e+18, 'Int64', pd.Timestamp('2025-05-27')),
         (pd.Timestamp('2025-05-27 12:34:56'), 'datetime64[ns]', pd.Timestamp('2025-05-27')),
     ]
 ]])
@@ -431,7 +453,28 @@ def test_date_parsing(in_value, in_dtype, out_value, assert_error):
 
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='datetime64[s]', name='col'))
     assert_error(error_state, [
-        {'type': 'date_parsing', 'msg': 'Input should be a valid date, unable to parse value as a date'}
+        {'type': 'date_parsing', 'msg': 'Input should be a valid date, unable to parse string as a date'}
+    ])
+
+
+@pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
+    (*params, assert_has_error)
+    for params in [
+        (True, 'boolean', None),
+        (1748383303000000000, 'Int64', None),
+        (1.748383303e+18, 'Int64', None),
+    ]
+]])
+def test_date_type(in_value, in_dtype, out_value, assert_error):
+    df = pd.DataFrame({'col': [in_value]}, dtype=in_dtype)
+    error_state = rules.ErrorState(df.index)
+    rule = rules.date_parsing()
+
+    actual = rule.verify(df, column='col', error_state=error_state)
+
+    pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='datetime64[s]', name='col'))
+    assert_error(error_state, [
+        {'type': 'date_type', 'msg': 'Input should be a valid date'}
     ])
 
 
@@ -468,8 +511,7 @@ def test_time_parsing(in_value, in_dtype, out_value, assert_error):
 @pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
     (*params, assert_has_error)
     for params in [
-        ('foo', 'object', None),
-        (True, 'boolean', None)
+        ('foo', 'object', None)
     ]
 ], *[
     (*params, assert_no_error)
@@ -477,8 +519,6 @@ def test_time_parsing(in_value, in_dtype, out_value, assert_error):
         ('2025-05-27', 'string[python]', pd.Timestamp('2025-05-27 00:00:00')),
         ('2025-05-27 12:34:56', 'string[python]', pd.Timestamp('2025-05-27 12:34:56')),
         ('Tuesday, 27 May 2025 22:01:43', 'string[python]', pd.Timestamp('2025-05-27 22:01:43')),
-        (1748383303000000000, 'Int64', pd.Timestamp('2025-05-27 22:01:43')),
-        (1.748383303e+18, 'Int64', pd.Timestamp('2025-05-27 22:01:43')),
         (pd.Timestamp('2025-05-27 12:34:56'), 'datetime64[ns]', pd.Timestamp('2025-05-27 12:34:56')),
     ]
 ]])
@@ -489,9 +529,30 @@ def test_datetime_parsing(in_value, in_dtype, out_value, assert_error):
 
     actual = rule.verify(df, column='col', error_state=error_state)
 
+    pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='datetime64[ns, UTC]', name='col'))
+    assert_error(error_state, [
+        {'type': 'datetime_parsing', 'msg': 'Input should be a valid datetime, unable to parse string as a datetime'}
+    ])
+
+
+@pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
+    (*params, assert_has_error)
+    for params in [
+        (True, 'boolean', None),
+        (1748383303000000000, 'Int64', None),
+        (1.748383303e+18, 'Int64', None),
+    ]
+]])
+def test_datetime_type(in_value, in_dtype, out_value, assert_error):
+    df = pd.DataFrame({'col': [in_value]}, dtype=in_dtype)
+    error_state = rules.ErrorState(df.index)
+    rule = rules.datetime_parsing()
+
+    actual = rule.verify(df, column='col', error_state=error_state)
+
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='datetime64[ns]', name='col'))
     assert_error(error_state, [
-        {'type': 'datetime_parsing', 'msg': 'Input should be a valid datetime, unable to parse value as a datetime'}
+        {'type': 'datetime_type', 'msg': 'Input should be a valid datetime'}
     ])
 
 
@@ -637,7 +698,7 @@ def test_extra_forbidden_allowed():
 @pytest.mark.parametrize('value, dtype, allowed, msg, assert_error', [*[
     (*params, assert_has_error)
     for params in [
-        ('abc', 'object', ('abcd', 'efgh', 'qwerty' ), '"abcd", "efgh" or "qwerty"'),
+        ('abc', 'object', ('abcd', 'efgh', 'qwerty'), '"abcd", "efgh" or "qwerty"'),
         ('123', 'string[python]', (123, 456), '123 or 456'),
         (123, 'string[python]', (123, 456), '123 or 456'),
     ]

@@ -1,0 +1,963 @@
+[
+  {
+    "description": "cast(null as boolean) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(true as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(false as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": false
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('true' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "true"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('True' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "True"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('t' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "t"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('yes' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "yes"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('y' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "y"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('on' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "on"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('false' as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "false"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('f' as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "f"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('no' as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "no"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('n' as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "n"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('off' as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "off"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('0' as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "0"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(1 as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123 as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(0 as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 0
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(1.23 as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1.23
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(0.123 as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 0.123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(0.0 as boolean) => false",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 0.0
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": false,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('foo' as boolean) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "bool_parsing",
+                  "msg": "Input should be a valid boolean, unable to interpret input"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(' on  ' as boolean) => true",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": " on  "
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({'foo': 'bar'} as boolean) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "bool_type",
+                  "msg": "Input should be a valid boolean"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([true] as boolean) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            true
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "bool_type",
+                  "msg": "Input should be a valid boolean"
+                }
+              ],
+              "original": "[true]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(true, '1', 'f', {'foo':'bar'}, 'foo' as boolean) => [true, true, false, null, null] error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        },
+        {
+          "col": "1"
+        },
+        {
+          "col": "f"
+        },
+        {
+          "col": {
+            "foo": "bar"
+          }
+        },
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors": {}
+        },
+        {
+          "col": true,
+          "errors": {}
+        },
+        {
+          "col": false,
+          "errors": {}
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "bool_type",
+                  "msg": "Input should be a valid boolean"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "bool_parsing",
+                  "msg": "Input should be a valid boolean, unable to interpret input"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  }
+]

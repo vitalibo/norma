@@ -3,14 +3,24 @@ from typing import Any, Callable, Dict, Iterable
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
-from pyspark.sql.types import NumericType, StringType
+from pyspark.sql.types import BooleanType, DateType, FloatType, IntegerType, NumericType, StringType, TimestampType
 
 from norma.errors import (
+    BOOL_PARSING,
+    BOOL_TYPE,
+    DATE_PARSING,
+    DATE_TYPE,
+    DATETIME_PARSING,
+    DATETIME_TYPE,
     ENUM,
     EQUAL_TO,
     EXTRA_FORBIDDEN,
+    FLOAT_PARSING,
+    FLOAT_TYPE,
     GREATER_THAN,
     GREATER_THAN_EQUAL,
+    INT_PARSING,
+    INT_TYPE,
     LESS_THAN,
     LESS_THAN_EQUAL,
     MISSING,
@@ -19,7 +29,8 @@ from norma.errors import (
     NOT_EQUAL_TO,
     STRING_PATTERN_MISMATCH,
     STRING_TOO_LONG,
-    STRING_TOO_SHORT
+    STRING_TOO_SHORT,
+    STRING_TYPE
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
@@ -189,18 +200,19 @@ def multiple_of(multiple: Any) -> Rule:
 def int_parsing() -> Rule:
     class _IntParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            if isinstance(df.schema[column].dataType, IntegerType):
+                return df
+
+            df = df.withColumn(f'{column}_bak', fn.col(column))
+
+            if not isinstance(df.schema[column].dataType, (StringType, NumericType, BooleanType)):
+                return df.withColumn(*error_state.add_errors(fn.lit(True), column, details=INT_TYPE))
+
             return (
-                df
-                .withColumn(f'{column}_bak', fn.col(column))
-                .withColumn(column, fn.col(column).cast('int'))
+                df.withColumn(column, fn.col(column).cast('int'))
                 .withColumn(
                     *error_state.add_errors(
-                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(),
-                        column,
-                        details={
-                            'type': 'int_parsing',
-                            'msg': 'Input should be a valid integer, unable to parse value as an integer'
-                        }
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(), column, details=INT_PARSING
                     )
                 )
             )
@@ -211,18 +223,20 @@ def int_parsing() -> Rule:
 def float_parsing():
     class _FloatParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            if isinstance(df.schema[column].dataType, FloatType):
+                return df
+
+            df = df.withColumn(f'{column}_bak', fn.col(column))
+
+            if not isinstance(df.schema[column].dataType, (StringType, NumericType, BooleanType)):
+                return df.withColumn(*error_state.add_errors(fn.lit(True), column, details=FLOAT_TYPE))
+
             return (
                 df
-                .withColumn(f'{column}_bak', fn.col(column))
                 .withColumn(column, fn.col(column).cast('float'))
                 .withColumn(
                     *error_state.add_errors(
-                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(),
-                        column,
-                        details={
-                            'type': 'float_parsing',
-                            'msg': 'Input should be a valid float, unable to parse value as a float'
-                        }
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(), column, details=FLOAT_PARSING
                     )
                 )
             )
@@ -233,8 +247,15 @@ def float_parsing():
 def str_parsing() -> Rule:
     class _StrParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            if isinstance(df.schema[column].dataType, StringType):
+                return df
+
+            df = df.withColumn(f'{column}_bak', fn.col(column))
+
+            if not isinstance(df.schema[column].dataType, (NumericType, BooleanType, DateType, TimestampType)):
+                return df.withColumn(*error_state.add_errors(fn.lit(True), column, details=STRING_TYPE))
+
             return df \
-                .withColumn(f'{column}_bak', fn.col(column)) \
                 .withColumn(column, fn.col(column).cast('string'))
 
     return _StrParsingRule()
@@ -243,18 +264,26 @@ def str_parsing() -> Rule:
 def bool_parsing() -> Rule:
     class _BoolParsingRule(Rule):
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            data_type = df.schema[column].dataType
+            if isinstance(data_type, BooleanType):
+                return df
+
+            df = df.withColumn(f'{column}_bak', fn.col(column))
+            if not isinstance(data_type, (NumericType, StringType)):
+                return df.withColumn(*error_state.add_errors(fn.lit(True), column, details=BOOL_TYPE))
+
+            if isinstance(data_type, StringType):
+                col = fn.lower(fn.trim(fn.col(column)))
+                df = df.withColumn(
+                    column, fn.when(col.isin(['on', 'off']), col == 'on').otherwise(fn.col(column).cast('boolean')))
+            else:
+                df = df.withColumn(column, fn.col(column).cast('boolean'))
+
             return (
                 df
-                .withColumn(f'{column}_bak', fn.col(column))
-                .withColumn(column, fn.col(column).cast('boolean'))
                 .withColumn(
                     *error_state.add_errors(
-                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(),
-                        column,
-                        details={
-                            'type': 'boolean_parsing',
-                            'msg': 'Input should be a valid boolean, unable to parse value as a boolean'
-                        }
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(), column, details=BOOL_PARSING
                     )
                 )
             )
@@ -263,11 +292,51 @@ def bool_parsing() -> Rule:
 
 
 def date_parsing() -> Rule:
-    raise NotImplementedError()
+    class _DateParsingRule(Rule):
+        def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            if isinstance(df.schema[column].dataType, DateType):
+                return df
+
+            df = df.withColumn(f'{column}_bak', fn.col(column))
+
+            if not isinstance(df.schema[column].dataType, (StringType, TimestampType)):
+                return df.withColumn(*error_state.add_errors(fn.lit(True), column, details=DATE_TYPE))
+
+            return (
+                df
+                .withColumn(column, fn.to_date(fn.col(column)))
+                .withColumn(
+                    *error_state.add_errors(
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(), column, details=DATE_PARSING
+                    )
+                )
+            )
+
+    return _DateParsingRule()
 
 
 def datetime_parsing() -> Rule:
-    raise NotImplementedError()
+    class _DatetimeParsingRule(Rule):
+        def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+            if isinstance(df.schema[column].dataType, TimestampType):
+                return df
+
+            df = df.withColumn(f'{column}_bak', fn.col(column))
+
+            if not isinstance(df.schema[column].dataType, (StringType, DateType)):
+                return df.withColumn(*error_state.add_errors(fn.lit(True), column, details=DATETIME_TYPE))
+
+            return (
+                df
+                .withColumn(column, fn.to_timestamp(fn.col(column)))
+                .withColumn(
+                    *error_state.add_errors(
+                        fn.col(column).isNull() & fn.col(f'{column}_bak').isNotNull(), column, details=DATETIME_PARSING
+                    )
+                )
+            )
+
+    return _DatetimeParsingRule()
 
 
 def min_length(value: int) -> Rule:
@@ -289,7 +358,7 @@ def min_length(value: int) -> Rule:
 
     return _MinLengthRule(
         lambda col: fn.length(fn.col(col)) < value,
-        **STRING_TOO_SHORT.format(min_length=value, _expected_plural_='s' if value > 1 else '')
+        **STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else '')
     )
 
 
@@ -312,7 +381,7 @@ def max_length(value: int) -> Rule:
 
     return _MaxLengthRule(
         lambda col: fn.length(fn.col(col)) > value,
-        **STRING_TOO_LONG.format(max_length=value, _expected_plural_='s' if value > 1 else '')
+        **STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else '')
     )
 
 

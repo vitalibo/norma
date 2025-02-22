@@ -61,7 +61,7 @@ def test_schema_validate():
                     'details': [
                         {
                             'type': 'int_parsing',
-                            'msg': 'Input should be a valid integer, unable to parse value as an integer'
+                            'msg': 'Input should be a valid integer, unable to parse string as an integer'
                         }
                     ],
                     'original': '"unknown"'

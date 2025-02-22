@@ -1,0 +1,444 @@
+[
+  {
+    "description": "cast(null as int) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        },
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123 as int) => 123",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123.45 as int) => 123",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123.45
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('123' as int) => 123",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "123"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('123.45' as int) => 123",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "123.45"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('foo' as int) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "int_parsing",
+                  "msg": "Input should be a valid integer, unable to parse string as an integer"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(true as int) => 1",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(false as int) => 0",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": false
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 0,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({'foo':'bar'} as int) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "int_type",
+                  "msg": "Input should be a valid integer"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([1] as int) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            1
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "int_type",
+                  "msg": "Input should be a valid integer"
+                }
+              ],
+              "original": "[1]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123, '456', {'foo':'bar'}, 'foo' as int) => [123, 456, null, null] error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        },
+        {
+          "col": "456"
+        },
+        {
+          "col": {
+            "foo": "bar"
+          }
+        },
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123,
+          "errors": {}
+        },
+        {
+          "col": 456,
+          "errors": {}
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "int_type",
+                  "msg": "Input should be a valid integer"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "int_parsing",
+                  "msg": "Input should be a valid integer, unable to parse string as an integer"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  }
+]

@@ -62,7 +62,7 @@ def test_schema_validate(spark_session):
                 'col1': {
                     'details': [
                         {
-                            'msg': 'Input should be a valid integer, unable to parse value as an integer',
+                            'msg': 'Input should be a valid integer, unable to parse string as an integer',
                             'type': 'int_parsing'
                         }
                     ],
