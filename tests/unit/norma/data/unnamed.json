@@ -1,6 +1,6 @@
 [
   {
-    "description": "users",
+    "description": "near-real data of people, with some invalid entries",
     "engines": [
       "pandas",
       "pyspark"

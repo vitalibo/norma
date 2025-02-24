@@ -19,7 +19,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "void"
             }
           ],
           "type": "struct"

@@ -201,7 +201,7 @@
               },
               {
                 "name": "col",
-                "type": "string"
+                "type": "void"
               }
             ]
           }
@@ -6320,9 +6320,7 @@
           "data": [
             {
               "col": "foo",
-              "errors_col": [
-                null
-              ]
+              "errors_col": []
             }
           ],
           "schema": {
@@ -6335,20 +6333,8 @@
                 "name": "errors_col",
                 "type": {
                   "type": "array",
-                  "elementType": {
-                    "fields": [
-                      {
-                        "name": "type",
-                        "type": "string"
-                      },
-                      {
-                        "name": "msg",
-                        "type": "string"
-                      }
-                    ],
-                    "type": "struct"
-                  },
-                  "containsNull": true
+                  "elementType": "void",
+                  "containsNull": false
                 }
               }
             ]

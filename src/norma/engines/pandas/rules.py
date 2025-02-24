@@ -1,37 +1,11 @@
 import inspect
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
 import pandas as pd
 
-from norma.errors import (
-    BOOL_PARSING,
-    BOOL_TYPE,
-    DATE_PARSING,
-    DATE_TYPE,
-    DATETIME_PARSING,
-    DATETIME_TYPE,
-    ENUM,
-    EQUAL_TO,
-    EXTRA_FORBIDDEN,
-    FLOAT_PARSING,
-    FLOAT_TYPE,
-    GREATER_THAN,
-    GREATER_THAN_EQUAL,
-    INT_PARSING,
-    INT_TYPE,
-    LESS_THAN,
-    LESS_THAN_EQUAL,
-    MISSING,
-    MULTIPLE_OF,
-    NOT_ENUM,
-    NOT_EQUAL_TO,
-    STRING_PATTERN_MISMATCH,
-    STRING_TOO_LONG,
-    STRING_TOO_SHORT,
-    STRING_TYPE
-)
+from norma import errors
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
@@ -45,7 +19,7 @@ class ErrorState(IErrorState):
         self.masks = defaultdict(lambda: pd.Series(False, index=index))
         self.errors = {}
 
-    def add_errors(self, boolmask: pd.Series, column: str, details: Dict[str, str]) -> None:
+    def add_errors(self, boolmask, column, **kwargs):
         """
         Add errors to the error state.
         """
@@ -55,7 +29,7 @@ class ErrorState(IErrorState):
                 self.errors[index] = {column: {'details': []}}
             elif column not in self.errors[index]:
                 self.errors[index][column] = {'details': []}
-            self.errors[index][column]['details'].append(details)
+            self.errors[index][column]['details'].append(dict(kwargs.get('details', {}) or kwargs))
         self.masks[column] = self.masks[column] | boolmask.astype(bool)
 
 
@@ -64,457 +38,186 @@ class MaskRule(Rule):
     The most basic rule type, which takes a boolean mask as input and applies it to the DataFrame to identify errors.
     """
 
-    def __init__(self, boolmask_func: Callable, type: str, msg: str) -> None:  # noqa pylint: disable=redefined-builtin
-        self.boolmask_func = boolmask_func
-        self.type = type
-        self.msg = msg
+    def __init__(self, func, **kwargs):
+        self.func = func
+        self.kwargs = kwargs
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        signature = inspect.signature(self.boolmask_func)
-        params = {}
-        if 'column' in signature.parameters or 'col' in signature.parameters:
-            params['col' if 'col' in signature.parameters else 'column'] = column
+        def inspect_params(f):
+            signature = inspect.signature(f)
+            params = {}
+            if set(signature.parameters) & {'col', 'column'}:
+                params['col' if 'col' in signature.parameters else 'column'] = column
+            if 'error_state' in signature.parameters:
+                params['error_state'] = error_state
+            return params
 
-        boolmask = self.boolmask_func(df, **params)
-        error_state.add_errors(boolmask, column, {'type': self.type, 'msg': self.msg})
+        if 'pre_func' in self.kwargs:
+            pre_func = self.kwargs['pre_func']
+            df = pre_func(df, **inspect_params(pre_func))
+
+        boolmask = self.func(df, **inspect_params(self.func))
+        error_state.add_errors(boolmask, column, details=self.kwargs.get('details', {}) or self.kwargs)
         return df[column]
 
 
-class NumberRule(Rule):
-    """
-    A rule that casts a column to a numeric type.
-    In case of casting errors, the rule will add the appropriate error message.
-    """
-
-    def __init__(self, dtype: str, type: str, msg: str) -> None:  # noqa pylint: disable=redefined-builtin
-        self.dtype = dtype
-        self.type = type
-        self.msg = msg
-
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        if df[column].dtype == self.dtype:
-            return df[column]
-
-        non_parsing_types_series = pd.Series(False, index=df.index)
-        if not (pd.api.types.is_string_dtype(df[column]) or pd.api.types.is_numeric_dtype(df[column])):
-            if not pd.api.types.is_object_dtype(df[column]):
-                error_state.add_errors(pd.Series(True, index=df.index), column,
-                                       details=dict(INT_TYPE if self.dtype == 'Int64' else FLOAT_TYPE))
-                return pd.Series(dtype=self.dtype, name=column, index=df.index)
-
-            non_parsing_types_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
-            error_state.add_errors(non_parsing_types_series, column,
-                                   details=dict(INT_TYPE if self.dtype == 'Int64' else FLOAT_TYPE))
-
-        numeric_series = pd.to_numeric(df[column].convert_dtypes(), errors='coerce').astype(self.dtype)
-        boolmask = numeric_series.isna() & df[column].notna() & ~non_parsing_types_series
-
-        error_state.add_errors(boolmask, column, {'type': self.type, 'msg': self.msg})
-        return numeric_series
-
-
-class BooleanRule(Rule):
-    """
-    A rule that casts a column to a boolean type.
-    In case of casting errors, the rule will add the appropriate error message.
-    """
-
-    def __init__(self, type: str, msg: str) -> None:  # noqa pylint: disable=redefined-builtin
-        self.type = type
-        self.msg = msg
-
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        def replace(regex, value):
-            return pd.to_numeric(series.str.replace(regex, value, case=False, regex=True), errors='coerce')
-
-        if pd.api.types.is_bool_dtype(df[column]):
-            return df[column].astype('boolean')
-
-        non_parsing_types_series = pd.Series(False, index=df.index)
-        if not (pd.api.types.is_string_dtype(df[column]) or pd.api.types.is_numeric_dtype(df[column])):
-            if not pd.api.types.is_object_dtype(df[column]):
-                error_state.add_errors(pd.Series(True, index=df.index), column, details=dict(BOOL_TYPE))
-                return pd.Series(dtype='boolean', name=column, index=df.index)
-
-            non_parsing_types_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
-            error_state.add_errors(non_parsing_types_series, column, details=dict(BOOL_TYPE))
-
-        series = df[column].astype('string')
-        true_series = replace(r'^\s*(true|t|yes|y|on)\s*$', '1')
-        false_series = replace(r'^\s*(false|f|no|n|off)\s*$', '0')
-        bool_series = true_series.combine_first(false_series).astype('boolean')
-        boolmask = bool_series.isna() & df[column].notna() & ~non_parsing_types_series
-
-        error_state.add_errors(boolmask, column, {'type': self.type, 'msg': self.msg})
-        return bool_series
-
-
-class DateRule(Rule):
-    """
-    A rule that casts a column to a datetime type.
-    """
-
-    # noqa pylint: disable=redefined-builtin
-    def __init__(self, dtype: Optional[str], unit: Optional[str], type: str, msg: str) -> None:
-        self.dtype = dtype
-        self.unit = unit
-        self.type = type
-        self.msg = msg
-
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        if df[column].dtype == self.dtype:
-            return df[column]
-
-        non_parsing_types_series = pd.Series(False, index=df.index)
-        if not (pd.api.types.is_string_dtype(df[column]) or pd.api.types.is_datetime64_any_dtype(df[column])):
-            if not pd.api.types.is_object_dtype(df[column]):
-                error_state.add_errors(pd.Series(True, index=df.index), column,
-                                       dict(DATE_TYPE if self.dtype == 'datetime64[D]' else DATETIME_TYPE))
-                return pd.Series(dtype=self.dtype or 'datetime64[ns]', name=column, index=df.index)
-
-            non_parsing_types_series = df[column].apply(lambda x: not isinstance(x, str))
-
-        datetime_series = pd.to_datetime(df[column], unit=self.unit, errors='coerce', utc=True)
-        if self.dtype is not None:
-            datetime_series = pd.Series(datetime_series.values.astype(self.dtype), name=column)
-        boolmask = datetime_series.isna() & df[column].notna() & ~non_parsing_types_series
-
-        error_state.add_errors(boolmask, column, {'type': self.type, 'msg': self.msg})
-        return datetime_series
-
-
-class DatetimeRule(Rule):
-    """
-    A rule that casts a column to a datetime type.
-    """
-
-    # noqa pylint: disable=redefined-builtin
-    def __init__(self, dtype: Optional[str], unit: Optional[str], type: str, msg: str) -> None:
-        self.dtype = dtype
-        self.unit = unit
-        self.type = type
-        self.msg = msg
-
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        datetime_series = pd.to_datetime(df[column], unit=self.unit, errors='coerce', utc=True)
-        if self.dtype is not None:
-            datetime_series = pd.Series(datetime_series.values.astype(self.dtype), name=column)
-        boolmask = datetime_series.isna() & df[column].notna()
-
-        error_state.add_errors(boolmask, column, {'type': self.type, 'msg': self.msg})
-        return datetime_series
+def rule(func, **kwargs) -> MaskRule:
+    return MaskRule(func, **kwargs)
 
 
 def required() -> Rule:
-    """
-    Checks if the input is missing.
-    """
+    @Rule.new
+    def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        if column not in df.columns:
+            error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.MISSING)
+            return pd.Series(dtype='string', index=df.index)
 
-    class _RequiredRule(Rule):
+        error_state.add_errors(df[column].isna(), column, details=errors.MISSING)
+        return df[column]
 
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-            if column not in df.columns:
-                error_state.add_errors(pd.Series(True, index=df.index), column, dict(MISSING))
-                return pd.Series(dtype='string', index=df.index)
-
-            error_state.add_errors(df[column].isna(), column, dict(MISSING))
-            return df[column]
-
-    return _RequiredRule()
+    return verify
 
 
 def equal_to(eq: Any) -> Rule:
-    """
-    Checks if the input is equal to a given value.
-    """
-
     if eq is None:
         raise ValueError('comparison value must not be None')
 
-    return MaskRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()] != eq,
-        **EQUAL_TO.format(eq=eq)
+        details=errors.EQUAL_TO.format(eq=eq)
     )
 
 
 def not_equal_to(ne: Any) -> Rule:
-    """
-    Checks if the input is not equal to a given value.
-    """
-
     if ne is None:
         raise ValueError('comparison value must not be None')
 
-    return MaskRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()] == ne,
-        **NOT_EQUAL_TO.format(ne=ne)
+        details=errors.NOT_EQUAL_TO.format(ne=ne)
     )
 
 
 def greater_than(gt: Any) -> Rule:
-    """
-    Checks if the input is greater than a given value.
-    """
-
     if gt is None:
         raise ValueError('comparison value must not be None')
 
-    return MaskRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()] <= gt,
-        **GREATER_THAN.format(gt=gt)
+        details=errors.GREATER_THAN.format(gt=gt)
     )
 
 
 def greater_than_equal(ge: Any) -> Rule:
-    """
-    Checks if the input is greater than or equal to a given value.
-    """
-
     if ge is None:
         raise ValueError('comparison value must not be None')
 
-    return MaskRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()] < ge,
-        **GREATER_THAN_EQUAL.format(ge=ge)
+        details=errors.GREATER_THAN_EQUAL.format(ge=ge)
     )
 
 
 def less_than(lt: Any) -> Rule:
-    """
-    Checks if the input is less than a given value.
-    """
-
     if lt is None:
         raise ValueError('comparison value must not be None')
 
-    return MaskRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()] >= lt,
-        **LESS_THAN.format(lt=lt)
+        details=errors.LESS_THAN.format(lt=lt)
     )
 
 
 def less_than_equal(le: Any) -> Rule:
-    """
-    Checks if the input is less than or equal to a given value.
-    """
-
     if le is None:
         raise ValueError('comparison value must not be None')
 
-    return MaskRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()] > le,
-        **LESS_THAN_EQUAL.format(le=le)
+        details=errors.LESS_THAN_EQUAL.format(le=le)
     )
 
 
 def multiple_of(multiple: Union[int, float]) -> Rule:
-    """
-    Checks if the input is a multiple of a given value.
-    """
     if multiple is None:
         raise ValueError('multiple_of must not be None')
     if not isinstance(multiple, (int, float)):
         raise ValueError('multiple_of must be an integer or a float')
 
-    class _MultipleOfRule(MaskRule):
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-            if not pd.api.types.is_numeric_dtype(df[column]):
-                raise ValueError('multiple_of rule can only be applied to numeric columns')
+    def before(df, column):
+        if not pd.api.types.is_numeric_dtype(df[column]):
+            raise ValueError('multiple_of rule can only be applied to numeric columns')
+        return df
 
-            return super().verify(df, column, error_state)
-
-    return _MultipleOfRule(
+    return rule(
         # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
-        lambda df, col: df[col][df[col].notna()] % multiple != 0,
-        **MULTIPLE_OF.format(multiple_of=multiple))
+        lambda df, col: df[col][df[col].notna()] % multiple != 0.0,
+        details=errors.MULTIPLE_OF.format(multiple_of=multiple),
+        pre_func=before
+    )
 
 
 def int_parsing() -> Rule:
-    """
-    Checks if the input can be parsed as an integer.
-    The rule modifies the original column to cast it to an integer type.
-    """
-
-    return NumberRule(
-        dtype='Int64',
-        **INT_PARSING
-    )
+    return NumberTypeRule('Int64', errors.INT_TYPE, errors.INT_PARSING)
 
 
 def float_parsing() -> Rule:
-    """
-    Checks if the input can be parsed as a float.
-    The rule modifies the original column to cast it to a float type.
-    """
-
-    return NumberRule(
-        dtype='Float64',
-        **FLOAT_PARSING
-    )
+    return NumberTypeRule('Float64', errors.FLOAT_TYPE, errors.FLOAT_PARSING)
 
 
 def str_parsing() -> Rule:
-    """
-    The rule modifies the original column to cast it to a string type.
-    """
-
-    class _StringRule(Rule):
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-            if df[column].dtype == 'string[python]':
-                return df[column]
-
-            non_parsing_types_series = pd.Series(False, index=df.index)
-            bool_series = pd.Series(False, index=df.index)
-            if pd.api.types.is_object_dtype(df[column]):
-                non_parsing_types_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
-                error_state.add_errors(non_parsing_types_series, column, details=dict(STRING_TYPE))
-                bool_series = df[column].apply(lambda x: isinstance(x, bool))
-
-            if pd.api.types.is_bool_dtype(df[column]):
-                str_series = df[column].astype('string').str.lower()
-            else:
-                str_series = df[column].astype('string')
-                str_series[bool_series] = str_series[bool_series].str.lower()
-
-            str_series[non_parsing_types_series] = None
-            return str_series
-
-    return _StringRule()
+    return StringTypeRule()
 
 
 def bool_parsing() -> Rule:
-    """
-    Checks if the input can be parsed as a boolean.
-    The rule modifies the original column to cast it to a boolean type.
-    """
-
-    return BooleanRule(
-        **BOOL_PARSING
-    )
+    return BooleanTypeRule()
 
 
 def datetime_parsing() -> Rule:
-    """
-    Checks if the input can be parsed as a datetime.
-    """
-
-    return DateRule(
-        dtype=None, unit=None,
-        **DATETIME_PARSING
-    )
-
-
-def timestamp_parsing(unit: str = 's') -> Rule:
-    """
-    Checks if the input can be parsed as a datetime.
-    """
-
-    if unit not in ['s', 'ms', 'us', 'ns']:
-        raise ValueError('unit should be one of "s", "ms", "us", "ns"')
-
-    return DatetimeRule(
-        dtype=f'datetime64[{unit}]', unit=unit,
-        type='timestamp_parsing',
-        msg='Input should be a valid epoch timestamp, unable to parse value as a epoch timestamp'
-    )
+    return DatetimeTypeRule(None, errors.DATETIME_TYPE, errors.DATETIME_PARSING)
 
 
 def date_parsing() -> Rule:
-    """
-    Checks if the input can be parsed as a date.
-    """
-
-    return DateRule(
-        dtype='datetime64[D]', unit=None,
-        **DATE_PARSING
-    )
-
-
-def time_parsing() -> Rule:
-    """
-    Checks if the input can be parsed as a time.
-    """
-
-    class _TimeRule(Rule):
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-            time_s, time_ms, time_s_tz, time_ms_tz = (
-                pd.to_datetime(df[column], errors='coerce', format=fstr)
-                for fstr in ['%H:%M:%S', '%H:%M:%S.%f', '%H:%M:%S%z', '%H:%M:%S.%f%z']
-            )
-
-            time_tz = time_s_tz.combine_first(time_ms_tz)
-            has_series_tz = time_tz.notna().any()
-            strformat = '%H:%M:%S.%f+0000' if has_series_tz else '%H:%M:%S.%f'
-            time_series = time_s.combine_first(time_ms).dt.strftime(strformat).astype('string')
-
-            if has_series_tz:
-                time_tz = time_tz.map(lambda x: x.strftime('%H:%M:%S.%f%z') if pd.notnull(x) else None)
-                time_series = time_series.combine_first(time_tz.astype('string'))
-
-            boolmask = time_series.isna() & df[column].notna()
-            error_state.add_errors(
-                boolmask, column, {
-                    'type': 'time_parsing',
-                    'msg': 'Input should be a valid time, unable to parse value as a time'
-                }
-            )
-
-            return time_series
-
-    return _TimeRule()
+    return DatetimeTypeRule('datetime64[D]', errors.DATE_TYPE, errors.DATE_PARSING)
 
 
 def min_length(value: int) -> Rule:
-    """
-    Checks if the input has a minimum length.
-    """
-
     if not isinstance(value, int):
         raise ValueError('min_length must be an integer')
     if value < 0:
         raise ValueError('min_length must be a non-negative integer')
 
-    class _MinLengthRule(MaskRule):
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-            if not pd.api.types.is_string_dtype(df[column]):
-                raise ValueError('min_length rule can only be applied to string columns')
+    def before(df, column):
+        if not pd.api.types.is_string_dtype(df[column]):
+            raise ValueError('min_length rule can only be applied to string columns')
+        return df
 
-            return super().verify(df, column, error_state)
-
-    return _MinLengthRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()].str.len() < value,
-        **STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else '')
+        details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
+        pre_func=before
     )
 
 
 def max_length(value: int) -> Rule:
-    """
-    Checks if the input has a maximum length.
-    """
-
     if not isinstance(value, int):
         raise ValueError('max_length must be an integer')
     if value < 0:
         raise ValueError('max_length must be a non-negative integer')
 
-    class _MaxLengthRule(MaskRule):
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-            if not pd.api.types.is_string_dtype(df[column]):
-                raise ValueError('max_length rule can only be applied to string columns')
+    def before(df, column):
+        if not pd.api.types.is_string_dtype(df[column]):
+            raise ValueError('max_length rule can only be applied to string columns')
+        return df
 
-            return super().verify(df, column, error_state)
-
-    return _MaxLengthRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()].str.len() > value,
-        **STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else '')
+        details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
+        pre_func=before
     )
 
 
 def pattern(regex: str) -> Rule:
-    """
-    Checks if the input matches a given regex pattern.
-    """
-
     if not isinstance(regex, str):
         raise ValueError('pattern must be a string')
     try:
@@ -522,65 +225,167 @@ def pattern(regex: str) -> Rule:
     except re.error as e:
         raise ValueError('pattern must be a valid regular expression') from e
 
-    class _PatternRule(MaskRule):
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-            if not pd.api.types.is_string_dtype(df[column]):
-                raise ValueError('pattern rule can only be applied to string columns')
+    def before(df, column):
+        if not pd.api.types.is_string_dtype(df[column]):
+            raise ValueError('pattern rule can only be applied to string columns')
+        return df
 
-            return super().verify(df, column, error_state)
-
-    return _PatternRule(
+    return rule(
         lambda df, col: ~df[col][df[col].notna()].str.match(regex, na=False),
-        **STRING_PATTERN_MISMATCH.format(pattern=regex)
+        details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
+        pre_func=before
     )
 
 
 def extra_forbidden(allowed: Iterable[str]) -> Rule:
-    """
-    A rule that forbids extra columns in the DataFrame.
-    """
+    @Rule.new
+    def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
+        if column in allowed:
+            return df[column]
 
-    class _ExtraRule(Rule):
+        error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.EXTRA_FORBIDDEN)
 
-        def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
-            if column in allowed:
-                return df[column]
+        del error_state.masks[column]
+        df.drop(column, axis=1, inplace=True)
+        return None
 
-            error_state.add_errors(
-                pd.Series(True, index=df.index), column,
-                dict(EXTRA_FORBIDDEN)
-            )
-
-            del error_state.masks[column]
-            df.drop(column, axis=1, inplace=True)
-            return None
-
-    return _ExtraRule()
+    return verify
 
 
 def isin(values: Iterable[Any]) -> Rule:
-    """
-    Checks if the input is in a given list of values.
-    """
-
     if not isinstance(values, (list, tuple, set)):
         raise ValueError('values must be a list, tuple, or set')
 
-    return MaskRule(
+    return rule(
         lambda df, col: ~df[col][df[col].notna()].isin(values),
-        **ENUM.format(expected=values)
+        details=errors.ENUM.format(expected=values)
     )
 
 
 def notin(values: Iterable[Any]) -> Rule:
-    """
-    Checks if the input is not in a given list of values.
-    """
-
     if not isinstance(values, (list, tuple, set)):
         raise ValueError('values must be a list, tuple, or set')
 
-    return MaskRule(
+    return rule(
         lambda df, col: df[col][df[col].notna()].isin(values),
-        **NOT_ENUM.format(unexpected=values)
+        details=errors.NOT_ENUM.format(unexpected=values)
     )
+
+
+class NumberTypeRule(Rule):
+    """
+    A rule that verifies the numeric type of the column.
+    """
+
+    def __init__(self, dtype, numeric_type, numeric_parsing):
+        self.dtype = dtype
+        self.numeric_type = numeric_type
+        self.numeric_parsing = numeric_parsing
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        if df[column].dtype == self.dtype:
+            return df[column]
+
+        non_parsing_type_series = pd.Series(False, index=df.index)
+        if not (pd.api.types.is_string_dtype(df[column]) or pd.api.types.is_numeric_dtype(df[column])):
+            if not pd.api.types.is_object_dtype(df[column]):
+                error_state.add_errors(pd.Series(True, index=df.index), column, details=self.numeric_type)
+                return pd.Series(dtype=self.dtype, name=column, index=df.index)
+
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            error_state.add_errors(non_parsing_type_series, column, details=self.numeric_type)
+
+        numeric_series = pd.to_numeric(df[column].convert_dtypes(), errors='coerce').astype(self.dtype)
+
+        boolmask = numeric_series.isna() & df[column].notna() & ~non_parsing_type_series
+        error_state.add_errors(boolmask, column, details=self.numeric_parsing)
+        return numeric_series
+
+
+class BooleanTypeRule(Rule):
+    """
+    A rule that verifies the boolean type of the column.
+    """
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        if pd.api.types.is_bool_dtype(df[column]):
+            return df[column].astype('boolean')
+
+        non_parsing_type_series = pd.Series(False, index=df.index)
+        if not (pd.api.types.is_string_dtype(df[column]) or pd.api.types.is_numeric_dtype(df[column])):
+            if not pd.api.types.is_object_dtype(df[column]):
+                error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.BOOL_TYPE)
+                return pd.Series(dtype='boolean', name=column, index=df.index)
+
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            error_state.add_errors(non_parsing_type_series, column, details=errors.BOOL_TYPE)
+
+        def replace_str(regex, value):
+            return pd.to_numeric(series.str.replace(regex, value, case=False, regex=True), errors='coerce')
+
+        series = df[column].astype('string')
+        true_series = replace_str(r'^\s*(true|t|yes|y|on)\s*$', '1')
+        false_series = replace_str(r'^\s*(false|f|no|n|off)\s*$', '0')
+        bool_series = true_series.combine_first(false_series).astype('boolean')
+
+        boolmask = bool_series.isna() & df[column].notna() & ~non_parsing_type_series
+        error_state.add_errors(boolmask, column, details=errors.BOOL_PARSING)
+        return bool_series
+
+
+class StringTypeRule(Rule):
+    """
+    A rule that verifies the string type of the column.
+    """
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        if df[column].dtype == 'string[python]':
+            return df[column]
+
+        non_parsing_type_series = pd.Series(False, index=df.index)
+        bool_series = pd.Series(False, index=df.index)
+        if pd.api.types.is_object_dtype(df[column]):
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            error_state.add_errors(non_parsing_type_series, column, details=errors.STRING_TYPE)
+            bool_series = df[column].apply(lambda x: isinstance(x, bool))
+
+        if pd.api.types.is_bool_dtype(df[column]):
+            str_series = df[column].astype('string').str.lower()
+        else:
+            str_series = df[column].astype('string')
+            str_series[bool_series] = str_series[bool_series].str.lower()
+
+        str_series[non_parsing_type_series] = None
+        return str_series
+
+
+class DatetimeTypeRule(Rule):
+    """
+    A rule that verifies the datetime type of the column.
+    """
+
+    def __init__(self, dtype, dt_type, dt_parsing):
+        self.dtype = dtype
+        self.dt_type = dt_type
+        self.dt_parsing = dt_parsing
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        if df[column].dtype == self.dtype:
+            return df[column]
+
+        non_parsing_type_series = pd.Series(False, index=df.index)
+        if not (pd.api.types.is_string_dtype(df[column]) or pd.api.types.is_datetime64_any_dtype(df[column])):
+            if not pd.api.types.is_object_dtype(df[column]):
+                error_state.add_errors(pd.Series(True, index=df.index), column, details=self.dt_type)
+                return pd.Series(dtype=self.dtype or 'datetime64[ns]', name=column, index=df.index)
+
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, str))
+            error_state.add_errors(non_parsing_type_series & df[column].notna(), column, details=self.dt_type)
+
+        datetime_series = pd.to_datetime(df[column], errors='coerce', utc=True)
+        if self.dtype is not None:
+            datetime_series = pd.Series(datetime_series.values.astype(self.dtype), name=column)
+
+        boolmask = datetime_series.isna() & df[column].notna() & ~non_parsing_type_series
+        error_state.add_errors(boolmask, column, details=self.dt_parsing)
+        return datetime_series

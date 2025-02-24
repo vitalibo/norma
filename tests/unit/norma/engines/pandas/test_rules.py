@@ -8,14 +8,14 @@ from norma.engines.pandas import rules
 def test_error_state_add_errors():
     error_state = rules.ErrorState(pd.RangeIndex(4))
     # iteration #1
-    error_state.add_errors(pd.Series([True, False, False, False]), 'col1', {'err': '#1'})
+    error_state.add_errors(pd.Series([True, False, False, False]), 'col1', details={'err': '#1'})
 
     assert error_state.errors == {
         0: {'col1': {'details': [{'err': '#1'}]}}}
     assert error_state.masks['col1'].equals(pd.Series([True, False, False, False]))
 
     # iteration #2
-    error_state.add_errors(pd.Series([True, True, False, False]), 'col2', {'err': '#2'})
+    error_state.add_errors(pd.Series([True, True, False, False]), 'col2', details={'err': '#2'})
 
     assert error_state.errors == {
         0: {'col1': {'details': [{'err': '#1'}]}, 'col2': {'details': [{'err': '#2'}]}},
@@ -24,7 +24,7 @@ def test_error_state_add_errors():
     assert error_state.masks['col2'].equals(pd.Series([True, True, False, False]))
 
     # iteration #3
-    error_state.add_errors(pd.Series([True, False, True, False]), 'col1', {'err': '#2'})
+    error_state.add_errors(pd.Series([True, False, True, False]), 'col1', details={'err': '#2'})
 
     assert error_state.errors == {
         0: {'col1': {'details': [{'err': '#1'}, {'err': '#2'}]}, 'col2': {'details': [{'err': '#2'}]}},
@@ -35,7 +35,7 @@ def test_error_state_add_errors():
     assert error_state.masks['col2'].equals(pd.Series([True, True, False, False]))
 
     # iteration #4
-    error_state.add_errors(pd.Series([False, False, False, False]), 'col1', {'err': '#3'})
+    error_state.add_errors(pd.Series([False, False, False, False]), 'col1', details={'err': '#3'})
 
     assert error_state.errors == {
         0: {'col1': {'details': [{'err': '#1'}, {'err': '#2'}]}, 'col2': {'details': [{'err': '#2'}]}},
@@ -481,36 +481,6 @@ def test_date_type(in_value, in_dtype, out_value, assert_error):
 @pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
     (*params, assert_has_error)
     for params in [
-        (['foo'], 'object', [None]),
-        ([True], 'boolean', [None])
-    ]
-], *[
-    (*params, assert_no_error)
-    for params in [
-        (['12:34:56'], 'string[python]', ['12:34:56.000000']),
-        (['12:34:56.123'], 'string[python]', ['12:34:56.123000']),
-        (['12:34:56+03:00'], 'string[python]', ['12:34:56.000000+0300']),
-        (['12:34:56.123+02:00'], 'string[python]', ['12:34:56.123000+0200']),
-        (['12:34:56', '12:34:56+03:00'], 'string[python]', ['12:34:56.000000+0000', '12:34:56.000000+0300']),
-        (['12:34:56.123', '12:34:56.123-05:00'], 'string[python]', ['12:34:56.123000+0000', '12:34:56.123000-0500']),
-    ]
-]])
-def test_time_parsing(in_value, in_dtype, out_value, assert_error):
-    df = pd.DataFrame({'col': in_value}, dtype=in_dtype)
-    error_state = rules.ErrorState(df.index)
-    rule = rules.time_parsing()
-
-    actual = rule.verify(df, column='col', error_state=error_state)
-
-    pd.testing.assert_series_equal(actual, pd.Series(out_value, dtype='string[python]', name='col'))
-    assert_error(error_state, [
-        {'type': 'time_parsing', 'msg': 'Input should be a valid time, unable to parse value as a time'}
-    ])
-
-
-@pytest.mark.parametrize('in_value, in_dtype, out_value, assert_error', [*[
-    (*params, assert_has_error)
-    for params in [
         ('foo', 'object', None)
     ]
 ], *[
@@ -553,44 +523,6 @@ def test_datetime_type(in_value, in_dtype, out_value, assert_error):
     pd.testing.assert_series_equal(actual, pd.Series([out_value], dtype='datetime64[ns]', name='col'))
     assert_error(error_state, [
         {'type': 'datetime_type', 'msg': 'Input should be a valid datetime'}
-    ])
-
-
-@pytest.mark.parametrize('in_value, in_dtype, out_value, unit, assert_error', [*[
-    (*params, {}, assert_has_error)
-    for params in [
-        ('foo', 'object', None),
-        (True, 'boolean', None),
-        ('2025-05-27', 'string[python]', None),
-        ('2025-05-27 12:34:56', 'string[python]', None),
-        ('Tuesday, 27 May 2025 22:01:43', 'string[python]', None),
-    ]
-], *[
-    (*params, assert_no_error)
-    for params in [
-        (1748383303, 'Int64', pd.Timestamp('2025-05-27 22:01:43'), {}),
-        ('1748383303', 'Int64', pd.Timestamp('2025-05-27 22:01:43'), {}),
-        (1748383303000, 'Int64', pd.Timestamp('2025-05-27 22:01:43'), {'unit': 'ms'}),
-        (1748383303000000, 'Int64', pd.Timestamp('2025-05-27 22:01:43'), {'unit': 'us'}),
-        (1748383303000000000, 'Int64', pd.Timestamp('2025-05-27 22:01:43'), {'unit': 'ns'}),
-        (1.748383303e+9, 'Int64', pd.Timestamp('2025-05-27 22:01:43'), {}),
-        (pd.Timestamp('2025-05-27 12:34:56'), 'datetime64[ns]', pd.Timestamp('2025-05-27 12:34:56'), {}),
-    ]
-]])
-def test_timestamp_parsing(in_value, in_dtype, out_value, unit, assert_error):
-    df = pd.DataFrame({'col': [in_value]}, dtype=in_dtype)
-    error_state = rules.ErrorState(df.index)
-    rule = rules.timestamp_parsing(**unit)
-
-    actual = rule.verify(df, column='col', error_state=error_state)
-
-    pd.testing.assert_series_equal(
-        actual, pd.Series([out_value], dtype=f'datetime64[{unit.get("unit", "s")}]', name='col'))
-    assert_error(error_state, [
-        {
-            'type': 'timestamp_parsing',
-            'msg': 'Input should be a valid epoch timestamp, unable to parse value as a epoch timestamp'
-        }
     ])
 
 

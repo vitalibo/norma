@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import abc
-from typing import Any, Dict, Iterable, TypeVar, Union
+from typing import Any, Iterable, TypeVar, Union
 
 DataFrame = TypeVar('DataFrame')
 
@@ -9,7 +11,7 @@ class ErrorState:
     Error state interface for data validation
     """
 
-    def add_errors(self, boolmask: Any, column: str, details: Dict[str, str]) -> Any:
+    def add_errors(self, boolmask, column, **kwargs):
         pass
 
 
@@ -21,6 +23,18 @@ class Rule(abc.ABC):
     @abc.abstractmethod
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         pass
+
+    @classmethod
+    def new(cls, func) -> Rule:
+        """
+        Create a new rule from a function
+        """
+
+        class _DecoratedRule(cls):
+            def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+                return func(df, column, error_state)
+
+        return _DecoratedRule()
 
 
 class RuleProxy(Rule):
@@ -38,6 +52,10 @@ class RuleProxy(Rule):
 
     def __repr__(self):
         return f'{self.name}({", ".join([f"{k}={v}" for k, v in self.kwargs.items()])})'
+
+
+def rule(func, priority: float = 5, **kwargs) -> Rule:
+    return RuleProxy('rule', priority, func=func, **kwargs)
 
 
 def required() -> Rule:
