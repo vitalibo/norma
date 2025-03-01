@@ -1,6 +1,5 @@
 import abc
 import inspect
-import re
 from typing import Any, Iterable
 
 from pyspark.sql import Column, DataFrame
@@ -14,13 +13,19 @@ from norma.rules import Rule
 
 class ErrorState(IErrorState):
     """
-    A class to represent the state of errors in a DataFrame.
+    Error state for PySpark DataFrame validation
+
+    :param error_column: The name of the column to store error information
     """
 
     def __init__(self, error_column: str):
         self.error_column = error_column
 
     def add_errors(self, boolmask: Column, column: str, **kwargs):
+        """
+        Returns a function that needs to be applied to a DataFrame to add errors to the error state
+        """
+
         details = kwargs.get('details') or kwargs
         details_col = fn.when(boolmask, fn.struct(*[fn.lit(v).alias(k) for k, v in details.items()]))
 
@@ -28,9 +33,12 @@ class ErrorState(IErrorState):
         return lambda df: df.withColumn(name, fn.array_append(fn.col(name), details_col))
 
 
-class MaskRule(Rule):
+class BaseRule(Rule):
     """
-    A rule to validate a column in a DataFrame.
+    Base rule class for PySpark DataFrame validation
+
+    :param func: The function to apply to the DataFrame
+    :param kwargs: Additional keyword arguments to pass to the function
     """
 
     def __init__(self, func, **kwargs):
@@ -38,25 +46,34 @@ class MaskRule(Rule):
         self.kwargs = kwargs
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        signature = inspect.signature(self.func)
-        if 'df' not in signature.parameters:
-            return df.transform(error_state.add_errors(self.func(column), column, **self.kwargs))
+        """
+        Verify the DataFrame against the rule
+        """
 
-        params = {}
-        if set(signature.parameters) & {'col', 'column'}:
-            params['col' if 'col' in signature.parameters else 'column'] = column
-        if 'error_state' in signature.parameters:
-            params['error_state'] = error_state
-        return self.func(df, **params)
+        def inspect_params(f):
+            signature = inspect.signature(f)
+            params = {}
+            if 'df' in signature.parameters:
+                params['df'] = df
+            if set(signature.parameters) & {'col', 'column'}:
+                params['col' if 'col' in signature.parameters else 'column'] = column
+            if 'error_state' in signature.parameters:
+                params['error_state'] = error_state
+            return params
 
-    def compose(self, before) -> Rule:
-        return MaskRule(
-            lambda df, col, error_state: self.verify(before(df, col, error_state), col, error_state), **self.kwargs
-        )
+        func_params = inspect_params(self.func)
+        if 'df' in func_params:
+            return self.func(**func_params)
+
+        if '__pre_func__' in self.kwargs:
+            pre_func = self.kwargs['__pre_func__']
+            df = pre_func(**inspect_params(pre_func))
+
+        return df.transform(error_state.add_errors(self.func(**func_params), column, **self.kwargs))
 
 
-def rule(func, **kwargs) -> MaskRule:
-    return MaskRule(func, **kwargs)
+def rule(func, **kwargs) -> BaseRule:
+    return BaseRule(func, **kwargs)
 
 
 def required() -> Rule:
@@ -73,9 +90,6 @@ def required() -> Rule:
 
 
 def equal_to(eq: Any) -> Rule:
-    if eq is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda col: fn.col(col) != fn.lit(eq),
         details=errors.EQUAL_TO.format(eq=eq)
@@ -83,9 +97,6 @@ def equal_to(eq: Any) -> Rule:
 
 
 def not_equal_to(ne: Any) -> Rule:
-    if ne is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda col: fn.col(col) == fn.lit(ne),
         details=errors.NOT_EQUAL_TO.format(ne=ne)
@@ -93,9 +104,6 @@ def not_equal_to(ne: Any) -> Rule:
 
 
 def greater_than(gt: Any) -> Rule:
-    if gt is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda col: fn.col(col) <= fn.lit(gt),
         details=errors.GREATER_THAN.format(gt=gt)
@@ -103,9 +111,6 @@ def greater_than(gt: Any) -> Rule:
 
 
 def greater_than_equal(ge: Any) -> Rule:
-    if ge is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda col: fn.col(col) < fn.lit(ge),
         details=errors.GREATER_THAN_EQUAL.format(ge=ge)
@@ -113,9 +118,6 @@ def greater_than_equal(ge: Any) -> Rule:
 
 
 def less_than(lt: Any) -> Rule:
-    if lt is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda col: fn.col(col) >= fn.lit(lt),
         details=errors.LESS_THAN.format(lt=lt)
@@ -123,9 +125,6 @@ def less_than(lt: Any) -> Rule:
 
 
 def less_than_equal(le: Any) -> Rule:
-    if le is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda col: fn.col(col) > fn.lit(le),
         details=errors.LESS_THAN_EQUAL.format(le=le)
@@ -133,73 +132,69 @@ def less_than_equal(le: Any) -> Rule:
 
 
 def multiple_of(multiple: Any) -> Rule:
-    if multiple is None:
-        raise ValueError('multiple_of must not be None')
-    if not isinstance(multiple, (int, float)):
-        raise ValueError('multiple_of must be an integer or a float')
-
-    def before(df, col, _):
+    def before(df, col):
         if not isinstance(df.schema[col].dataType, NumericType):
             raise ValueError('multiple_of rule can only be applied to numeric columns')
         return df
 
     return rule(
         lambda col: (fn.col(col) % fn.lit(multiple)) != fn.lit(0),
-        details=errors.MULTIPLE_OF.format(multiple_of=multiple)
-    ).compose(before)
+        details=errors.MULTIPLE_OF.format(multiple_of=multiple),
+        __pre_func__=before
+    )
 
 
 def min_length(value: int) -> Rule:
-    if not isinstance(value, int):
-        raise ValueError('min_length must be an integer')
-    if value < 0:
-        raise ValueError('min_length must be a non-negative integer')
-
-    def before(df, column, _):
-        if not isinstance(df.schema[column].dataType, StringType):
+    def before(df, col):
+        if not isinstance(df.schema[col].dataType, StringType):
             raise ValueError('min_length rule can only be applied to string columns')
         return df
 
     return rule(
         lambda col: fn.length(fn.col(col)) < value,
-        details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else '')
-    ).compose(before)
+        details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
+        __pre_func__=before
+    )
 
 
 def max_length(value: int) -> Rule:
-    if not isinstance(value, int):
-        raise ValueError('max_length must be an integer')
-    if value < 0:
-        raise ValueError('max_length must be a non-negative integer')
-
-    def before(df, column, _):
-        if not isinstance(df.schema[column].dataType, StringType):
+    def before(df, col):
+        if not isinstance(df.schema[col].dataType, StringType):
             raise ValueError('max_length rule can only be applied to string columns')
         return df
 
     return rule(
         lambda col: fn.length(fn.col(col)) > value,
-        details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else '')
-    ).compose(before)
+        details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
+        __pre_func__=before
+    )
 
 
 def pattern(regex: str) -> Rule:
-    if not isinstance(regex, str):
-        raise ValueError('pattern must be a string')
-    try:
-        re.compile(regex)
-    except re.error as e:
-        raise ValueError('pattern must be a valid regular expression') from e
-
-    def before(df, column, _):
-        if not isinstance(df.schema[column].dataType, StringType):
+    def before(df, col):
+        if not isinstance(df.schema[col].dataType, StringType):
             raise ValueError('pattern rule can only be applied to string columns')
         return df
 
     return rule(
         lambda col: ~fn.col(col).rlike(regex),
-        details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex)
-    ).compose(before)
+        details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
+        __pre_func__=before
+    )
+
+
+def isin(values: Iterable[Any]) -> Rule:
+    return rule(
+        lambda col: ~fn.col(col).isin(values),
+        details=errors.ENUM.format(expected=values)
+    )
+
+
+def notin(values: Iterable[Any]) -> Rule:
+    return rule(
+        lambda col: fn.col(col).isin(values),
+        details=errors.NOT_ENUM.format(unexpected=values)
+    )
 
 
 def extra_forbidden(allowed: Iterable[str]) -> Rule:
@@ -213,26 +208,6 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
             .transform(error_state.add_errors(fn.lit(True), column, details=errors.EXTRA_FORBIDDEN))
 
     return verify
-
-
-def isin(values: Iterable[Any]) -> Rule:
-    if not isinstance(values, (list, tuple, set)):
-        raise ValueError('values must be a list, tuple, or set')
-
-    return rule(
-        lambda col: ~fn.col(col).isin(values),
-        details=errors.ENUM.format(expected=values)
-    )
-
-
-def notin(values: Iterable[Any]) -> Rule:
-    if not isinstance(values, (list, tuple, set)):
-        raise ValueError('values must be a list, tuple, or set')
-
-    return rule(
-        lambda col: fn.col(col).isin(values),
-        details=errors.NOT_ENUM.format(unexpected=values)
-    )
 
 
 def int_parsing() -> Rule:
@@ -251,17 +226,17 @@ def bool_parsing() -> Rule:
     return BooleanTypeRule()
 
 
-def date_parsing() -> Rule:
-    return DateTypeRule()
-
-
 def datetime_parsing() -> Rule:
     return DatetimeTypeRule()
 
 
+def date_parsing() -> Rule:
+    return DateTypeRule()
+
+
 class DataTypeRule(Rule):
     """
-    A rule to validate the data type of column in a DataFrame.
+    Abstract base class for data type rules
     """
 
     def __init__(self, dtype, unsupported, details):
@@ -285,13 +260,13 @@ class DataTypeRule(Rule):
     @abc.abstractmethod
     def cast(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         """
-        Cast the column to the appropriate data type.
+        Abstract method to cast the column to the specified data type
         """
 
 
 class NumericTypeRule(DataTypeRule):
     """
-    A rule to validate the numeric data type of column in a DataFrame.
+    Class for numeric type casting rules
     """
 
     def __init__(self, dtype, numeric_type, numeric_parsing):
@@ -307,7 +282,7 @@ class NumericTypeRule(DataTypeRule):
 
 class StringTypeRule(DataTypeRule):
     """
-    A rule to validate the string data type of column in a DataFrame.
+    Class for string type casting rules
     """
 
     def __init__(self):
@@ -319,7 +294,7 @@ class StringTypeRule(DataTypeRule):
 
 class BooleanTypeRule(DataTypeRule):
     """
-    A rule to validate the boolean data type of column in a DataFrame.
+    Class for boolean type casting rules
     """
 
     def __init__(self):
@@ -339,7 +314,7 @@ class BooleanTypeRule(DataTypeRule):
 
 class DatetimeTypeRule(DataTypeRule):
     """
-    A rule to validate the datetime data type of column in a DataFrame.
+    Class for datetime type casting rules
     """
 
     def __init__(self):
@@ -354,7 +329,7 @@ class DatetimeTypeRule(DataTypeRule):
 
 class DateTypeRule(DataTypeRule):
     """
-    A rule to validate the date data type of column in a DataFrame.
+    Class for date type casting rules
     """
 
     def __init__(self):

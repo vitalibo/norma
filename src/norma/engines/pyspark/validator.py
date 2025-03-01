@@ -6,8 +6,16 @@ from norma.engines.pyspark.rules import ErrorState, extra_forbidden
 
 
 def validate(
-        schema: 'Schema', df: DataFrame, error_column: str = 'errors'
+        schema: 'Schema', df: DataFrame, error_column: str
 ) -> DataFrame:
+    """
+    Validate the PySpark DataFrame according to the schema
+
+    :param schema: The schema to validate the DataFrame against
+    :param df: The DataFrame to validate
+    :param error_column: The name of the column to store error information
+    """
+
     error_state = ErrorState(error_column)
     original_cols = df.columns
     columns_with_extra = \
@@ -31,7 +39,7 @@ def validate(
     df = df.withColumn(error_column, fn.struct(*[
         fn.struct(
             fn.filter(fn.col(f'{error_column}_{column}'), fn.isnotnull).alias('details'),
-            __origin(df, column).alias('original'),
+            _make_origin(df, column).alias('original'),
         ).alias(column) for column in columns_with_extra
     ]))
 
@@ -69,7 +77,11 @@ def validate(
     return df.select(*original_cols, error_column)
 
 
-def __origin(df: DataFrame, column):
+def _make_origin(df: DataFrame, column):
+    """
+    Format the original value of a column for error reporting
+    """
+
     column = f'{column}_bak' if f'{column}_bak' in df.columns else column
     dtype = df.schema[column].dataType.typeName()
 

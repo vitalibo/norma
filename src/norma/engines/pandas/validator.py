@@ -7,9 +7,17 @@ import norma.rules
 from norma.engines.pandas.rules import ErrorState, extra_forbidden
 
 
-def validate(  # pylint: disable=too-many-branches)
-        schema: 'Schema', df: pd.DataFrame, error_column: str = 'errors'
+def validate(  # pylint: disable=too-many-branches
+        schema: 'Schema', df: pd.DataFrame, error_column: str
 ) -> pd.DataFrame:
+    """
+    Validate the Pandas DataFrame according to the schema
+
+    :param schema: The schema to validate the DataFrame against
+    :param df: The DataFrame to validate
+    :param error_column: The name of the column to store error information
+    """
+
     original_df = df.copy()
 
     error_state = ErrorState(df.index)
@@ -30,7 +38,7 @@ def validate(  # pylint: disable=too-many-branches)
         for column in error_state.errors[index]:
             if column in original_df.columns:
                 error_state.errors[index][column]['original'] = \
-                    json.dumps(original_df.loc[index, column], separators=(',', ':'), default=__json_serde)
+                    json.dumps(original_df.loc[index, column], separators=(',', ':'), default=_json_serde)
             else:
                 error_state.errors[index][column]['original'] = 'null'
 
@@ -52,7 +60,11 @@ def validate(  # pylint: disable=too-many-branches)
     return df[list(out_cols) + [error_column]]
 
 
-def __json_serde(obj):
+def _json_serde(obj):
+    """
+    Serialize an object to JSON. Used to serialize the original value
+    """
+
     if pd.isna(obj):
         return None
     if isinstance(obj, np.integer):

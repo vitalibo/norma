@@ -1,6 +1,6 @@
 [
   {
-    "description": "column must start with f",
+    "description": "vectorized rule. column must start with f",
     "engines": [
       "pandas"
     ],
@@ -50,7 +50,7 @@
     }
   },
   {
-    "description": "column must start with f",
+    "description": "vectorized rule. column must start with f",
     "engines": [
       "pyspark"
     ],
@@ -89,6 +89,106 @@
               "details": [
                 {
                   "msg": "column must start with f",
+                  "type": "custom_error"
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "custom rule. column must equal foo",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        },
+        {
+          "col": "bar"
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col": {
+            "dtype": "str",
+            "rules": {
+              "expr": "rules.rule(lambda df, col, error_state: error_state.add_errors(df[col] != 'foo', col, details={'type': 'custom_error', 'msg': 'column must equal foo'}))"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "foo",
+          "errors": {}
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "column must equal foo",
+                  "type": "custom_error"
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "custom rule. column must equal foo",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        },
+        {
+          "col": "bar"
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col": {
+            "dtype": "str",
+            "rules": {
+              "expr": "rules.rule(lambda df, col, error_state: df.transform(error_state.add_errors(fn.col(col) != 'foo', col, details={'type': 'custom_error', 'msg': 'column must equal foo'})))"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "foo",
+          "errors": {}
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "column must equal foo",
                   "type": "custom_error"
                 }
               ],

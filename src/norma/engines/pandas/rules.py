@@ -1,5 +1,4 @@
 import inspect
-import re
 from collections import defaultdict
 from typing import Any, Iterable, Optional, Union
 
@@ -12,7 +11,9 @@ from norma.rules import Rule
 
 class ErrorState(IErrorState):
     """
-    A class that holds the error state of the DataFrame.
+    Error state for Pandas DataFrame validation
+
+    :param index: The index of the original DataFrame
     """
 
     def __init__(self, index: pd.Index) -> None:
@@ -21,7 +22,7 @@ class ErrorState(IErrorState):
 
     def add_errors(self, boolmask, column, **kwargs):
         """
-        Add errors to the error state.
+        Add errors to the error state for a given column
         """
 
         for index in boolmask[boolmask].index:
@@ -33,9 +34,12 @@ class ErrorState(IErrorState):
         self.masks[column] = self.masks[column] | boolmask.astype(bool)
 
 
-class MaskRule(Rule):
+class BaseRule(Rule):
     """
-    The most basic rule type, which takes a boolean mask as input and applies it to the DataFrame to identify errors.
+    Base rule class for Pandas DataFrame validation
+
+    :param func: The function to apply to the DataFrame
+    :param kwargs: Additional keyword arguments to pass to the function
     """
 
     def __init__(self, func, **kwargs):
@@ -43,26 +47,36 @@ class MaskRule(Rule):
         self.kwargs = kwargs
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        """
+        Verify the DataFrame against the rule
+        """
+
         def inspect_params(f):
             signature = inspect.signature(f)
             params = {}
+            if 'df' in signature.parameters:
+                params['df'] = df
             if set(signature.parameters) & {'col', 'column'}:
                 params['col' if 'col' in signature.parameters else 'column'] = column
             if 'error_state' in signature.parameters:
                 params['error_state'] = error_state
             return params
 
-        if 'pre_func' in self.kwargs:
-            pre_func = self.kwargs['pre_func']
-            df = pre_func(df, **inspect_params(pre_func))
+        func_params = inspect_params(self.func)
+        if len(func_params) == 3:
+            return self.func(**func_params)
 
-        boolmask = self.func(df, **inspect_params(self.func))
+        if '__pre_func__' in self.kwargs:
+            pre_func = self.kwargs['__pre_func__']
+            df = pre_func(**inspect_params(pre_func))
+
+        boolmask = self.func(**inspect_params(self.func))
         error_state.add_errors(boolmask, column, details=self.kwargs.get('details', {}) or self.kwargs)
         return df[column]
 
 
-def rule(func, **kwargs) -> MaskRule:
-    return MaskRule(func, **kwargs)
+def rule(func, **kwargs) -> BaseRule:
+    return BaseRule(func, **kwargs)
 
 
 def required() -> Rule:
@@ -70,7 +84,7 @@ def required() -> Rule:
     def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         if column not in df.columns:
             error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.MISSING)
-            return pd.Series(dtype='string', index=df.index)
+            return pd.Series(dtype='object', index=df.index)
 
         error_state.add_errors(df[column].isna(), column, details=errors.MISSING)
         return df[column]
@@ -79,9 +93,6 @@ def required() -> Rule:
 
 
 def equal_to(eq: Any) -> Rule:
-    if eq is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda df, col: df[col][df[col].notna()] != eq,
         details=errors.EQUAL_TO.format(eq=eq)
@@ -89,9 +100,6 @@ def equal_to(eq: Any) -> Rule:
 
 
 def not_equal_to(ne: Any) -> Rule:
-    if ne is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda df, col: df[col][df[col].notna()] == ne,
         details=errors.NOT_EQUAL_TO.format(ne=ne)
@@ -99,9 +107,6 @@ def not_equal_to(ne: Any) -> Rule:
 
 
 def greater_than(gt: Any) -> Rule:
-    if gt is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda df, col: df[col][df[col].notna()] <= gt,
         details=errors.GREATER_THAN.format(gt=gt)
@@ -109,9 +114,6 @@ def greater_than(gt: Any) -> Rule:
 
 
 def greater_than_equal(ge: Any) -> Rule:
-    if ge is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda df, col: df[col][df[col].notna()] < ge,
         details=errors.GREATER_THAN_EQUAL.format(ge=ge)
@@ -119,9 +121,6 @@ def greater_than_equal(ge: Any) -> Rule:
 
 
 def less_than(lt: Any) -> Rule:
-    if lt is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda df, col: df[col][df[col].notna()] >= lt,
         details=errors.LESS_THAN.format(lt=lt)
@@ -129,9 +128,6 @@ def less_than(lt: Any) -> Rule:
 
 
 def less_than_equal(le: Any) -> Rule:
-    if le is None:
-        raise ValueError('comparison value must not be None')
-
     return rule(
         lambda df, col: df[col][df[col].notna()] > le,
         details=errors.LESS_THAN_EQUAL.format(le=le)
@@ -139,13 +135,8 @@ def less_than_equal(le: Any) -> Rule:
 
 
 def multiple_of(multiple: Union[int, float]) -> Rule:
-    if multiple is None:
-        raise ValueError('multiple_of must not be None')
-    if not isinstance(multiple, (int, float)):
-        raise ValueError('multiple_of must be an integer or a float')
-
-    def before(df, column):
-        if not pd.api.types.is_numeric_dtype(df[column]):
+    def before(df, col):
+        if not pd.api.types.is_numeric_dtype(df[col]):
             raise ValueError('multiple_of rule can only be applied to numeric columns')
         return df
 
@@ -153,7 +144,60 @@ def multiple_of(multiple: Union[int, float]) -> Rule:
         # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
         lambda df, col: df[col][df[col].notna()] % multiple != 0.0,
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
-        pre_func=before
+        __pre_func__=before
+    )
+
+
+def min_length(value: int) -> Rule:
+    def before(df, column):
+        if not pd.api.types.is_string_dtype(df[column]):
+            raise ValueError('min_length rule can only be applied to string columns')
+        return df
+
+    return rule(
+        lambda df, col: df[col][df[col].notna()].str.len() < value,
+        details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
+        __pre_func__=before
+    )
+
+
+def max_length(value: int) -> Rule:
+    def before(df, column):
+        if not pd.api.types.is_string_dtype(df[column]):
+            raise ValueError('max_length rule can only be applied to string columns')
+        return df
+
+    return rule(
+        lambda df, col: df[col][df[col].notna()].str.len() > value,
+        details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
+        __pre_func__=before
+    )
+
+
+def pattern(regex: str) -> Rule:
+    def before(df, column):
+        if not pd.api.types.is_string_dtype(df[column]):
+            raise ValueError('pattern rule can only be applied to string columns')
+        return df
+
+    return rule(
+        lambda df, col: ~df[col][df[col].notna()].str.match(regex, na=False),
+        details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
+        __pre_func__=before
+    )
+
+
+def isin(values: Iterable[Any]) -> Rule:
+    return rule(
+        lambda df, col: ~df[col][df[col].notna()].isin(values),
+        details=errors.ENUM.format(expected=values)
+    )
+
+
+def notin(values: Iterable[Any]) -> Rule:
+    return rule(
+        lambda df, col: df[col][df[col].notna()].isin(values),
+        details=errors.NOT_ENUM.format(unexpected=values)
     )
 
 
@@ -181,62 +225,6 @@ def date_parsing() -> Rule:
     return DatetimeTypeRule('datetime64[D]', errors.DATE_TYPE, errors.DATE_PARSING)
 
 
-def min_length(value: int) -> Rule:
-    if not isinstance(value, int):
-        raise ValueError('min_length must be an integer')
-    if value < 0:
-        raise ValueError('min_length must be a non-negative integer')
-
-    def before(df, column):
-        if not pd.api.types.is_string_dtype(df[column]):
-            raise ValueError('min_length rule can only be applied to string columns')
-        return df
-
-    return rule(
-        lambda df, col: df[col][df[col].notna()].str.len() < value,
-        details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
-        pre_func=before
-    )
-
-
-def max_length(value: int) -> Rule:
-    if not isinstance(value, int):
-        raise ValueError('max_length must be an integer')
-    if value < 0:
-        raise ValueError('max_length must be a non-negative integer')
-
-    def before(df, column):
-        if not pd.api.types.is_string_dtype(df[column]):
-            raise ValueError('max_length rule can only be applied to string columns')
-        return df
-
-    return rule(
-        lambda df, col: df[col][df[col].notna()].str.len() > value,
-        details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
-        pre_func=before
-    )
-
-
-def pattern(regex: str) -> Rule:
-    if not isinstance(regex, str):
-        raise ValueError('pattern must be a string')
-    try:
-        re.compile(regex)
-    except re.error as e:
-        raise ValueError('pattern must be a valid regular expression') from e
-
-    def before(df, column):
-        if not pd.api.types.is_string_dtype(df[column]):
-            raise ValueError('pattern rule can only be applied to string columns')
-        return df
-
-    return rule(
-        lambda df, col: ~df[col][df[col].notna()].str.match(regex, na=False),
-        details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
-        pre_func=before
-    )
-
-
 def extra_forbidden(allowed: Iterable[str]) -> Rule:
     @Rule.new
     def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
@@ -252,29 +240,9 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
     return verify
 
 
-def isin(values: Iterable[Any]) -> Rule:
-    if not isinstance(values, (list, tuple, set)):
-        raise ValueError('values must be a list, tuple, or set')
-
-    return rule(
-        lambda df, col: ~df[col][df[col].notna()].isin(values),
-        details=errors.ENUM.format(expected=values)
-    )
-
-
-def notin(values: Iterable[Any]) -> Rule:
-    if not isinstance(values, (list, tuple, set)):
-        raise ValueError('values must be a list, tuple, or set')
-
-    return rule(
-        lambda df, col: df[col][df[col].notna()].isin(values),
-        details=errors.NOT_ENUM.format(unexpected=values)
-    )
-
-
 class NumberTypeRule(Rule):
     """
-    A rule that verifies the numeric type of the column.
+    Class for numeric type casting rules
     """
 
     def __init__(self, dtype, numeric_type, numeric_parsing):
@@ -302,9 +270,35 @@ class NumberTypeRule(Rule):
         return numeric_series
 
 
+class StringTypeRule(Rule):
+    """
+    Class for string type casting rules
+    """
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        if df[column].dtype == 'string[python]':
+            return df[column]
+
+        non_parsing_type_series = pd.Series(False, index=df.index)
+        bool_series = pd.Series(False, index=df.index)
+        if pd.api.types.is_object_dtype(df[column]):
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            error_state.add_errors(non_parsing_type_series, column, details=errors.STRING_TYPE)
+            bool_series = df[column].apply(lambda x: isinstance(x, bool))
+
+        if pd.api.types.is_bool_dtype(df[column]):
+            str_series = df[column].astype('string').str.lower()
+        else:
+            str_series = df[column].astype('string')
+            str_series[bool_series] = str_series[bool_series].str.lower()
+
+        str_series[non_parsing_type_series] = None
+        return str_series
+
+
 class BooleanTypeRule(Rule):
     """
-    A rule that verifies the boolean type of the column.
+    Class for boolean type casting rules
     """
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
@@ -333,35 +327,9 @@ class BooleanTypeRule(Rule):
         return bool_series
 
 
-class StringTypeRule(Rule):
-    """
-    A rule that verifies the string type of the column.
-    """
-
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        if df[column].dtype == 'string[python]':
-            return df[column]
-
-        non_parsing_type_series = pd.Series(False, index=df.index)
-        bool_series = pd.Series(False, index=df.index)
-        if pd.api.types.is_object_dtype(df[column]):
-            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
-            error_state.add_errors(non_parsing_type_series, column, details=errors.STRING_TYPE)
-            bool_series = df[column].apply(lambda x: isinstance(x, bool))
-
-        if pd.api.types.is_bool_dtype(df[column]):
-            str_series = df[column].astype('string').str.lower()
-        else:
-            str_series = df[column].astype('string')
-            str_series[bool_series] = str_series[bool_series].str.lower()
-
-        str_series[non_parsing_type_series] = None
-        return str_series
-
-
 class DatetimeTypeRule(Rule):
     """
-    A rule that verifies the datetime type of the column.
+    Class for datetime type casting rules
     """
 
     def __init__(self, dtype, dt_type, dt_parsing):

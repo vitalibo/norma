@@ -20,7 +20,25 @@ T = TypeVar('T')
 
 class Column:
     """
-    Column definition for data validation
+    Column definition in a schema with various validation rules
+
+    :param dtype: The data type of the column
+    :param rules: The validation rules to apply to the column
+    :param nullable: Whether the column can be null (default: True)
+    :param eq: The values must be equal to this value
+    :param ne: The values must not be equal to this value
+    :param gt: The values must be greater than this value
+    :param lt: The values must be less than this value
+    :param ge: The values must be greater than or equal to this value
+    :param le: The values must be less than or equal to this value
+    :param multiple_of: The values must be a multiple of this value
+    :param min_length: The minimum length of the values
+    :param max_length: The maximum length of the values
+    :param pattern: The regex pattern that the values must match
+    :param isin: The values must be in this list
+    :param notin: The values must not be in this list
+    :param default: The default value for the column
+    :param default_factory: A factory function to generate the default value
     """
 
     def __init__(  # pylint: disable=too-many-arguments,too-many-locals
@@ -101,6 +119,9 @@ class Column:
 class Schema:
     """
     Schema definition for data validation
+
+    :param columns: The columns in the schema
+    :param allow_extra: Whether extra columns are allowed in the DataFrame
     """
 
     def __init__(
@@ -112,6 +133,15 @@ class Schema:
         self.allow_extra = allow_extra
 
     def validate(self, df: T, error_col: str = 'errors') -> T:
+        """
+        Validates the given DataFrame against the schema
+
+        :param df: The DataFrame to validate (supported engines are Pandas and PySpark)
+        :param error_col: Optional column name to store the validation errors
+        :return: The validated DataFrame with the error column
+        :raises NotImplementedError: If the engine is not supported
+        """
+
         # pylint: disable=import-outside-toplevel
         if PandasDataFrame and isinstance(df, PandasDataFrame):
             from norma.engines.pandas import validator
@@ -121,11 +151,17 @@ class Schema:
             from norma.engines.pyspark import validator
             return validator.validate(self, df, error_col)
 
-        else:
-            raise NotImplementedError('unsupported engine')
+        raise NotImplementedError('unsupported engine')
 
     @staticmethod
     def from_json_schema(json_schema: Dict) -> Schema:
+        """
+        Creates a Schema instance from a JSON schema
+
+        :param json_schema: The JSON schema to convert
+        :return: The Schema instance
+        """
+
         known = {
             'minimum': 'ge',
             'maximum': 'le',
