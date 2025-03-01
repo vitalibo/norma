@@ -23,9 +23,9 @@ jobs:
         run: |
           make install
 
-      - name: 'Run style checks'
+      - name: 'Run code style checks'
         run: |
-          make style
+          make codestyle
 
       - name: 'Run tests'
         run: |

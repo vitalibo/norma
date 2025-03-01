@@ -1,7 +1,7 @@
 install:
 	pip3 install -r requirements-dev.txt
 
-style:
+codestyle:
 	isort ./src/ ./tests/ -l 120 -m 3
 	pylint ./src/ ./tests/ --rcfile=.pylintrc
 
@@ -14,4 +14,4 @@ build: clean
 clean:
 	rm -rf ./.pytest_cache ./build ./dist ./src/*.egg-info
 
-.PHONY: install style test build clean
+.PHONY: install codestyle test build clean
