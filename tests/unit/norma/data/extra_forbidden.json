@@ -1,0 +1,327 @@
+[
+  {
+    "description": "extra fields are allowed",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy",
+          "age": 25
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30,
+          "errors": {}
+        },
+        {
+          "name": "Nancy",
+          "age": 25,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "extra fields forbidden",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy",
+          "age": 25
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "30"
+            }
+          }
+        },
+        {
+          "name": "Nancy",
+          "errors": {
+            "age": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "25"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "column is allowed",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "foo",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "allowed": [
+          "col",
+          "col2",
+          "col3"
+        ]
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "foo",
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "column is forbidden, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "foo",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "allowed": [
+          "col2",
+          "col3"
+        ]
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col_bak": "foo",
+          "errors_col": [
+            {
+              "type": "extra_forbidden",
+              "msg": "Extra inputs are not permitted"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col_bak",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "extra fields are allowed",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": 1,
+          "col2": 2
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {
+        "allowed": [
+          "col1",
+          "col2"
+        ]
+      },
+      "column": "col2"
+    },
+    "then": {
+      "data": [
+        2
+      ],
+      "dtype": "int64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "column is forbidden, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": 1,
+          "col2": 2
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {
+        "allowed": [
+          "col1"
+        ]
+      },
+      "column": "col2"
+    },
+    "then": {
+      "data": null,
+      "masks": {
+      },
+      "errors": {
+        "0": {
+          "col2": {
+            "details": [
+              {
+                "type": "extra_forbidden",
+                "msg": "Extra inputs are not permitted"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+]

@@ -615,5 +615,228 @@
         "match": "comparison value must not be None"
       }
     }
+  },
+  {
+    "description": "2 < 3",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          2,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "lt": 3
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 2,
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "4 < 3, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          4,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "lt": 3
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 4,
+          "errors_col": [
+            {
+              "type": "less_than",
+              "msg": "Input should be less than 3"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "2 <int64> < 3",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 2
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {
+        "lt": 3
+      }
+    },
+    "then": {
+      "data": [
+        2
+      ],
+      "dtype": "int64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "4 <int64> < 3, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 4
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {
+        "lt": 3
+      }
+    },
+    "then": {
+      "data": [
+        4
+      ],
+      "dtype": "int64",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "less_than",
+                "msg": "Input should be less than 3"
+              }
+            ]
+          }
+        }
+      }
+    }
   }
 ]

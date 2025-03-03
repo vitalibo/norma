@@ -201,5 +201,673 @@
         }
       ]
     }
+  },
+  {
+    "description": "column is not null",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "foo",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": "foo",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "column is null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": [
+            {
+              "type": "missing",
+              "msg": "Field required"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "column is missing, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": [
+            {
+              "type": "missing",
+              "msg": "Field required"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col",
+            "type": "void"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "null <object> is null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "object",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "msg": "Field required",
+                "type": "missing"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "np.nan <float64> is null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "np.nan"
+        }
+      ],
+      "dtype": "float64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "float64",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "msg": "Field required",
+                "type": "missing"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "pd.NA <boolean> is null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "pd.NA"
+        }
+      ],
+      "dtype": "boolean"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "msg": "Field required",
+                "type": "missing"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "pd.NaT <datetime64[ns]> is null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "pd.NaT"
+        }
+      ],
+      "dtype": "datetime64[ns]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[ns]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "msg": "Field required",
+                "type": "missing"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "null <str> is null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "dtype": "<class 'str'>"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "object",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "msg": "Field required",
+                "type": "missing"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "'foo' <str> is not null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ],
+      "dtype": "<class 'str'>"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "foo"
+      ],
+      "dtype": "object",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "{'foo':'bar'} <object> is not null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "foo": "bar"
+        }
+      ],
+      "dtype": "object",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "1 <int64> is not null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        1
+      ],
+      "dtype": "int64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "1.5 <float64> is not null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1.5
+        }
+      ],
+      "dtype": "float64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        1.5
+      ],
+      "dtype": "float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "np.inf <float64> is not null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "np.inf"
+        }
+      ],
+      "dtype": "float64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "np.inf"
+      ],
+      "dtype": "float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "pd.Timestamp('2020-01-02') <datetime64[ns]> is not null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "pd.Timestamp('2020-01-02')"
+        }
+      ],
+      "dtype": "datetime64[ns]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2020-01-02')"
+      ],
+      "dtype": "datetime64[ns]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "pd.Timedelta('1 days') <timedelta64[ns]> is not null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "pd.Timedelta('1 days')"
+        }
+      ],
+      "dtype": "timedelta64[ns]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timedelta('1 days')"
+      ],
+      "dtype": "timedelta64[ns]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "column is missing, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col2": "foo"
+        }
+      ],
+      "dtype": "<class 'str'>"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "object",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "msg": "Field required",
+                "type": "missing"
+              }
+            ]
+          }
+        }
+      }
+    }
   }
 ]

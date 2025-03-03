@@ -504,5 +504,812 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(null as float) => null",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "void"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "float"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('1.2' as float) => 1.2",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "1.2",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1.2,
+          "col_bak": "1.2",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "float"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(1 as float) => 1.0",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          1,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1.0,
+          "col_bak": 1,
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "float"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "integer"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(1.2 as float) => 1.2",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          1.2,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "float"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": 1.2,
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "float"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('foo' as float) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "foo",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": "foo",
+          "errors_col": [
+            {
+              "type": "float_parsing",
+              "msg": "Input should be a valid number, unable to parse string as a number"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "float"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(null <Float64> as float) => null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "dtype": "Float64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(-123 <int8> as float) => -123.0",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": -123
+        }
+      ],
+      "dtype": "int8"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        -123.0
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(123 <int8> as float) => 123.0",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ],
+      "dtype": "int8"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        123.0
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(123 <int64> as float) => 123.0",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        123.0
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(123.45 <float16> as float) => 123.4375",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123.45
+        }
+      ],
+      "dtype": "float16"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        123.4375
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(123.45 <float64> as float) => 123.45",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123.45
+        }
+      ],
+      "dtype": "float64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        123.45
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('123' <string[python]> as float) => 123.0",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "123"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        123.0
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('123.45' <string[python]> as float) => 123.45",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "123.45"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        123.45
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('123.45' <object> as float) => 123.45",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "123.45"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        123.45
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(true <boolean> as float) => 1.0",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ],
+      "dtype": "boolean"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        1.0
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('foo' <object> as float) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "float_parsing",
+                "msg": "Input should be a valid number, unable to parse string as a number"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast('foo' <string[python]> as float) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "float_parsing",
+                "msg": "Input should be a valid number, unable to parse string as a number"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(pd.Timestamp('2020-01-01') <datetime64[ns]> as float) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "pd.Timestamp('2020-01-01')"
+        }
+      ],
+      "dtype": "datetime64[ns]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "float_type",
+                "msg": "Input should be a valid number"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast({'foo':'bar'} <object> as float) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "Float64",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "float_type",
+                "msg": "Input should be a valid number"
+              }
+            ]
+          }
+        }
+      }
+    }
   }
 ]

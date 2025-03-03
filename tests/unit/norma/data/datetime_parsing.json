@@ -47,7 +47,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23 12:34:56' as date) => datetime('2025-01-23 12:34:56')",
+    "description": "cast('2025-01-23 12:34:56' as datetime) => datetime('2025-01-23 12:34:56')",
     "engines": [
       "pandas"
     ],
@@ -79,7 +79,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23 12:34:56' as date) => datetime('2025-01-23 12:34:56')",
+    "description": "cast('2025-01-23 12:34:56' as datetime) => datetime('2025-01-23 12:34:56')",
     "engines": [
       "pyspark"
     ],
@@ -111,7 +111,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23T12:34:56Z' as date) => datetime('2025-01-23 12:34:56')",
+    "description": "cast('2025-01-23T12:34:56Z' as datetime) => datetime('2025-01-23 12:34:56')",
     "engines": [
       "pandas"
     ],
@@ -143,7 +143,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23T12:34:56Z' as date) => datetime('2025-01-23 12:34:56')",
+    "description": "cast('2025-01-23T12:34:56Z' as datetime) => datetime('2025-01-23 12:34:56')",
     "engines": [
       "pyspark"
     ],
@@ -175,7 +175,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23T12:34:56.123Z' as date) => datetime('2025-01-23 12:34:56.123000+00:00')",
+    "description": "cast('2025-01-23T12:34:56.123Z' as datetime) => datetime('2025-01-23 12:34:56.123000+00:00')",
     "engines": [
       "pandas"
     ],
@@ -207,7 +207,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23T12:34:56.123Z' as date) => datetime('2025-01-23 12:34:56.123000+00:00')",
+    "description": "cast('2025-01-23T12:34:56.123Z' as datetime) => datetime('2025-01-23 12:34:56.123000+00:00')",
     "engines": [
       "pyspark"
     ],
@@ -239,7 +239,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23 12:34:56+02:00' as date) => datetime('2025-01-23 12:34:56+02:00')",
+    "description": "cast('2025-01-23 12:34:56+02:00' as datetime) => datetime('2025-01-23 12:34:56+02:00')",
     "engines": [
       "pandas"
     ],
@@ -271,7 +271,7 @@
     }
   },
   {
-    "description": "cast('2025-01-23 12:34:56+02:00' as date) => datetime('2025-01-23 12:34:56+02:00')",
+    "description": "cast('2025-01-23 12:34:56+02:00' as datetime) => datetime('2025-01-23 12:34:56+02:00')",
     "engines": [
       "pyspark"
     ],
@@ -303,7 +303,7 @@
     }
   },
   {
-    "description": "cast('foo' as date) => null, error is raised",
+    "description": "cast('foo' as datetime) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -346,7 +346,7 @@
     }
   },
   {
-    "description": "cast(true as date) => null, error is raised",
+    "description": "cast(true as datetime) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -386,6 +386,238 @@
           }
         }
       ]
+    }
+  },
+  {
+    "description": "cast(null <object> as datetime) => null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[ns, UTC]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('2025-05-27' <object> as datetime) => pd.Timestamp('2025-05-27 00:00:00')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-05-27"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27 00:00:00')"
+      ],
+      "dtype": "datetime64[ns, UTC]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('2025-05-27 12:34:56' <string[python]> as datetime) => pd.Timestamp('2025-05-27 12:34:56')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-05-27 12:34:56"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27 12:34:56')"
+      ],
+      "dtype": "datetime64[ns, UTC]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('Tuesday, 27 May 2025 22:01:43' <string[python]> as datetime) => pd.Timestamp('2025-05-27 22:01:43')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "Tuesday, 27 May 2025 22:01:43"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27 22:01:43')"
+      ],
+      "dtype": "datetime64[ns, UTC]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(pd.Timestamp('2025-05-27 12:34:56') <datetime64[s]> as datetime) => pd.Timestamp('2025-05-27 12:34:56')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "pd.Timestamp('2025-05-27 12:34:56')"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27 12:34:56')"
+      ],
+      "dtype": "datetime64[ns, UTC]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('foo' <string[python]> as datetime) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[ns, UTC]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "datetime_parsing",
+                "msg": "Input should be a valid datetime, unable to parse string as a datetime"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast({'foo':'bar'} <object> as datetime) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[ns, UTC]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "datetime_type",
+                "msg": "Input should be a valid datetime"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 ]

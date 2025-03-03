@@ -259,5 +259,367 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(null <object> as date) => null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('2025/05/27' <object> as date) => pd.Timestamp('2025-05-27')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025/05/27"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27')"
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('2025/05/27' <string[python]> as date) => pd.Timestamp('2025-05-27')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025/05/27"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27')"
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('27/05/2025' <string[python]> as date) => pd.Timestamp('2025-05-27')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "27/05/2025"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27')"
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('05/27/2025' <string[python]> as date) => pd.Timestamp('2025-05-27')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "05/27/2025"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27')"
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('2025-05-27' <string[python]> as date) => pd.Timestamp('2025-05-27')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-05-27"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27')"
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('2025-05-27 12:34:56' <string[python]> as date) => pd.Timestamp('2025-05-27')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-05-27 12:34:56"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27')"
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(pd.Timestamp('2025-05-27 12:34:56') <datetime64[s]> as date) => pd.Timestamp('2025-05-27')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "pd.Timestamp('2025-05-27 12:34:56')"
+        }
+      ],
+      "dtype": "datetime64[s]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "pd.Timestamp('2025-05-27')"
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('foo' <string[python]> as date) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "date_parsing",
+                "msg": "Input should be a valid date, unable to parse string as a date"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast({'foo':'bar'} <object> as date) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "date_type",
+                "msg": "Input should be a valid date"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(1748383303000000000 <Int64> as date) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 1748383303000000000
+        }
+      ],
+      "dtype": "Int64"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "datetime64[s]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "date_type",
+                "msg": "Input should be a valid date"
+              }
+            ]
+          }
+        }
+      }
+    }
   }
 ]

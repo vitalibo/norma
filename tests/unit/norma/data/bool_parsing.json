@@ -959,5 +959,682 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(null as boolean) => null",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "void"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "boolean"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('true' as boolean) => true",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "true",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "col_bak": "true",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "boolean"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(1 as boolean) => true",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          1,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "col_bak": 1,
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "boolean"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "integer"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(true as boolean) => true",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          true,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "boolean"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": true,
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "boolean"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('foo' as boolean) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "foo",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": "foo",
+          "errors_col": [
+            {
+              "type": "bool_parsing",
+              "msg": "Input should be a valid boolean, unable to interpret input"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "boolean"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(null <boolean> as boolean) => null",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "dtype": "boolean"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(true <bool> as boolean) => true",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": true
+        }
+      ],
+      "dtype": "bool"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        true
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast(123 <Int32> as boolean) => true",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ],
+      "dtype": "Int32"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        true
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('True' <string[python]> as boolean) => true",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "True"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        true
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('on' <string[python]> as boolean) => true",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "on"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        true
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('True' <object> as boolean) => true",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "True"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        true
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('on' <object> as boolean) => true",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "on"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        true
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "cast('foo' <string[python]> as boolean) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "bar"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "bool_parsing",
+                "msg": "Input should be a valid boolean, unable to interpret input"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast('foo' <object> as boolean) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "bar"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "bool_parsing",
+                "msg": "Input should be a valid boolean, unable to interpret input"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast({'foo':'bar'} <object> as boolean) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "boolean",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "bool_type",
+                "msg": "Input should be a valid boolean"
+              }
+            ]
+          }
+        }
+      }
+    }
   }
 ]

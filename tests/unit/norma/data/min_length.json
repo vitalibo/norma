@@ -279,5 +279,228 @@
         "match": "min_length rule can only be applied to string columns"
       }
     }
+  },
+  {
+    "description": "len('ab') >= 3, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "ab",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "value": 3
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "ab",
+          "errors_col": [
+            {
+              "type": "string_too_short",
+              "msg": "String should have at least 3 characters"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "len('abc') >= 3",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "abc",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "value": 3
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "abc",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "len('ab') >= 3, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "ab"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {
+        "value": 3
+      }
+    },
+    "then": {
+      "data": [
+        "ab"
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "string_too_short",
+                "msg": "String should have at least 3 characters"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "len('abc') >= 3",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "abc"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {
+        "value": 3
+      }
+    },
+    "then": {
+      "data": [
+        "abc"
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
   }
 ]

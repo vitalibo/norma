@@ -324,5 +324,228 @@
         "match": "multiple_of must not be None"
       }
     }
+  },
+  {
+    "description": "33 is multiple of 3",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          33,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "multiple": 3
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 33,
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "2 is not multiple of 3, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          2,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "multiple": 3
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 2,
+          "errors_col": [
+            {
+              "type": "multiple_of",
+              "msg": "Input should be a multiple of 3"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "33 <int64> is multiple of 3",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 33
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {
+        "multiple": 3
+      }
+    },
+    "then": {
+      "data": [
+        33
+      ],
+      "dtype": "int64",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "2 <int64> is not multiple of 3, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 2
+        }
+      ],
+      "dtype": "int64"
+    },
+    "when": {
+      "args": {
+        "multiple": 3
+      }
+    },
+    "then": {
+      "data": [
+        2
+      ],
+      "dtype": "int64",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "multiple_of",
+                "msg": "Input should be a multiple of 3"
+              }
+            ]
+          }
+        }
+      }
+    }
   }
 ]

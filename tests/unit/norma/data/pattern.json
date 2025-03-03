@@ -215,5 +215,228 @@
         "match": "pattern must be a string"
       }
     }
+  },
+  {
+    "description": "'abc' matches '[a-z]+'",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "abc",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "regex": "[a-z]+"
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "abc",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "'abc' does not match '[0-9]+', error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "abc",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "regex": "[0-9]+"
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "abc",
+          "errors_col": [
+            {
+              "type": "string_pattern_mismatch",
+              "msg": "String should match pattern \"[0-9]+\""
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "'abc' matches '[a-z]+'",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "abc"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {
+        "regex": "[a-z]+"
+      }
+    },
+    "then": {
+      "data": [
+        "abc"
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {
+      }
+    }
+  },
+  {
+    "description": "'abc' does not match '[0-9]+', error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "ab"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {
+        "regex": "[0-9]+"
+      }
+    },
+    "then": {
+      "data": [
+        "ab"
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "string_pattern_mismatch",
+                "msg": "String should match pattern \"[0-9]+\""
+              }
+            ]
+          }
+        }
+      }
+    }
   }
 ]
