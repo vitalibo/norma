@@ -389,6 +389,161 @@
     }
   },
   {
+    "description": "cast('2025-01-23T12:34:56.000Z' as datetime) => datetime('2025-01-23T12:34:56.000Z')",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "2025-01-23T12:34:56.000Z",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23T12:34:56.000Z",
+          "col_bak": "2025-01-23T12:34:56.000Z",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "timestamp"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('foo' as date) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "foo",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": "foo",
+          "errors_col": [
+            {
+              "type": "datetime_parsing",
+              "msg": "Input should be a valid datetime, unable to parse string as a datetime"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "timestamp"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
     "description": "cast(null <object> as datetime) => null",
     "engines": [
       "pandas_api"

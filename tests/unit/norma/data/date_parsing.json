@@ -261,6 +261,237 @@
     }
   },
   {
+    "description": "cast('2025-01-23' as date) => date('2025-01-23')",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "2025-01-23",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23",
+          "col_bak": "2025-01-23",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "date"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('2025-01-23T12:34:56.000Z' as date) => date('2025-01-23')",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "2025-01-23T12:34:56.000Z",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23",
+          "col_bak": "2025-01-23T12:34:56.000Z",
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "date"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('foo' as date) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "foo",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": "foo",
+          "errors_col": [
+            {
+              "type": "date_parsing",
+              "msg": "Input should be a valid date, unable to parse string as a date"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "date"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
     "description": "cast(null <object> as date) => null",
     "engines": [
       "pandas_api"
