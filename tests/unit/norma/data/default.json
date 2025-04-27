@@ -46,6 +46,86 @@
     }
   },
   {
+    "description": "fill missing values with default in unstructured data",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30
+        },
+        {
+          "name": "Nancy",
+          "address": {
+            "city": {
+              "name": "New York",
+              "zip": 10001
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer",
+            "default": 25
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "Unknown"
+                  },
+                  "zip": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "name": "John",
+          "age": 30,
+          "address": {
+            "city": {
+              "name": "Unknown",
+              "zip": null
+            }
+          },
+          "errors": {}
+        },
+        {
+          "name": "Nancy",
+          "age": 25,
+          "address": {
+            "city": {
+              "name": "New York",
+              "zip": 10001
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
     "description": "fill invalid values with default",
     "engines": [
       "pandas",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Callable, Dict, List, TypeVar, Union
 
 import norma.rules
@@ -59,6 +60,7 @@ class Column:
             pattern: Union[str, None] = None,
             isin: Union[List[Any], None] = None,
             notin: Union[List[Any], None] = None,
+            inner_schema: Union[Schema, None] = None,
             default: Any = None,
             default_factory: Union[Callable, None] = None,
     ) -> None:
@@ -70,12 +72,15 @@ class Column:
                 norma.rules.bool_parsing: ['boolean', 'bool'],
                 norma.rules.datetime_parsing: ['datetime'],
                 norma.rules.date_parsing: ['date'],
+                partial(norma.rules.object_parsing, inner_schema): ['object'],
             }.items() for alias in aliases
         }
 
         dtype = dtype.__name__ if isinstance(dtype, type) else dtype
         if dtype not in dtype_parsing:
             raise ValueError(f"unsupported dtype '{dtype}'")
+        if dtype == 'object' and inner_schema is None:
+            raise ValueError("inner_schema must be provided for 'object' dtype")
 
         if default is not None and default_factory is not None:
             raise ValueError('default and default_factory cannot be used together')
@@ -114,6 +119,9 @@ class Column:
         self.rules = sorted(defined_rules.values(), key=lambda x: x.priority)
         self.default = default
         self.default_factory = default_factory
+        self.inner_schema = inner_schema
+        self.nullable = nullable
+        self.dtype = dtype
 
 
 class Schema:
@@ -152,6 +160,20 @@ class Schema:
             return validator.validate(self, df, error_col)
 
         raise NotImplementedError('unsupported engine')
+
+    @property
+    def nested_columns(self):
+        """
+        Returns a list of nested columns in the schema
+        """
+
+        def traverse(schema, root):
+            for name, column in schema.columns.items():
+                yield f'{root}{name}', column
+                if column.inner_schema is not None:
+                    yield from traverse(column.inner_schema, f'{root}{name}.')
+
+        return dict(traverse(self, ''))
 
     @staticmethod
     def from_json_schema(json_schema: Dict) -> Schema:
@@ -195,6 +217,7 @@ class Schema:
                     ),
 
                     nullable=field not in json_schema.get('required', []),
+                    inner_schema=Schema.from_json_schema(properties) if properties['type'] == 'object' else None,
                     **{
                         known[key]: value
                         for key, value in properties.items()

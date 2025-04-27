@@ -731,5 +731,162 @@
         }
       }
     }
+  },
+  {
+    "description": "{col={col1=null}}, ignored",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string",
+                "not": {
+                  "const": "abc"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "{col={col1='123'}} != 'abc'",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "123"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string",
+                "not": {
+                  "const": "abc"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "123"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "{col={col1='abc'}} != 'abc', error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "abc"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string",
+                "not": {
+                  "const": "abc"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {
+            "col.col1": {
+              "details": [
+                {
+                  "type": "not_equal_to",
+                  "msg": "Input should not be equal to \"abc\""
+                }
+              ],
+              "original": "\"abc\""
+            }
+          }
+        }
+      ]
+    }
   }
 ]

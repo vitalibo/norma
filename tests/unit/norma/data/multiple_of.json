@@ -547,5 +547,156 @@
         }
       }
     }
+  },
+  {
+    "description": "{col={col1=null}}, ignored",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "integer"
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "integer",
+                "multipleOf": 10
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "{col={col1=30}} is multiple of 10",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": 30
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "integer",
+                "multipleOf": 10
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": 30
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "{col={col1=33}}) is multiple of 10, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": 33
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "integer",
+                "multipleOf": 10
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {
+            "col.col1": {
+              "details": [
+                {
+                  "type": "multiple_of",
+                  "msg": "Input should be a multiple of 10"
+                }
+              ],
+              "original": "33"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

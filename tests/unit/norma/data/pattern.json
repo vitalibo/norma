@@ -80,7 +80,7 @@
     }
   },
   {
-    "description": "'abc' matches '^[a-z]*$', error is raised",
+    "description": "'abc1' matches '^[a-z]*$', error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -437,6 +437,157 @@
           }
         }
       }
+    }
+  },
+  {
+    "description": "{col={col1=null}}, ignored",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string",
+                "pattern": "^[a-z]*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "{col={col1='abc'}} matches '^[a-z]*$'",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "abc"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string",
+                "pattern": "^[a-z]*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "abc"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "{col={col1='abc1'}} matches '^[a-z]*$', error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "abc1"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string",
+                "pattern": "^[a-z]*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {
+            "col.col1": {
+              "details": [
+                {
+                  "type": "string_pattern_mismatch",
+                  "msg": "String should match pattern \"^[a-z]*$\""
+                }
+              ],
+              "original": "\"abc1\""
+            }
+          }
+        }
+      ]
     }
   }
 ]

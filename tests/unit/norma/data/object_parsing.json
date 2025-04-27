@@ -1,0 +1,1571 @@
+[
+  {
+    "description": "cast(null as struct) => null, exception is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "foo": "bar"
+          }
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "NotImplementedError",
+        "match": "object_parsing is not implemented yet"
+      }
+    }
+  },
+  {
+    "description": "cast(null as struct) => null",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "void"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(null <struct> as struct) => null",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(null <string> as struct) => null",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": null,
+          "errors_col": [
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(null <integer> as struct) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": null,
+          "errors_col": [
+            {
+              "msg": "Input should be a valid object",
+              "type": "object_type"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "integer"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast({col1='test', col2=123, col3=456} as struct) => {col1='test', col2=123, col3=456}",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          {
+            "col1": "test",
+            "col2": 123,
+            "col3": 456
+          },
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                },
+                {
+                  "name": "col3",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "test",
+            "col2": 123,
+            "col3": 456
+          },
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                },
+                {
+                  "name": "col3",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast({col1='test', col2='123', col3='456'} <map> as struct) => {col1='test', col2='123'}",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          {
+            "col1": "test",
+            "col2": "123",
+            "col3": "456"
+          },
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "keyType": "string",
+              "type": "map",
+              "valueContainsNull": true,
+              "valueType": "string"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "test",
+            "col2": "123"
+          },
+          "errors_col": [],
+          "col_bak": {
+            "col1": "test",
+            "col2": "123",
+            "col3": "456"
+          }
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "nullable": false,
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "string"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": {
+              "keyType": "string",
+              "type": "map",
+              "valueContainsNull": true,
+              "valueType": "string"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast({col1='test', col2={col21='foo', col22=456, col23=12.34}, col3=789} as struct) => {col1='test', col2={col21='foo', col22=456, col23=12.34}, col3=789}",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          {
+            "col1": "test",
+            "col2": {
+              "col21": "foo",
+              "col22": 456,
+              "col23": 12.34
+            },
+            "col3": 789
+          },
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": {
+                    "fields": [
+                      {
+                        "name": "col21",
+                        "type": "string"
+                      },
+                      {
+                        "name": "col22",
+                        "type": "integer"
+                      },
+                      {
+                        "name": "col23",
+                        "type": "double"
+                      }
+                    ],
+                    "type": "struct"
+                  }
+                },
+                {
+                  "name": "col3",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(object, inner_schema=Schema({'col21': Column(str), 'col22': Column(int)}))})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "test",
+            "col2": {
+              "col21": "foo",
+              "col22": 456,
+              "col23": 12.34
+            },
+            "col3": 789
+          },
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": {
+                    "fields": [
+                      {
+                        "name": "col21",
+                        "type": "string"
+                      },
+                      {
+                        "name": "col22",
+                        "type": "integer"
+                      },
+                      {
+                        "name": "col23",
+                        "type": "double"
+                      }
+                    ],
+                    "type": "struct"
+                  }
+                },
+                {
+                  "name": "col3",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast({col1='test', col2=123} <string> as struct) => {col1='test', col2=123}",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "{\"col1\": \"test\", \"col2\": 123, \"col3\": 456}",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "test",
+            "col2": 123
+          },
+          "errors_col": [
+            null
+          ],
+          "col_bak": "{\"col1\": \"test\", \"col2\": 123, \"col3\": 456}"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast({col1=321, col2='123'} <string> as struct) => {col1='321', col2=null}",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "{\"col1\": 321, \"col2\": \"123\"}",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "321",
+            "col2": null
+          },
+          "errors_col": [
+            null
+          ],
+          "col_bak": "{\"col1\": 321, \"col2\": \"123\"}"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast({col1='test', col2={col21='foo', col22=456}} <string> as struct) => {col1='test', col2={col21='foo', col22=456}}",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "{\"col1\": \"test\", \"col2\": {\"col21\": \"foo\", \"col22\": 456}}",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(object, inner_schema=Schema({'col21': Column(str), 'col22': Column(int)}))})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "test",
+            "col2": {
+              "col21": "foo",
+              "col22": 456
+            }
+          },
+          "errors_col": [
+            null
+          ],
+          "col_bak": "{\"col1\": \"test\", \"col2\": {\"col21\": \"foo\", \"col22\": 456}}"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": {
+                    "fields": [
+                      {
+                        "name": "col21",
+                        "type": "string"
+                      },
+                      {
+                        "name": "col22",
+                        "type": "integer"
+                      }
+                    ],
+                    "type": "struct"
+                  }
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('malformed json' <string> as struct) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "{\"col1\": \"test\", \"col2\": 123, \"col",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": [
+            {
+              "msg": "Input should be a valid object, unable to parse string as an object",
+              "type": "object_parsing"
+            }
+          ],
+          "col_bak": "{\"col1\": \"test\", \"col2\": 123, \"col"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('' as struct) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": [
+            {
+              "msg": "Input should be a valid object, unable to parse string as an object",
+              "type": "object_parsing"
+            }
+          ],
+          "col_bak": ""
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(123 as struct) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          123,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Schema({'col1': Column(str), 'col2': Column(int)})"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": 123,
+          "errors_col": [
+            {
+              "msg": "Input should be a valid object",
+              "type": "object_type"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "fields": [
+                {
+                  "name": "col1",
+                  "type": "string"
+                },
+                {
+                  "name": "col2",
+                  "type": "integer"
+                }
+              ],
+              "type": "struct"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "integer"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast({col={col1='foo', col2='bar'}} as struct) => {col={col1='foo', col2='bar'}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "bar"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  },
+                  {
+                    "name": "col2",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "bar"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1='foo', col2='123', col3='456}} <map> as struct) => {col={col1='foo', col2='123'}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "123",
+            "col3": "456"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "123"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1='foo', col2='bar', col3=123}} <string> as struct) => {col={col1='foo', col2='bar'}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "{\"col1\": \"foo\", \"col2\": \"bar\", \"col3\": 123}"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "bar"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123 as struct) => null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "123"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('foo' as struct) => null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  }
+]

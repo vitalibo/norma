@@ -110,8 +110,14 @@ def make_test_pyspark_api(spark_session, test_name, case):
             if 'raises' in case['then'] else mock.MagicMock()
     ) as e:
         # when
-        rule = getattr(pyspark_rules, test_name)(**case['when']['args'])
-        actual = rule.verify(df, case['when'].get('column', 'col'), error_state)
+        args = {
+            k: eval(v['expr'], globals()) if isinstance(v, dict) and 'expr' in v else v  # pylint: disable=eval-used
+            for k, v in case['when']['args'].items()
+        }
+        rule = getattr(pyspark_rules, test_name)(**args)
+        column = case['when'].get('column', 'col')
+        error_state.suffixes = {column: column}
+        actual = rule.verify(df, column, error_state)
 
         # then
         assert actual.schema.json() == StructType.from_json(case['then']['schema']).json()

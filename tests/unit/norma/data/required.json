@@ -869,5 +869,409 @@
         }
       }
     }
+  },
+  {
+    "description": "nested column is not null",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "nested column is null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "col1"
+            ]
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {
+            "col.col1": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "nested column is missing, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col2": "foo"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "col1"
+            ]
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null,
+            "col2": "foo"
+          },
+          "errors": {
+            "col.col1": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "nested (level-3) column is not null",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": "foo"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "object",
+                    "properties": {
+                      "col111": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": "foo"
+              }
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "nested (level-3) column is null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": null
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": {
+                      "fields": [
+                        {
+                          "name": "col11",
+                          "type": {
+                            "fields": [
+                              {
+                                "name": "col111",
+                                "type": "string"
+                              }
+                            ],
+                            "type": "struct"
+                          }
+                        }
+                      ],
+                      "type": "struct"
+                    }
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "object",
+                    "properties": {
+                      "col111": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "col111"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": null
+              }
+            }
+          },
+          "errors": {
+            "col.col1.col11.col111": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "nested (level-3) column is missing, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col112": "foo"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "object",
+                    "properties": {
+                      "col111": {
+                        "type": "string"
+                      },
+                      "col112": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "col111"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": null,
+                "col112": "foo"
+              }
+            }
+          },
+          "errors": {
+            "col.col1.col11.col111": {
+              "details": [
+                {
+                  "type": "missing",
+                  "msg": "Field required"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

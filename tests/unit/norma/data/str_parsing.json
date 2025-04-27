@@ -865,5 +865,253 @@
         }
       }
     }
+  },
+  {
+    "description": "cast({col={col1=null}} as struct<str>) => {col={col1=null}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "integer"
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": null
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1=123}} as struct<str>) => {col={col1='123'}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": 123
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "123"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1={col2={col3=null}}} as struct<str>) => {col={col1={col2=col3=null}}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": null
+              }
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": {
+                      "fields": [
+                        {
+                          "name": "col2",
+                          "type": {
+                            "fields": [
+                              {
+                                "name": "col3",
+                                "type": "string"
+                              }
+                            ],
+                            "type": "struct"
+                          }
+                        }
+                      ],
+                      "type": "struct"
+                    }
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "object",
+                    "properties": {
+                      "col3": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": null
+              }
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1={col2={col3=123}}} as struct<str>) => {col={col1={col2={col3='123'}}}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": 123
+              }
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "object",
+                    "properties": {
+                      "col3": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": "123"
+              }
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
   }
 ]

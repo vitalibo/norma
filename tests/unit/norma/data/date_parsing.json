@@ -492,6 +492,85 @@
     }
   },
   {
+    "description": "cast(123 as date) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          123,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "col_bak": 123,
+          "errors_col": [
+            {
+              "type": "date_type",
+              "msg": "Input should be a valid date"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "date"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "integer"
+          }
+        ]
+      }
+    }
+  },
+  {
     "description": "cast(null <object> as date) => null",
     "engines": [
       "pandas_api"
@@ -851,6 +930,227 @@
           }
         }
       }
+    }
+  },
+  {
+    "description": "cast({col={col1={col2={col3=null}}} as struct<date>) => {col={col1={col2=col3=null}}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": null
+              }
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": {
+                      "fields": [
+                        {
+                          "name": "col2",
+                          "type": {
+                            "fields": [
+                              {
+                                "name": "col3",
+                                "type": "string"
+                              }
+                            ],
+                            "type": "struct"
+                          }
+                        }
+                      ],
+                      "type": "struct"
+                    }
+                  }
+                ],
+                "type": "struct"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "object",
+                    "properties": {
+                      "col3": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": null
+              }
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1={col2={col3='2025-01-23T12:34:56'}}} as struct<date>) => {col={col1={col2={col3='2025-01-23}}}}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": "2025-01-23T12:34:56"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "object",
+                    "properties": {
+                      "col3": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": "2025-01-23"
+              }
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1={col2={col3='abc'}}} as struct<date>) => {col={col1={col2={col3=null}}}}, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": "abc"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "object",
+                    "properties": {
+                      "col3": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": {
+                "col3": null
+              }
+            }
+          },
+          "errors": {
+            "col.col1.col2.col3": {
+              "details": [
+                {
+                  "type": "date_parsing",
+                  "msg": "Input should be a valid date, unable to parse string as a date"
+                }
+              ],
+              "original": "\"abc\""
+            }
+          }
+        }
+      ]
     }
   }
 ]

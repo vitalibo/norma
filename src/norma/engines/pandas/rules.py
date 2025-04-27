@@ -240,6 +240,10 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
     return verify
 
 
+def object_parsing(schema) -> Rule:
+    raise NotImplementedError('object_parsing is not implemented yet')
+
+
 class NumberTypeRule(Rule):
     """
     Class for numeric type casting rules

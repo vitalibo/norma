@@ -38,6 +38,28 @@ def test_schema_from_json_schema():
             'releaseDate': {
                 'type': 'string',
                 'format': 'date-time'
+            },
+            'address': {
+                'description': 'Address of the person',
+                'type': 'object',
+                'properties': {
+                    'street': {
+                        'description': 'Street address',
+                        'type': 'string'
+                    },
+                    'city': {
+                        'description': 'City name',
+                        'type': 'string'
+                    },
+                    'state': {
+                        'description': 'State name',
+                        'type': 'string'
+                    },
+                    'zip_code': {
+                        'description': 'ZIP code',
+                        'type': 'string'
+                    }
+                },
             }
         },
         'required': ['name', 'age', 'disabled'],
@@ -47,12 +69,17 @@ def test_schema_from_json_schema():
     with mock.patch('norma.schema.Column') as mock_column:
         actual = Schema.from_json_schema(json_schema)
 
-    assert actual.columns.keys() == {'name', 'age', 'height', 'disabled', 'releaseDate'}
+    assert actual.columns.keys() == {'name', 'age', 'height', 'disabled', 'releaseDate', 'address'}
     assert mock_column.mock_calls == [
-        mock.call('string', nullable=False, min_length=3, max_length=256, pattern='^[A-Za-z ]+$'),
-        mock.call('integer', nullable=False, ge=0, le=120, isin=[0, 1, 2, 3]),
-        mock.call('number', nullable=True, gt=0.5, lt=3.0),
-        mock.call('boolean', nullable=False, default=False),
-        mock.call('datetime', nullable=True)
+        mock.call('string', nullable=False, inner_schema=None, min_length=3, max_length=256, pattern='^[A-Za-z ]+$'),
+        mock.call('integer', nullable=False, inner_schema=None, ge=0, le=120, isin=[0, 1, 2, 3]),
+        mock.call('number', nullable=True, inner_schema=None, gt=0.5, lt=3.0),
+        mock.call('boolean', nullable=False, inner_schema=None, default=False),
+        mock.call('datetime', nullable=True, inner_schema=None),
+        mock.call('string', nullable=True, inner_schema=None),
+        mock.call('string', nullable=True, inner_schema=None),
+        mock.call('string', nullable=True, inner_schema=None),
+        mock.call('string', nullable=True, inner_schema=None),
+        mock.call('object', nullable=True, inner_schema=mock.ANY)
     ]
     assert actual.allow_extra is False

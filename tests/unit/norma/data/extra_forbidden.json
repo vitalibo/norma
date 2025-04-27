@@ -323,5 +323,351 @@
         }
       }
     }
+  },
+  {
+    "description": "extra fields are allowed unstructured",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "bar"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  },
+                  {
+                    "name": "col2",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "bar"
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "extra fields forbidden unstructured",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": "bar"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  },
+                  {
+                    "name": "col2",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo"
+          },
+          "errors": {
+            "col.col2": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "extra fields are allowed unstructured (level 3)",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": "foo",
+                "col112": "bar"
+              }
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col11",
+                          "type": {
+                            "type": "struct",
+                            "fields": [
+                              {
+                                "name": "col111",
+                                "type": "string"
+                              },
+                              {
+                                "name": "col112",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "object",
+                    "properties": {
+                      "col111": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": "foo",
+                "col112": "bar"
+              }
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "extra fields forbidden unstructured (level 3)",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": "foo",
+                "col112": "bar"
+              }
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col11",
+                          "type": {
+                            "type": "struct",
+                            "fields": [
+                              {
+                                "name": "col111",
+                                "type": "string"
+                              },
+                              {
+                                "name": "col112",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "object",
+                    "properties": {
+                      "col111": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": {
+                "col111": "foo"
+              }
+            }
+          },
+          "errors": {
+            "col.col1.col11.col112": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        }
+      ]
+    }
   }
 ]

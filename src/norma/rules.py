@@ -305,3 +305,11 @@ def date_parsing() -> Rule:
     """
 
     return RuleProxy('date_parsing', 1)
+
+
+def object_parsing(schema) -> Rule:
+    """
+    Ensure that the values are objects or parse as objects if possible
+    """
+
+    return RuleProxy('object_parsing', 1, schema=schema)
