@@ -888,5 +888,143 @@
         }
       ]
     }
+  },
+  {
+    "description": "each([1, 2]) != 3",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                1,
+                2
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "not": {
+                        "const": 3
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                1,
+                2
+              ]
+            }
+          },
+          "errors": {
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each([1, 2, 3]) != 3, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                1,
+                2,
+                3
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "not": {
+                        "const": 3
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                1,
+                2,
+                null
+              ]
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": [
+                    2
+                  ],
+                  "msg": "Input should not be equal to 3",
+                  "type": "not_equal_to"
+                }
+              ],
+              "original": "[1,2,3]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

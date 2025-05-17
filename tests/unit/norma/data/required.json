@@ -1273,5 +1273,346 @@
         }
       ]
     }
+  },
+  {
+    "description": "each(['ab', 'cd']) is not null",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "cd"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "cd"
+              ]
+            }
+          },
+          "errors": {
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each(['ab', null, 'cd', null]) is not null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                null,
+                "cd",
+                null
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                null,
+                "cd",
+                null
+              ]
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": [
+                    1,
+                    3
+                  ],
+                  "msg": "Field required",
+                  "type": "missing"
+                }
+              ],
+              "original": "[\"ab\",null,\"cd\",null]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each(['ab', null, 'cd', null]) is not null",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                null,
+                "cd",
+                null
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                null,
+                "cd",
+                null
+              ]
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "each(['12', null, '34', null]) is not null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "12",
+                null,
+                "34",
+                null
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                12,
+                null,
+                34,
+                null
+              ]
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": [
+                    1,
+                    3
+                  ],
+                  "msg": "Field required",
+                  "type": "missing"
+                }
+              ],
+              "original": "[\"12\",null,\"34\",null]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each(['12', null, '34', null]) is not null",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "12",
+                null,
+                "34",
+                null
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                12,
+                null,
+                34,
+                null
+              ]
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
   }
 ]

@@ -1,6 +1,6 @@
 [
   {
-    "description": "column is null, ignored",
+    "description": "len(null) <= 3",
     "engines": [
       "pandas",
       "pyspark"
@@ -250,7 +250,7 @@
     }
   },
   {
-    "description": "len(123) <= 3",
+    "description": "len(123) <= 3, exception is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -504,7 +504,7 @@
     }
   },
   {
-    "description": "{col={col1=null}}, ignored",
+    "description": "len({col.col1=null}) <= 3",
     "engines": [
       "pyspark"
     ],
@@ -563,7 +563,7 @@
     }
   },
   {
-    "description": "len({col={col1='ab'}}) <= 3",
+    "description": "len({col.col1='ab'}) <= 3",
     "engines": [
       "pyspark"
     ],
@@ -604,7 +604,7 @@
     }
   },
   {
-    "description": "len({col={col1='abcd'}}) <= 3, error is raised",
+    "description": "len({col.col1='abcd'}) <= 3, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -648,6 +648,273 @@
                 }
               ],
               "original": "\"abcd\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "len(['ab', 'cd', 'efg']) <= 3",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "cd",
+                "efg"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxLength": 3
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "cd",
+                "efg"
+              ]
+            }
+          },
+          "errors": {
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "len(['ab', 'cd', 'ef', 'gh']) <= 3, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "cd",
+                "ef",
+                "gh"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxLength": 3
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": null
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": null,
+                  "msg": "Array should have at most 3 items",
+                  "type": "too_long"
+                }
+              ],
+              "original": "[\"ab\",\"cd\",\"ef\",\"gh\"]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "len(each(['ab', 'a'])) <= 3",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "a"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "a"
+              ]
+            }
+          },
+          "errors": {
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "len(each(['ab', 'abcd', 'a', 'abc'])) <= 3, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "abcd",
+                "a",
+                "abc"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                null,
+                "a",
+                "abc"
+              ]
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": [
+                    1
+                  ],
+                  "msg": "String should have at most 3 characters",
+                  "type": "string_too_long"
+                }
+              ],
+              "original": "[\"ab\",\"abcd\",\"a\",\"abc\"]"
             }
           }
         }

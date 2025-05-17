@@ -589,5 +589,142 @@
         }
       ]
     }
+  },
+  {
+    "description": "each(['ab', 'a']) matches '^[a-z]*$'",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "a"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z]*$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "a"
+              ]
+            }
+          },
+          "errors": {
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each(['ab', '123', 'a', 'Ab']) matches '^[a-z]*$', error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                "123",
+                "a",
+                "Ab"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z]*$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "ab",
+                null,
+                "a",
+                null
+              ]
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": [
+                    1,
+                    3
+                  ],
+                  "msg": "String should match pattern \"^[a-z]*$\"",
+                  "type": "string_pattern_mismatch"
+                }
+              ],
+              "original": "[\"ab\",\"123\",\"a\",\"Ab\"]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

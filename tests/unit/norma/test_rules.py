@@ -103,7 +103,7 @@ def make_test_pyspark_api(spark_session, test_name, case):
     # given
     df = spark_session.createDataFrame(
         case['given']['data'], StructType.from_json(case['given']['schema']))
-    error_state = pyspark_rules.ErrorState('errors')
+    error_state = pyspark_rules.ErrorState('errors', False)
 
     with (
             pytest.raises(Exception, match=case['then']['raises']['match'])

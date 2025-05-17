@@ -989,5 +989,142 @@
         }
       ]
     }
+  },
+  {
+    "description": "each([3, 4]) < 5",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                3,
+                4
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "exclusiveMaximum": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                3,
+                4
+              ]
+            }
+          },
+          "errors": {
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each([1, 4, 2, 3]) < 3, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                1,
+                4,
+                2,
+                3
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "exclusiveMaximum": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                1,
+                null,
+                2,
+                null
+              ]
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": [
+                    1,
+                    3
+                  ],
+                  "msg": "Input should be less than 3",
+                  "type": "less_than"
+                }
+              ],
+              "original": "[1,4,2,3]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

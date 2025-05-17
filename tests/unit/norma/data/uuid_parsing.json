@@ -170,5 +170,166 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(['b9e95281-2f6b-4f75-8010-5afabaca81e7', 'C6F75244-8D0E-479C-B557-5585F485350C', null] as array<uuid>) => ['b9e95281-2f6b-4f75-8010-5afabaca81e7', 'c6f75244-8d0e-479c-b557-5585f485350c', null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "b9e95281-2f6b-4f75-8010-5afabaca81e7",
+            "C6F75244-8D0E-479C-B557-5585F485350C",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "b9e95281-2f6b-4f75-8010-5afabaca81e7",
+            "c6f75244-8d0e-479c-b557-5585f485350c",
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<uuid>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    0
+                  ],
+                  "msg": "UUID input should be a string",
+                  "type": "uuid_type"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['b9e95281-2f6b-4f75-8010-5afabaca81e7', 'C6F75244-8D0E-479C-B557-5585F485350C', 'foo', null] as array<uuid>) => ['b9e95281-2f6b-4f75-8010-5afabaca81e7', 'c6f75244-8d0e-479c-b557-5585f485350c', null, null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "b9e95281-2f6b-4f75-8010-5afabaca81e7",
+            "C6F75244-8D0E-479C-B557-5585F485350C",
+            "foo",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "b9e95281-2f6b-4f75-8010-5afabaca81e7",
+            "c6f75244-8d0e-479c-b557-5585f485350c",
+            null,
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    2
+                  ],
+                  "msg": "Input should be a valid UUID, unable to parse string as a UUID",
+                  "type": "uuid_parsing"
+                }
+              ],
+              "original": "[\"b9e95281-2f6b-4f75-8010-5afabaca81e7\",\"C6F75244-8D0E-479C-B557-5585F485350C\",\"foo\",null]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

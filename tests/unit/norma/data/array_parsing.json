@@ -1,0 +1,518 @@
+[
+  {
+    "description": "cast(['foo'] as array) => null, exception is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "foo"
+          ]
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Column('str')"
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "NotImplementedError",
+        "match": "array_parsing is not implemented yet"
+      }
+    }
+  },
+  {
+    "description": "cast(null as array) => null",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          null,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "void"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Column('str')"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "containsNull": true,
+              "elementType": "string",
+              "type": "array"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(['abc'] as array) => ['abc']",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          [
+            "abc"
+          ],
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "type": "array",
+              "elementType": "string",
+              "containsNull": true
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Column('str')"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "abc"
+          ],
+          "errors_col": []
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "containsNull": true,
+              "elementType": "string",
+              "type": "array"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('[\"abc\"]' as array) => ['abc']",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "[\"abc\"]",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Column('str')"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "abc"
+          ],
+          "errors_col": [
+            null
+          ],
+          "col_bak": "[\"abc\"]"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "containsNull": true,
+              "elementType": "string",
+              "type": "array"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('[\"1\", 2, true, {\"foo\":\"bar\"}]' as array) => ['abc', '2', 'true', '{\"foo\":\"bar\"}']",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "[\"abc\", 2, true, {\"foo\":\"bar\"}]",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Column('str')"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "abc",
+            "2",
+            "true",
+            "{\"foo\":\"bar\"}"
+          ],
+          "errors_col": [
+            null
+          ],
+          "col_bak": "[\"abc\", 2, true, {\"foo\":\"bar\"}]"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "containsNull": true,
+              "elementType": "string",
+              "type": "array"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast(123 as array) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          123,
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "integer"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Column('str')"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": [
+            {
+              "msg": "Input should be a valid array",
+              "type": "array_type"
+            }
+          ],
+          "col_bak": 123
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "containsNull": true,
+              "elementType": "string",
+              "type": "array"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "integer"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "description": "cast('[abc]' as array) => null, error is raised",
+    "engines": [
+      "pyspark_api"
+    ],
+    "given": {
+      "data": [
+        [
+          "[abc]",
+          []
+        ]
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": "string"
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": "void",
+              "containsNull": false
+            }
+          }
+        ]
+      }
+    },
+    "when": {
+      "args": {
+        "schema": {
+          "expr": "Column('str')"
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors_col": [
+            {
+              "msg": "Input should be a valid array, unable to parse string as an array",
+              "type": "array_parsing"
+            }
+          ],
+          "col_bak": "[abc]"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "col",
+            "type": {
+              "containsNull": true,
+              "elementType": "string",
+              "type": "array"
+            }
+          },
+          {
+            "name": "errors_col",
+            "type": {
+              "type": "array",
+              "elementType": {
+                "fields": [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "msg",
+                    "type": "string"
+                  }
+                ],
+                "type": "struct"
+              },
+              "containsNull": true
+            }
+          },
+          {
+            "name": "col_bak",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  }
+]

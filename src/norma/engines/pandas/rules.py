@@ -248,6 +248,10 @@ def object_parsing(schema) -> Rule:
     raise NotImplementedError('object_parsing is not implemented yet')
 
 
+def array_parsing(schema) -> Rule:
+    raise NotImplementedError('array_parsing is not implemented yet')
+
+
 class NumberTypeRule(Rule):
     """
     Class for numeric type casting rules

@@ -1677,5 +1677,170 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(['1', '2.1', '1.24e-5', null] as array<float>) => [1.0, 2.1, 1.24e-5, null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "1",
+            "2.1",
+            "1.24e-5",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            1.0,
+            2.1,
+            1.24e-5,
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<float>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    0
+                  ],
+                  "msg": "Input should be a valid number",
+                  "type": "float_type"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['1', '2.1', 'true', '1.24e-5', null, 'foo'] as array<float>) => [1.0, 2.1, 1.0, 1.24e-5, null, null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "1",
+            "2.1",
+            "true",
+            "1.24e-5",
+            null,
+            "foo"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            1.0,
+            2.1,
+            null,
+            1.24e-5,
+            null,
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    2,
+                    5
+                  ],
+                  "msg": "Input should be a valid number, unable to parse string as a number",
+                  "type": "float_parsing"
+                }
+              ],
+              "original": "[\"1\",\"2.1\",\"true\",\"1.24e-5\",null,\"foo\"]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

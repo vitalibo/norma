@@ -181,5 +181,74 @@
         }
       ]
     }
+  },
+  {
+    "description": "fill missing values in each(['3', '4', null, '6', null]) with default",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "3",
+                "4",
+                null,
+                "6",
+                null
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "default": -1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                3,
+                4,
+                -1,
+                6,
+                -1
+              ]
+            }
+          },
+          "errors": {
+          }
+        }
+      ]
+    }
   }
 ]

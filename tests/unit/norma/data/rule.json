@@ -70,7 +70,7 @@
           "col": {
             "dtype": "str",
             "rules": {
-              "expr": "rules.rule(lambda column: ~fn.col(column).startswith('f'), type='custom_error', msg='column must start with f')"
+              "expr": "rules.rule(lambda column: ~fn.col(column).startswith('f'), details={'type':'custom_error', 'msg':'column must start with f'})"
             }
           }
         }

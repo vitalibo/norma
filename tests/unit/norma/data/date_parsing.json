@@ -1152,5 +1152,166 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(['2025-05-23', '2025-05-23T12:34:56', null] as array<date>) => [date(2025-05-23), date(2025-05-23), null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23",
+            "2025-05-23T12:34:56",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23",
+            "2025-05-23",
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<date>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    0
+                  ],
+                  "msg": "Input should be a valid date",
+                  "type": "date_type"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['2025-05-23', '2025-05-23T12:34:56', null, 'foo'] as array<date>) => [date(2025-05-23), date(2025-05-23), null, null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23",
+            "2025-05-23T12:34:56",
+            null,
+            "foo"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23",
+            "2025-05-23",
+            null,
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    3
+                  ],
+                  "msg": "Input should be a valid date, unable to parse string as a date",
+                  "type": "date_parsing"
+                }
+              ],
+              "original": "[\"2025-05-23\",\"2025-05-23T12:34:56\",null,\"foo\"]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

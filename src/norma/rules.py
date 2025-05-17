@@ -322,3 +322,11 @@ def object_parsing(schema) -> Rule:
     """
 
     return RuleProxy('object_parsing', 1, schema=schema)
+
+
+def array_parsing(schema) -> Rule:
+    """
+    Ensure that the values are arrays or parse as arrays if possible
+    """
+
+    return RuleProxy('array_parsing', 1, schema=schema)

@@ -127,3 +127,14 @@ def with_nested_column(col_name: str, col: Column) -> Callable[[DataFrame], Data
         return df.withColumn(root, build_struct(field_names, nested_names, root))
 
     return transform
+
+
+def default_if_null(default: Column):
+    """
+    Create a function that returns a column with a default value if the original column is null.
+    """
+
+    def wrap(col):
+        return fn.coalesce(col, default)
+
+    return wrap

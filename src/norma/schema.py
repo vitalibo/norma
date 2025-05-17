@@ -60,7 +60,7 @@ class Column:
             pattern: Union[str, None] = None,
             isin: Union[List[Any], None] = None,
             notin: Union[List[Any], None] = None,
-            inner_schema: Union[Schema, None] = None,
+            inner_schema: Union[Schema, Column, None] = None,
             default: Any = None,
             default_factory: Union[Callable, None] = None,
     ) -> None:
@@ -74,6 +74,7 @@ class Column:
                 norma.rules.date_parsing: ['date'],
                 norma.rules.uuid_parsing: ['uuid'],
                 partial(norma.rules.object_parsing, inner_schema): ['object'],
+                partial(norma.rules.array_parsing, inner_schema): ['array', 'list'],
             }.items() for alias in aliases
         }
 
@@ -82,6 +83,8 @@ class Column:
             raise ValueError(f"unsupported dtype '{dtype}'")
         if dtype == 'object' and inner_schema is None:
             raise ValueError("inner_schema must be provided for 'object' dtype")
+        if dtype in ('array', 'list') and inner_schema is None:
+            raise ValueError("inner_schema must be provided for 'array' dtype")
 
         if default is not None and default_factory is not None:
             raise ValueError('default and default_factory cannot be used together')
@@ -171,7 +174,7 @@ class Schema:
         def traverse(schema, root):
             for name, column in schema.columns.items():
                 yield f'{root}{name}', column
-                if column.inner_schema is not None:
+                if column.inner_schema is not None and column.dtype == 'object':
                     yield from traverse(column.inner_schema, f'{root}{name}.')
 
         return dict(traverse(self, ''))
@@ -197,6 +200,8 @@ class Schema:
             'default': 'default',
             'enum': 'isin',
             'const': 'eq',
+            'minItems': 'min_length',
+            'maxItems': 'max_length',
         }
         known_not = {
             'const': 'ne',
@@ -210,27 +215,43 @@ class Schema:
             ('string', 'uuid'): 'uuid',
         }
 
+        def column_from(nullable, properties):
+            dtype = properties.get('type')
+            if isinstance(dtype, list):
+                if len(dtype) == 1:
+                    dtype = dtype[0]
+                elif len(dtype) == 2 and 'null' in dtype:
+                    dtype = str(dtype[0] if dtype[0] != 'null' else dtype[1])
+                    nullable = True
+                else:
+                    raise ValueError(f'unsupported multiple types: {dtype}')
+
+            inner_schema = None
+            if dtype == 'object':
+                inner_schema = Schema.from_json_schema(properties)
+            elif dtype == 'array':
+                inner_schema = column_from(False, properties['items'])
+
+            return Column(
+                complex_types.get((dtype, properties.get('format')), dtype),
+
+                nullable=nullable,
+                inner_schema=inner_schema,
+                **{
+                    known[key]: value
+                    for key, value in properties.items()
+                    if key in known
+                },
+                **{
+                    known_not[key]: value
+                    for key, value in properties.get('not', {}).items()
+                    if key in known_not
+                }
+            )
+
         return Schema(
             {
-                field: Column(
-                    complex_types.get(
-                        (properties.get('type'), properties.get('format')),
-                        properties.get('type')
-                    ),
-
-                    nullable=field not in json_schema.get('required', []),
-                    inner_schema=Schema.from_json_schema(properties) if properties['type'] == 'object' else None,
-                    **{
-                        known[key]: value
-                        for key, value in properties.items()
-                        if key in known
-                    },
-                    **{
-                        known_not[key]: value
-                        for key, value in properties.get('not', {}).items()
-                        if key in known_not
-                    }
-                )
+                field: column_from(field not in json_schema.get('required', []), properties)
                 for field, properties in json_schema['properties'].items()
             },
             allow_extra=json_schema.get('additionalProperties', False)

@@ -1793,5 +1793,241 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(['1', '2.1', null] as array<int>) => [1, 2, null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "1",
+            "2.1",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            1,
+            2,
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<int>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    0
+                  ],
+                  "msg": "Input should be a valid integer",
+                  "type": "int_type"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['1', null, 'foo', '2.1'] as array<int>) => [1, null, null, 2], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "1",
+            null,
+            "foo",
+            "2.1"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            1,
+            null,
+            null,
+            2
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    2
+                  ],
+                  "msg": "Input should be a valid integer, unable to parse string as an integer",
+                  "type": "int_parsing"
+                }
+              ],
+              "original": "[\"1\",null,\"foo\",\"2.1\"]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col={col1=col2=['1', null, 'foo', '2.1']}} as array<int>) => {col={col1{col2=[1, null, null, 2]}}}, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "1",
+                null,
+                "foo",
+                "2.1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                1,
+                null,
+                null,
+                2
+              ]
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "indexes": [
+                    2
+                  ],
+                  "msg": "Input should be a valid integer, unable to parse string as an integer",
+                  "type": "int_parsing"
+                }
+              ],
+              "original": "[\"1\",null,\"foo\",\"2.1\"]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

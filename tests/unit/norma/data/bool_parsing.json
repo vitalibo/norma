@@ -2185,5 +2185,173 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast(['true', 'false', 'yes', 'no', 'on', 'off', null] as array<bool>) => [true, false, true, false, true, false, null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "true",
+            "false",
+            "yes",
+            "no",
+            "on",
+            "off",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<bool>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    0
+                  ],
+                  "msg": "Input should be a valid boolean",
+                  "type": "bool_type"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['true', 'false', null, 'foo', '1'] as array<bool>) => [true, false, null, null, true], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "true",
+            "false",
+            null,
+            "foo",
+            "1"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            true,
+            false,
+            null,
+            null,
+            true
+          ],
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "indexes": [
+                    3
+                  ],
+                  "msg": "Input should be a valid boolean, unable to interpret input",
+                  "type": "bool_parsing"
+                }
+              ],
+              "original": "[\"true\",\"false\",null,\"foo\",\"1\"]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

@@ -132,5 +132,53 @@
         }
       ]
     }
+  },
+  {
+    "description": "fill missing values in array with derived",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": [
+            "bar",
+            null,
+            "baz",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col1": {
+            "dtype": "str"
+          },
+          "col2": {
+            "dtype": "array",
+            "inner_schema": {
+              "expr": "Column('str', default_factory=lambda x: fn.upper(fn.col('col1')))"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": [
+            "bar",
+            "FOO",
+            "baz",
+            "FOO"
+          ],
+          "errors": {}
+        }
+      ]
+    }
   }
 ]
