@@ -72,6 +72,7 @@ class Column:
                 norma.rules.bool_parsing: ['boolean', 'bool'],
                 norma.rules.datetime_parsing: ['datetime'],
                 norma.rules.date_parsing: ['date'],
+                norma.rules.uuid_parsing: ['uuid'],
                 partial(norma.rules.object_parsing, inner_schema): ['object'],
             }.items() for alias in aliases
         }
@@ -206,6 +207,7 @@ class Schema:
             ('string', 'date'): 'date',
             ('string', 'date-time'): 'datetime',
             ('string', 'time'): 'time',
+            ('string', 'uuid'): 'uuid',
         }
 
         return Schema(

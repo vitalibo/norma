@@ -257,6 +257,25 @@ def date_parsing() -> Rule:
     return DateTypeRule()
 
 
+def uuid_parsing() -> Rule:
+    @Rule.new
+    def verify(df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        data_type = data_type_of(df, column)
+        backup_column = backup_col(column, error_state)
+        df = df.withColumn(backup_column, fn.col(column))
+        if not isinstance(data_type, StringType):
+            return df \
+                .withColumn(column, fn.lit(None).cast(StringType.typeName())) \
+                .transform(error_state.add_errors(fn.lit(True), column, details=errors.UUID_TYPE))
+
+        uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        return df \
+            .withColumn(column, fn.lower(fn.col(column))) \
+            .transform(error_state.add_errors(~fn.col(column).rlike(uuid_regex), column, details=errors.UUID_PARSING))
+
+    return verify
+
+
 def object_parsing(schema) -> Rule:
     return ObjectTypeRule(schema)
 

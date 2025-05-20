@@ -240,6 +240,10 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
     return verify
 
 
+def uuid_parsing() -> Rule:
+    raise NotImplementedError('uuid_parsing is not implemented yet')
+
+
 def object_parsing(schema) -> Rule:
     raise NotImplementedError('object_parsing is not implemented yet')
 

@@ -264,6 +264,7 @@ def int_parsing() -> Rule:
     Ensure that the values are integers or parse as integers if possible
     :return:
     """
+
     return RuleProxy('int_parsing', 1)
 
 
@@ -305,6 +306,14 @@ def date_parsing() -> Rule:
     """
 
     return RuleProxy('date_parsing', 1)
+
+
+def uuid_parsing() -> Rule:
+    """
+    Ensure that the values are valid UUIDs
+    """
+
+    return RuleProxy('uuid_parsing', 1)
 
 
 def object_parsing(schema) -> Rule:
