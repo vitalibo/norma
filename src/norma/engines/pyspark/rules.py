@@ -6,26 +6,13 @@ from typing import Any, Iterable, Optional
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
 from pyspark.sql.types import (
-    ArrayType,
-    BooleanType,
-    DateType,
-    FloatType,
-    IntegerType,
-    MapType,
-    NumericType,
-    StringType,
-    StructField,
-    StructType,
+    ArrayType, BooleanType, DateType, FloatType, IntegerType, MapType, NumericType, StringType, StructField, StructType,
     TimestampType
 )
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    backup_col,
-    data_type_of,
-    suffix_col,
-    with_nested_column,
-    with_nested_column_renamed
+    backup_col, data_type_of, suffix_col, with_nested_column, with_nested_column_renamed
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule

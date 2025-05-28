@@ -2,7 +2,7 @@ install:
 	pip3 install -r requirements-dev.txt
 
 codestyle:
-	isort ./src/ ./tests/ -l 120 -m 3
+	isort ./src/ ./tests/ -l 120 -m 5
 	pylint ./src/ ./tests/ --rcfile=.pylintrc
 
 test:
