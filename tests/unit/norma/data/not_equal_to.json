@@ -1,6 +1,6 @@
 [
   {
-    "description": "column is null, ignored",
+    "description": "null != 10",
     "engines": [
       "pandas",
       "pyspark"
@@ -733,7 +733,7 @@
     }
   },
   {
-    "description": "{col={col1=null}}, ignored",
+    "description": "{col.col1=null} != 'abc'",
     "engines": [
       "pyspark"
     ],
@@ -794,7 +794,7 @@
     }
   },
   {
-    "description": "{col={col1='123'}} != 'abc'",
+    "description": "{col.col1='123'} != 'abc'",
     "engines": [
       "pyspark"
     ],
@@ -837,7 +837,7 @@
     }
   },
   {
-    "description": "{col={col1='abc'}} != 'abc', error is raised",
+    "description": "{col.col1='abc'} != 'abc', error is raised",
     "engines": [
       "pyspark"
     ],

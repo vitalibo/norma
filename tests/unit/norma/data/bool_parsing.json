@@ -1596,7 +1596,7 @@
     }
   },
   {
-    "description": "cast({'foo':'bar'} <object> as boolean) => null, error is raised",
+    "description": "cast({foo='bar'} <object> as boolean) => null, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -1638,7 +1638,7 @@
     }
   },
   {
-    "description": "cast({col={col1=null}} as struct<bool>) => {col={col1=null}}",
+    "description": "cast({col.col1=null} as struct<bool>) => {col.col1=null}",
     "engines": [
       "pyspark"
     ],
@@ -1696,7 +1696,7 @@
     }
   },
   {
-    "description": "cast({col={col1='true'}} as struct<bool>) => {col={col1=true}}",
+    "description": "cast({col.col1='true'} as struct<bool>) => {col.col1=true}",
     "engines": [
       "pyspark"
     ],
@@ -1736,7 +1736,7 @@
     }
   },
   {
-    "description": "cast({col={col1='abc'}} as struct<bool>) => {col={col1=null}}, error is raised",
+    "description": "cast({col.col1='abc'} as struct<bool>) => {col.col1=null}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1786,7 +1786,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2=null}} as struct<bool>) => {col={col1={col2=null}}}",
+    "description": "cast({col.col1.col2=null} as struct<bool>) => {col.col1.col2=null}",
     "engines": [
       "pyspark"
     ],
@@ -1861,7 +1861,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2='on'}} as struct<bool>) => {col={col1={col2=true}}}",
+    "description": "cast({col.col1.col2='on'} as struct<bool>) => {col.col1.col2=true}",
     "engines": [
       "pyspark"
     ],
@@ -1910,7 +1910,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2='abc'}} as struct<bool>) => {col={col1={col2=null}}}, error is raised",
+    "description": "cast({col.col1.col2='abc'} as struct<bool>) => {col.col1.col2=null}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1969,7 +1969,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3=null}}} as struct<bool>) => {col={col1={col2=col3=null}}}",
+    "description": "cast({col.col1.col2.col3=null} as struct<bool>) => {col.col1.col2.col3=null}",
     "engines": [
       "pyspark"
     ],
@@ -2061,7 +2061,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='off'}}} as struct<bool>) => {col={col1={col2={col3=false}}}}",
+    "description": "cast({col.col1.col2.col3='off'} as struct<bool>) => {col.col1.col2.col3=false}",
     "engines": [
       "pyspark"
     ],
@@ -2119,7 +2119,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='abc'}}} as struct<bool>) => {col={col1={col2={col3=null}}}}, error is raised",
+    "description": "cast({col.col1.col2.col3='abc'} as struct<bool>) => {col.col1.col2.col3=null}, error is raised",
     "engines": [
       "pyspark"
     ],

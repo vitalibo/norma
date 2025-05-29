@@ -513,6 +513,7 @@ class ObjectTypeRule(Rule):
                     'boolean': BooleanType,
                     'datetime': TimestampType,
                     'date': DateType,
+                    'uuid': StringType,
                 }[col.dtype](),
                 nullable=True,
                 metadata={}

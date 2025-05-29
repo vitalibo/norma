@@ -851,7 +851,7 @@
     }
   },
   {
-    "description": "cast({'foo':'bar'} <object> as date) => null, error is raised",
+    "description": "cast({foo='bar'} <object> as date) => null, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -933,7 +933,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3=null}}} as struct<date>) => {col={col1={col2=col3=null}}}",
+    "description": "cast({col.col1.col2.col3=null} as struct<date>) => {col.col1.col2=col3=null}",
     "engines": [
       "pyspark"
     ],
@@ -1026,7 +1026,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='2025-01-23T12:34:56'}}} as struct<date>) => {col={col1={col2={col3='2025-01-23}}}}",
+    "description": "cast({col.col1.col2.col3='2025-01-23T12:34:56'} as struct<date>) => {col.col1.col2.col3='2025-01-23}",
     "engines": [
       "pyspark"
     ],
@@ -1085,7 +1085,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='abc'}}} as struct<date>) => {col={col1={col2={col3=null}}}}, error is raised",
+    "description": "cast({col.col1.col2.col3='abc'} as struct<date>) => {col.col1.col2.col3=null}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1200,7 +1200,7 @@
     }
   },
   {
-    "description": "cast([{co1:'foo'}] as array<date>) => [null], error is raised",
+    "description": "cast([{co1='foo'}] as array<date>) => [null], error is raised",
     "engines": [
       "pyspark"
     ],

@@ -174,7 +174,7 @@
     }
   },
   {
-    "description": "cast({'foo':'bar'} as str) => null, error is raised",
+    "description": "cast({foo='bar''} as str) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -262,7 +262,7 @@
     }
   },
   {
-    "description": "cast(false, 123, '4.56', {'foo':'bar'}, ['foo'] as str) => ['false', '123', '4.56', null, null] error is raised",
+    "description": "cast(false, 123, '4.56', {foo='bar'}, ['foo'] as str) => ['false', '123', '4.56', null, null] error is raised",
     "engines": [
       "pandas"
     ],
@@ -825,7 +825,7 @@
     }
   },
   {
-    "description": "cast({'foo':'bar'} <object> as string) => null, error is raised",
+    "description": "cast({foo='bar'} <object> as string) => null, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -867,7 +867,7 @@
     }
   },
   {
-    "description": "cast({col={col1=null}} as struct<str>) => {col={col1=null}}",
+    "description": "cast({col.col1=null} as struct<str>) => {col.col1=null}",
     "engines": [
       "pyspark"
     ],
@@ -925,7 +925,7 @@
     }
   },
   {
-    "description": "cast({col={col1=123}} as struct<str>) => {col={col1='123'}}",
+    "description": "cast({col.col1=123} as struct<str>) => {col.col1='123'}",
     "engines": [
       "pyspark"
     ],
@@ -965,7 +965,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3=null}}} as struct<str>) => {col={col1={col2=col3=null}}}",
+    "description": "cast({col.col1.col2.col3=null} as struct<str>) => {col.col1.col2.col3=null}",
     "engines": [
       "pyspark"
     ],
@@ -1057,7 +1057,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3=123}}} as struct<str>) => {col={col1={col2={col3='123'}}}}",
+    "description": "cast({col.col1.col2.col3=123} as struct<str>) => {col.col1.col2.col3='123'}",
     "engines": [
       "pyspark"
     ],
@@ -1107,6 +1107,210 @@
               "col2": {
                 "col3": "123"
               }
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([123, null] as array<str>) => [123, null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            123,
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "123",
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1='foo'}] as array<str>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid string",
+                  "type": "string_type"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([1, null, 'foo', 2.1] as array<str>) => ['1', null, 'foo', '2.1'], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            1,
+            null,
+            "foo",
+            2.1
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "1",
+            null,
+            "foo",
+            "2.1"
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col2=[123, null]} as array<str>) => {col.col1.col2=['123', null}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                123,
+                null
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": [
+                "123",
+                null
+              ]
             }
           },
           "errors": {}

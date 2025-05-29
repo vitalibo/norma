@@ -1,6 +1,6 @@
 [
   {
-    "description": "near-real data of people, with some invalid entries",
+    "description": "flat-structured data",
     "engines": [
       "pandas",
       "pyspark"
@@ -289,7 +289,7 @@
     }
   },
   {
-    "description": "near-real semistructured data of people, with some invalid entries",
+    "description": "semi-structured data",
     "engines": [
       "pyspark"
     ],
@@ -306,7 +306,11 @@
             "state": "NY",
             "zip_code": "10001"
           },
-          "email": "john.doe@example.com"
+          "email": "john.doe@example.com",
+          "tags": [
+            "friend",
+            "colleague"
+          ]
         },
         {
           "name": "Jane",
@@ -319,7 +323,10 @@
             "state": "CA",
             "zip_code": "90001"
           },
-          "email": "jane.smith@example"
+          "email": "jane.smith@example",
+          "tags": [
+            "family"
+          ]
         },
         {
           "name": "Robert",
@@ -332,7 +339,11 @@
             "state": "IL",
             "zip_code": "60601"
           },
-          "email": "robert.brown@domain.com"
+          "email": "robert.brown@domain.com",
+          "tags": [
+            "colleague",
+            "other"
+          ]
         },
         {
           "name": "Emily",
@@ -345,7 +356,8 @@
             "state": "TX",
             "zip_code": "77001"
           },
-          "email": "emily.davis@example.com"
+          "email": "emily.davis@example.com",
+          "tags": []
         },
         {
           "name": "Michael",
@@ -357,7 +369,12 @@
             "city": "Miami",
             "state": "FL"
           },
-          "email": "michael.wilson@.com"
+          "email": "michael.wilson@.com",
+          "tags": [
+            "Friend",
+            "other",
+            "#colleague"
+          ]
         },
         {
           "name": "Sarah",
@@ -370,7 +387,13 @@
             "state": "WA",
             "zip_code": "98101"
           },
-          "email": "sarah.miller@example.com"
+          "email": "sarah.miller@example.com",
+          "tags": [
+            "family",
+            "friend",
+            "colleague",
+            "other"
+          ]
         },
         {
           "name": "A",
@@ -380,7 +403,10 @@
           "address": {
             "street": ""
           },
-          "email": "invalid.email.com"
+          "email": "invalid.email.com",
+          "tags": [
+            "other"
+          ]
         },
         {
           "name": "Tom",
@@ -391,7 +417,10 @@
             "street": "741 Maple St",
             "city": "Springfield"
           },
-          "email": "tom.lee@example.com"
+          "email": "tom.lee@example.com",
+          "tags": [
+            "colleague"
+          ]
         }
       ]
     },
@@ -447,6 +476,20 @@
           "email": {
             "type": "string",
             "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "friend",
+                "family",
+                "colleague",
+                "other"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 3
           }
         },
         "required": [
@@ -473,6 +516,10 @@
             "zip_code": "10001"
           },
           "email": "john.doe@example.com",
+          "tags": [
+            "friend",
+            "colleague"
+          ],
           "errors": {}
         },
         {
@@ -487,10 +534,14 @@
             "zip_code": "90001"
           },
           "email": null,
+          "tags": [
+            "family"
+          ],
           "errors": {
             "age": {
               "details": [
                 {
+                  "loc": null,
                   "type": "int_parsing",
                   "msg": "Input should be a valid integer, unable to parse string as an integer"
                 }
@@ -500,6 +551,7 @@
             "email": {
               "details": [
                 {
+                  "loc": null,
                   "type": "string_pattern_mismatch",
                   "msg": "String should match pattern \"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\""
                 }
@@ -520,6 +572,10 @@
             "zip_code": "60601"
           },
           "email": "robert.brown@domain.com",
+          "tags": [
+            "colleague",
+            "other"
+          ],
           "errors": {}
         },
         {
@@ -534,15 +590,27 @@
             "zip_code": "77001"
           },
           "email": "emily.davis@example.com",
+          "tags": null,
           "errors": {
             "age": {
               "details": [
                 {
+                  "loc": null,
                   "type": "greater_than_equal",
                   "msg": "Input should be greater than or equal to 0"
                 }
               ],
               "original": "\"-5\""
+            },
+            "tags": {
+              "details": [
+                {
+                  "loc": null,
+                  "type": "too_short",
+                  "msg": "Array should have at least 1 item"
+                }
+              ],
+              "original": "[]"
             }
           }
         },
@@ -558,10 +626,16 @@
             "zip_code": null
           },
           "email": null,
+          "tags": [
+            null,
+            "other",
+            null
+          ],
           "errors": {
             "age": {
               "details": [
                 {
+                  "loc": null,
                   "type": "less_than_equal",
                   "msg": "Input should be less than or equal to 100"
                 }
@@ -571,11 +645,25 @@
             "email": {
               "details": [
                 {
+                  "loc": null,
                   "type": "string_pattern_mismatch",
                   "msg": "String should match pattern \"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\""
                 }
               ],
               "original": "\"michael.wilson@.com\""
+            },
+            "tags[]": {
+              "details": [
+                {
+                  "loc": [
+                    0,
+                    2
+                  ],
+                  "type": "enum",
+                  "msg": "Input should be \"friend\", \"family\", \"colleague\" or \"other\""
+                }
+              ],
+              "original": "[\"Friend\",\"other\",\"#colleague\"]"
             }
           }
         },
@@ -591,7 +679,19 @@
             "zip_code": "98101"
           },
           "email": "sarah.miller@example.com",
-          "errors": {}
+          "tags": null,
+          "errors": {
+            "tags": {
+              "details": [
+                {
+                  "loc": null,
+                  "type": "too_long",
+                  "msg": "Array should have at most 3 items"
+                }
+              ],
+              "original": "[\"family\",\"friend\",\"colleague\",\"other\"]"
+            }
+          }
         },
         {
           "name": null,
@@ -605,10 +705,14 @@
             "zip_code": null
           },
           "email": null,
+          "tags": [
+            "other"
+          ],
           "errors": {
             "address.city": {
               "details": [
                 {
+                  "loc": null,
                   "type": "missing",
                   "msg": "Field required"
                 }
@@ -618,6 +722,7 @@
             "address.street": {
               "details": [
                 {
+                  "loc": null,
                   "type": "string_too_short",
                   "msg": "String should have at least 5 characters"
                 }
@@ -627,6 +732,7 @@
             "sex": {
               "details": [
                 {
+                  "loc": null,
                   "type": "enum",
                   "msg": "Input should be \"M\" or \"F\""
                 }
@@ -636,6 +742,7 @@
             "email": {
               "details": [
                 {
+                  "loc": null,
                   "type": "string_pattern_mismatch",
                   "msg": "String should match pattern \"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\""
                 }
@@ -645,6 +752,7 @@
             "name": {
               "details": [
                 {
+                  "loc": null,
                   "type": "string_too_short",
                   "msg": "String should have at least 2 characters"
                 }
@@ -665,10 +773,14 @@
             "zip_code": null
           },
           "email": "tom.lee@example.com",
+          "tags": [
+            "colleague"
+          ],
           "errors": {
             "age": {
               "details": [
                 {
+                  "loc": null,
                   "type": "int_parsing",
                   "msg": "Input should be a valid integer, unable to parse string as an integer"
                 }

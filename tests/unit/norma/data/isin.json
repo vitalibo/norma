@@ -1,6 +1,6 @@
 [
   {
-    "description": "column is null, ignored",
+    "description": "null in ['foo', 'bar', 'baz']",
     "engines": [
       "pandas",
       "pyspark"
@@ -564,7 +564,7 @@
     }
   },
   {
-    "description": "{col={col1=null}}, ignored",
+    "description": "{col.col1=null} in ['foo', 'bar', 'baz']",
     "engines": [
       "pyspark"
     ],
@@ -627,7 +627,7 @@
     }
   },
   {
-    "description": "{col={col1='bar'}} in ['foo', 'bar', 'baz']",
+    "description": "{col.col1='bar'} in ['foo', 'bar', 'baz']",
     "engines": [
       "pyspark"
     ],
@@ -672,7 +672,7 @@
     }
   },
   {
-    "description": "{col={col1='qux'}} in ['foo', 'bar', 'baz'], error is raised",
+    "description": "{col.col1='qux'} in ['foo', 'bar', 'baz'], error is raised",
     "engines": [
       "pyspark"
     ],

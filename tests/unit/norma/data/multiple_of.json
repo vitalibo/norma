@@ -1,6 +1,6 @@
 [
   {
-    "description": "column is null, ignored",
+    "description": "null is multiple of 10",
     "engines": [
       "pandas",
       "pyspark"
@@ -549,7 +549,7 @@
     }
   },
   {
-    "description": "{col={col1=null}}, ignored",
+    "description": "{col.col1=null} is multiple of 10",
     "engines": [
       "pyspark"
     ],
@@ -608,7 +608,7 @@
     }
   },
   {
-    "description": "{col={col1=30}} is multiple of 10",
+    "description": "{col.col1=30} is multiple of 10",
     "engines": [
       "pyspark"
     ],
@@ -649,7 +649,7 @@
     }
   },
   {
-    "description": "{col={col1=33}}) is multiple of 10, error is raised",
+    "description": "{col.col1=33} is multiple of 10, error is raised",
     "engines": [
       "pyspark"
     ],

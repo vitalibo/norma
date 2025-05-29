@@ -1271,7 +1271,7 @@
     }
   },
   {
-    "description": "cast({'foo':'bar'} <object> as float) => null, error is raised",
+    "description": "cast({foo='bar'} <object> as float) => null, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -1313,7 +1313,7 @@
     }
   },
   {
-    "description": "cast({col={col1=null}} as struct<float>) => {col={col1=null}}",
+    "description": "cast({col.col1=null} as struct<float>) => {col.col1=null}",
     "engines": [
       "pyspark"
     ],
@@ -1371,7 +1371,7 @@
     }
   },
   {
-    "description": "cast({col={col1='123.4'}} as struct<float>) => {col={col1=123.4}}",
+    "description": "cast({col.col1='123.4'} as struct<float>) => {col.col1=123.4}",
     "engines": [
       "pyspark"
     ],
@@ -1411,7 +1411,7 @@
     }
   },
   {
-    "description": "cast({col={col1='abc'}} as struct<float>) => {col={col1=null}}, error is raised",
+    "description": "cast({col.col1='abc'} as struct<float>) => {col.col1=null}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1461,7 +1461,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3=null}}} as struct<float>) => {col={col1={col2=col3=null}}}",
+    "description": "cast({col.col1.col2.col3=null} as struct<float>) => {col.col1.col2=col3=null}",
     "engines": [
       "pyspark"
     ],
@@ -1553,7 +1553,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='123.4'}}} as struct<float>) => {col={col1={col2={col3=123.4}}}}",
+    "description": "cast({col.col1.col2.col3='123.4'} as struct<float>) => {col.col1.col2.col3=123.4}",
     "engines": [
       "pyspark"
     ],
@@ -1611,7 +1611,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='abc'}}} as struct<float>) => {col={col1={col2={col3=null}}}}, error is raised",
+    "description": "cast({col.col1.col2.col3='abc'} as struct<float>) => {col.col1.col2.col3=null}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1726,7 +1726,7 @@
     }
   },
   {
-    "description": "cast([{co1:'foo'}] as array<float>) => [null], error is raised",
+    "description": "cast([{co1='foo'}] as array<float>) => [null], error is raised",
     "engines": [
       "pyspark"
     ],

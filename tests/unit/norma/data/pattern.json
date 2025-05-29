@@ -1,6 +1,6 @@
 [
   {
-    "description": "column is null, ignored",
+    "description": "null matches '^[a-z]*$'",
     "engines": [
       "pandas",
       "pyspark"
@@ -440,7 +440,7 @@
     }
   },
   {
-    "description": "{col={col1=null}}, ignored",
+    "description": "{col.col1=null} matches '^[a-z]*$'",
     "engines": [
       "pyspark"
     ],
@@ -499,7 +499,7 @@
     }
   },
   {
-    "description": "{col={col1='abc'}} matches '^[a-z]*$'",
+    "description": "{col.col1='abc'} matches '^[a-z]*$'",
     "engines": [
       "pyspark"
     ],
@@ -540,7 +540,7 @@
     }
   },
   {
-    "description": "{col={col1='abc1'}} matches '^[a-z]*$', error is raised",
+    "description": "{col.col1='abc1'} matches '^[a-z]*$', error is raised",
     "engines": [
       "pyspark"
     ],

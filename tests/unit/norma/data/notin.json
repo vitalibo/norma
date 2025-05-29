@@ -1,6 +1,6 @@
 [
   {
-    "description": "column is null, ignored",
+    "description": "null not in ['foo', 'bar', 'baz']",
     "engines": [
       "pandas",
       "pyspark"
@@ -519,7 +519,7 @@
     }
   },
   {
-    "description": "{col={col1=null}}, ignored",
+    "description": "{col.col1=null} not in ['foo', 'bar', 'baz']",
     "engines": [
       "pyspark"
     ],
@@ -584,7 +584,7 @@
     }
   },
   {
-    "description": "{col={col1='qux'}} not in ['foo', 'bar', 'baz']",
+    "description": "{col.col1='qux'} not in ['foo', 'bar', 'baz']",
     "engines": [
       "pyspark"
     ],
@@ -631,7 +631,7 @@
     }
   },
   {
-    "description": "{col={col1='bar'}} not in ['foo', 'bar', 'baz'], error is raised",
+    "description": "{col.col1='bar'} not in ['foo', 'bar', 'baz'], error is raised",
     "engines": [
       "pyspark"
     ],

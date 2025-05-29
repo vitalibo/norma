@@ -776,7 +776,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3=null}}}} as struct<datetime>) => {col={col1={col2={col3=null}}}}",
+    "description": "cast({col.col1.col2.col3=null} as struct<datetime>) => {col.col1.col2.col3=null}",
     "engines": [
       "pyspark"
     ],
@@ -869,7 +869,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='2025-01-23T12:34:56.123Z'}}}} as struct<datetime>) => {col={col1={col2={col3='2025-01-23T12:34:56.123Z'}}}}",
+    "description": "cast({col.col1.col2.col3='2025-01-23T12:34:56.123Z'} as struct<datetime>) => {col.col1.col2.col3='2025-01-23T12:34:56.123Z'}",
     "engines": [
       "pyspark"
     ],
@@ -928,7 +928,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2={col3='foo'}}}} as struct<datetime>) => {col={col1={col2={col3=null}}}}, error is raised",
+    "description": "cast({col.col1.col2.col3='foo'} as struct<datetime>) => {col.col1.col2.col3=null}, error is raised",
     "engines": [
       "pyspark"
     ],
