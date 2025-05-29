@@ -771,7 +771,7 @@
             "col.col1.col2": {
               "details": [
                 {
-                  "indexes": null,
+                  "loc": null,
                   "msg": "Array should have at least 3 items",
                   "type": "too_short"
                 }
@@ -904,10 +904,10 @@
             }
           },
           "errors": {
-            "col.col1.col2": {
+            "col.col1.col2[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     0,
                     2
                   ],

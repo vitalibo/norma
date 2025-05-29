@@ -254,10 +254,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     0
                   ],
                   "msg": "UUID input should be a string",
@@ -315,10 +315,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     2
                   ],
                   "msg": "Input should be a valid UUID, unable to parse string as a UUID",

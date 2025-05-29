@@ -1010,10 +1010,10 @@
             }
           },
           "errors": {
-            "col.col1.col2": {
+            "col.col1.col2[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     2
                   ],
                   "msg": "Input should not be equal to 3",

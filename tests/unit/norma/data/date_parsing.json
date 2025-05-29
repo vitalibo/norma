@@ -1236,10 +1236,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     0
                   ],
                   "msg": "Input should be a valid date",
@@ -1297,10 +1297,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     3
                   ],
                   "msg": "Input should be a valid date, unable to parse string as a date",

@@ -1079,10 +1079,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     0
                   ],
                   "msg": "Input should be a valid datetime",
@@ -1140,10 +1140,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     3
                   ],
                   "msg": "Input should be a valid datetime, unable to parse string as a datetime",

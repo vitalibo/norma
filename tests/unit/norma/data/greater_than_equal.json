@@ -1069,10 +1069,10 @@
             }
           },
           "errors": {
-            "col.col1.col2": {
+            "col.col1.col2[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     0
                   ],
                   "msg": "Input should be greater than or equal to 2",

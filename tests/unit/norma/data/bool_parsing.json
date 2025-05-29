@@ -2275,10 +2275,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     0
                   ],
                   "msg": "Input should be a valid boolean",
@@ -2337,10 +2337,10 @@
             true
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     3
                   ],
                   "msg": "Input should be a valid boolean, unable to interpret input",

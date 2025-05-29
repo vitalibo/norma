@@ -42,10 +42,12 @@ class ErrorState(IErrorState):
 
             indexes = fn.filter(
                 fn.transform(boolmask, lambda x, i: fn.when(x, i).otherwise(fn.lit(None))), lambda x: x.isNotNull())
-            cols.append(indexes.alias('indexes'))
+            cols.append(indexes.alias('loc'))
 
             details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*cols))
-            error_column = f'{self.error_column}_{suffix}'
+            error_column = f'{self.error_column}_{suffix_col(column + "[]", self)}'
+            if error_column not in df.columns:
+                df = df.withColumn(error_column, fn.array())
             return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
 
         def default_strategy(df):
@@ -53,7 +55,7 @@ class ErrorState(IErrorState):
             # if DataFrame has at least one array column, we need to add indexes
             # because we cannot append a struct to an array with different types
             if self.has_array:
-                cols.append(fn.lit(None).cast('array<int>').alias('indexes'))
+                cols.append(fn.lit(None).cast('array<int>').alias('loc'))
 
             details_col = fn.when(boolmask, fn.struct(*cols))
             error_column = f'{self.error_column}_{suffix}'

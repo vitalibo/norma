@@ -773,7 +773,7 @@
             "col.col1.col2": {
               "details": [
                 {
-                  "indexes": null,
+                  "loc": null,
                   "msg": "Array should have at most 3 items",
                   "type": "too_long"
                 }
@@ -904,10 +904,10 @@
             }
           },
           "errors": {
-            "col.col1.col2": {
+            "col.col1.col2[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     1
                   ],
                   "msg": "String should have at most 3 characters",

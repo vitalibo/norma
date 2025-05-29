@@ -1761,10 +1761,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     0
                   ],
                   "msg": "Input should be a valid number",
@@ -1825,10 +1825,10 @@
             null
           ],
           "errors": {
-            "col": {
+            "col[]": {
               "details": [
                 {
-                  "indexes": [
+                  "loc": [
                     2,
                     5
                   ],

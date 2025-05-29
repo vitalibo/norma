@@ -147,6 +147,7 @@ def _make_origin(df: DataFrame, column, error_state):
     Format the original value of a column for error reporting
     """
 
+    column = column.replace('[]', '')
     backup_column = backup_col(column, error_state)
     column = f'{backup_column}_array' if f'{backup_column}_array' in df.columns else (
         backup_column if backup_column in df.columns else column)
