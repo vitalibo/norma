@@ -164,6 +164,36 @@ root
  |    |    |-- original: string (nullable = true)
 ```
 
+### Supported validation rules
+
+Norma supports a variety of validation rules, including:
+
+| rule                 | pandas | pyspark | pyspark[object] | pyspark[array] |
+|----------------------|--------|---------|-----------------|----------------|
+| `required`           | ✅      | ✅       | ✅               | ✅              |
+| `equal_to`           | ✅      | ✅       | ✅               | ✅              |
+| `not_equal_to`       | ✅      | ✅       | ✅               | ✅              |
+| `greater_than`       | ✅      | ✅       | ✅               | ✅              |
+| `greater_than_equal` | ✅      | ✅       | ✅               | ✅              |
+| `less_than`          | ✅      | ✅       | ✅               | ✅              |
+| `less_than_equal`    | ✅      | ✅       | ✅               | ✅              |
+| `multiple_of`        | ✅      | ✅       | ✅               | ✅              |
+| `min_length`         | ✅      | ✅       | ✅               | ✅              |
+| `max_length`         | ✅      | ✅       | ✅               | ✅              |
+| `pattern`            | ✅      | ✅       | ✅               | ✅              |
+| `isin`               | ✅      | ✅       | ✅               | ✅              |
+| `notin`              | ✅      | ✅       | ✅               | ✅              |
+| `extra_forbidden`    | ✅      | ✅       | ✅               | ❌              |
+| `int_parsing`        | ✅      | ✅       | ✅               | ✅              |
+| `float_parsing`      | ✅      | ✅       | ✅               | ✅              |
+| `str_parsing`        | ✅      | ✅       | ✅               | ✅              |
+| `bool_parsing`       | ✅      | ✅       | ✅               | ✅              |
+| `date_parsing`       | ✅      | ✅       | ✅               | ✅              |
+| `datetime_parsing`   | ✅      | ✅       | ✅               | ✅              |
+| `uuid_parsing`       | ❌      | ✅       | ✅               | ✅              |
+| `object_parsing`     | ❌      | ✅       | ✅               | ❌              |
+| `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
+
 ### Errors
 
 The error format is a dictionary where the key is the column name, and value is a structure with two fields: `details`
@@ -194,6 +224,32 @@ that caused the error.
         }
       ],
       "original": "\"alice.spring@ep\""
+    }
+  }
+}
+```
+
+Special case for PySpark, when DataFrame has array validation rules, the error format is slightly different.
+In this case, the `details` array has an additional `loc` field that indicates the indexes of the array elements that
+failed validation and incorrect values are replaced with `null` in an array.
+
+```json
+{
+  "tags": [
+    null,
+    "tag1",
+    null
+  ],
+  "errors": {
+    "tags[]": {
+      "details": [
+        {
+          "loc": [ 0, 2 ],
+          "type": "enum",
+          "msg": "Input should be \"tag1\", \"tag2\" or \"tag3\""
+        }
+      ],
+      "original": "[\"tag0\",\"tag1\",\"tag3\"]"
     }
   }
 }
