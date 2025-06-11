@@ -190,7 +190,7 @@ Norma supports a variety of validation rules, including:
 | `bool_parsing`       | ✅      | ✅       | ✅               | ✅              |
 | `date_parsing`       | ✅      | ✅       | ✅               | ✅              |
 | `datetime_parsing`   | ✅      | ✅       | ✅               | ✅              |
-| `uuid_parsing`       | ❌      | ✅       | ✅               | ✅              |
+| `uuid_parsing`       | ✅      | ✅       | ✅               | ✅              |
 | `object_parsing`     | ❌      | ✅       | ✅               | ❌              |
 | `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
 

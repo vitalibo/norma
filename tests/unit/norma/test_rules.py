@@ -1,5 +1,6 @@
 import json
 import os
+import uuid  # noqa pylint: disable=unused-import
 from functools import partial
 from unittest import mock
 
@@ -133,7 +134,7 @@ def make_test_pandas_api(test_name, case):
             return {k: as_data(v) for k, v in o.items()}
         if isinstance(o, list):
             return [as_data(v) for v in o]
-        if isinstance(o, str) and (o.startswith('pd.') or o.startswith('np.')):
+        if isinstance(o, str) and (o.startswith('pd.') or o.startswith('np.') or o.startswith('uuid.UUID(')):
             return eval(o)  # pylint: disable=eval-used
         return o
 

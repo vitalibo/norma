@@ -1,31 +1,8 @@
 [
   {
-    "description": "cast(null as uuid) => null, exception is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "b9e95281-2f6b-4f75-8010-5afabaca81e7"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {
-      }
-    },
-    "then": {
-      "raises": {
-        "type": "NotImplementedError",
-        "match": "uuid_parsing is not implemented yet"
-      }
-    }
-  },
-  {
     "description": "cast(null as uuid) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -43,6 +20,9 @@
             }
           ],
           "type": "struct"
+        },
+        "pandas": {
+          "col": "object"
         }
       }
     },
@@ -69,6 +49,7 @@
   {
     "description": "cast('b9e95281-2f6b-4f75-8010-5afabaca81e7' as uuid) => uuid('b9e95281-2f6b-4f75-8010-5afabaca81e7')",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -101,6 +82,7 @@
   {
     "description": "cast('B9E95281-2F6B-4F75-8010-5AFABACA81E7' as uuid) => uuid('b9e95281-2f6b-4f75-8010-5afabaca81e7')",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -133,6 +115,7 @@
   {
     "description": "cast('foo' as uuid) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -175,6 +158,7 @@
   {
     "description": "cast(123 as uuid) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -212,6 +196,173 @@
           }
         }
       ]
+    }
+  },
+  {
+    "description": "cast('62ca2b41-b7c0-474c-b138-bf5e3f4283d1' <string[python]> as uuid) => uuid('62ca2b41-b7c0-474c-b138-bf5e3f4283d1')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
+        }
+      ],
+      "dtype": "string[python]"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {}
+    }
+  },
+  {
+    "description": "cast('62ca2b41-b7c0-474c-b138-bf5e3f4283d1' <object> as uuid) => uuid('62ca2b41-b7c0-474c-b138-bf5e3f4283d1')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {}
+    }
+  },
+  {
+    "description": "cast(uuid('62ca2b41-b7c0-474c-b138-bf5e3f4283d1') <object> as uuid) => uuid('62ca2b41-b7c0-474c-b138-bf5e3f4283d1')",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "uuid.UUID('62ca2b41-b7c0-474c-b138-bf5e3f4283d1')"
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          false
+        ]
+      },
+      "errors": {}
+    }
+  },
+  {
+    "description": "cast(123 <int16> as uuid) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ],
+      "dtype": "int16"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "uuid_type",
+                "msg": "UUID input should be a string"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(123 <object> as uuid) => null, error is raised",
+    "engines": [
+      "pandas_api"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ],
+      "dtype": "object"
+    },
+    "when": {
+      "args": {}
+    },
+    "then": {
+      "data": [
+        null
+      ],
+      "dtype": "string[python]",
+      "masks": {
+        "col": [
+          true
+        ]
+      },
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "uuid_type",
+                "msg": "UUID input should be a string"
+              }
+            ]
+          }
+        }
+      }
     }
   },
   {

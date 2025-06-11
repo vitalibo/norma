@@ -1,6 +1,8 @@
+import abc
 import inspect
 from collections import defaultdict
 from typing import Any, Iterable, Optional, Union
+from uuid import UUID
 
 import pandas as pd
 
@@ -241,7 +243,7 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
 
 
 def uuid_parsing() -> Rule:
-    raise NotImplementedError('uuid_parsing is not implemented yet')
+    return UUIDTypeRule()
 
 
 def object_parsing(schema) -> Rule:
@@ -369,3 +371,40 @@ class DatetimeTypeRule(Rule):
         boolmask = datetime_series.isna() & df[column].notna() & ~non_parsing_type_series
         error_state.add_errors(boolmask, column, details=self.dt_parsing)
         return datetime_series
+
+
+class StringDerivedTypeRule(Rule, abc.ABC):
+    """
+    Base class for rules that derive from string types
+    """
+
+    @staticmethod
+    def cast_as_str(df: pd.DataFrame, column: str, error_state: ErrorState, supported, error_details) -> pd.Series:
+        if df[column].dtype == 'string[python]':
+            return df[column]
+
+        if not pd.api.types.is_object_dtype(df[column]):
+            error_state.add_errors(pd.Series(True, index=df.index), column, details=error_details)
+            return pd.Series(dtype='string', name=column, index=df.index)
+
+        non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, supported))
+        error_state.add_errors(non_parsing_type_series & df[column].notna(), column, details=error_details)
+
+        str_series = df[column].astype('string')
+        str_series[non_parsing_type_series] = None
+        return str_series
+
+
+class UUIDTypeRule(StringDerivedTypeRule):
+    """
+    Class for UUID type casting rules
+    """
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        series = self.cast_as_str(df, column, error_state, (str, UUID), errors.UUID_TYPE)
+        series = series.str.lower()
+        boolmask = ~series.str.match(uuid_regex, na=False)
+        error_state.add_errors(boolmask & series.notna(), column, details=errors.UUID_PARSING)
+        series[boolmask] = None
+        return series
