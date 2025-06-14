@@ -316,6 +316,22 @@ def uuid_parsing() -> Rule:
     return RuleProxy('uuid_parsing', 1)
 
 
+def ipv4_address() -> Rule:
+    """
+    Ensure that the values are valid IPv4 addresses
+    """
+
+    return RuleProxy('ipv4_address', 1)
+
+
+def ipv6_address() -> Rule:
+    """
+    Ensure that the values are valid IPv6 addresses
+    """
+
+    return RuleProxy('ipv6_address', 1)
+
+
 def object_parsing(schema) -> Rule:
     """
     Ensure that the values are objects or parse as objects if possible

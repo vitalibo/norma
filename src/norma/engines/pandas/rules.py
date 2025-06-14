@@ -246,6 +246,14 @@ def uuid_parsing() -> Rule:
     return UUIDTypeRule()
 
 
+def ipv4_address() -> Rule:
+    return IPv4TypeRule()
+
+
+def ipv6_address() -> Rule:
+    return IPv6TypeRule()
+
+
 def object_parsing(schema) -> Rule:
     raise NotImplementedError('object_parsing is not implemented yet')
 
@@ -406,5 +414,42 @@ class UUIDTypeRule(StringDerivedTypeRule):
         series = series.str.lower()
         boolmask = ~series.str.match(uuid_regex, na=False)
         error_state.add_errors(boolmask & series.notna(), column, details=errors.UUID_PARSING)
+        series[boolmask] = None
+        return series
+
+
+class IPv4TypeRule(StringDerivedTypeRule):
+    """
+    Class for IPv4 type casting rules
+    """
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
+        series = self.cast_as_str(df, column, error_state, str, errors.IPV4)
+        boolmask = ~series.str.match(ipv4_regex, na=False)
+        error_state.add_errors(boolmask & series.notna(), column, details=errors.IPV4)
+        series[boolmask] = None
+        return series
+
+
+class IPv6TypeRule(StringDerivedTypeRule):
+    """
+    Class for IPv6 type casting rules
+    """
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        # https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
+        ipv6_regex = (
+            r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:'
+            r'[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0'
+            r'-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}'
+            r'(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7'
+            r'}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4'
+            r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
+            r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
+        )
+        series = self.cast_as_str(df, column, error_state, str, errors.IPV6)
+        boolmask = ~series.str.match(ipv6_regex, na=False)
+        error_state.add_errors(boolmask & series.notna(), column, details=errors.IPV6)
         series[boolmask] = None
         return series

@@ -1,0 +1,824 @@
+[
+  {
+    "description": "cast(null as IPv4) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ],
+          "type": "struct"
+        },
+        "pandas": {
+          "col": "object"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('165.104.209.139' as IPv4) => '165.104.209.139'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "165.104.209.139"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "165.104.209.139",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('255.255.255.255' as IPv4) => '255.255.255.255'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "255.255.255.255"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "255.255.255.255",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('0.0.0.0' as IPv4) => '0.0.0.0'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "0.0.0.0"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "0.0.0.0",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('256.256.256.256' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "256.256.256.256"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"256.256.256.256\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1.1.1.01' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1.1.1.01"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"1.1.1.01\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('192.168.1.1.1' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "192.168.1.1.1"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"192.168.1.1.1\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('127.1' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "127.1"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"127.1\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('192.168.1.256' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "192.168.1.256"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"192.168.1.256\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('-1.2.3.4' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "-1.2.3.4"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"-1.2.3.4\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1.1.1.1.' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1.1.1.1."
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"1.1.1.1.\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('3...3' as IPv4) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "3...3"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv4"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"3...3\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11='127.0.0.1'} as IPv4) => '127.0.0.1'",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "127.0.0.1"
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "ipv4"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "127.0.0.1"
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11=123} as IPv4) => null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": 123
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "ipv4"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": null
+            }
+          },
+          "errors": {
+            "col.col1.col11": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "123"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11='foo'} as IPv4) => null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "foo"
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "ipv4"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": null
+            }
+          },
+          "errors": {
+            "col.col1.col11": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['94.227.178.100', '142.81.238.253', null] as array<IPv4>) => ['94.227.178.100', '142.81.238.253',, null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "94.227.178.100",
+            "142.81.238.253",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "ipv4"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "94.227.178.100",
+            "142.81.238.253",
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<IPv4>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "ipv4"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['127.0.0.0/18', '112.12.29.186', 'foo', null] as array<IPv4>) => [null, '112.12.29.186', null, null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "127.0.0.0/18",
+            "112.12.29.186",
+            "foo",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "ipv4"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null,
+            "112.12.29.186",
+            null,
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    0,
+                    2
+                  ],
+                  "msg": "Input is not a valid IPv4 address",
+                  "type": "ipv4"
+                }
+              ],
+              "original": "[\"127.0.0.0/18\",\"112.12.29.186\",\"foo\",null]"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

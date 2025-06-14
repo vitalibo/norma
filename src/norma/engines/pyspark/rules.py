@@ -340,7 +340,32 @@ def uuid_parsing() -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
     return DataTypeRule(
         lambda col: fn.when(fn.lower(col).rlike(uuid_regex), fn.lower(col)),
-        DateType, (StringType,), errors.UUID_TYPE, errors.UUID_PARSING
+        StringType, (StringType,), errors.UUID_TYPE, errors.UUID_PARSING, is_complex=True
+    )
+
+
+def ipv4_address() -> Rule:
+    ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
+    return DataTypeRule(
+        lambda col: fn.when(col.rlike(ipv4_regex), col),
+        StringType, (StringType,), errors.IPV4, errors.IPV4, is_complex=True
+    )
+
+
+def ipv6_address() -> Rule:
+    # https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
+    ipv6_regex = (
+        r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:'
+        r'[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0'
+        r'-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}'
+        r'(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7'
+        r'}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4'
+        r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
+        r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
+    )
+    return DataTypeRule(
+        lambda col: fn.when(col.rlike(ipv6_regex), col),
+        StringType, (StringType,), errors.IPV6, errors.IPV6, is_complex=True
     )
 
 
@@ -358,13 +383,14 @@ class DataTypeRule(Rule):
     """
 
     def __init__(  # pylint: disable=too-many-arguments
-            self, cast, dtype, supported, type_details=None, parsing_details=None
+            self, cast, dtype, supported, type_details=None, parsing_details=None, is_complex=False
     ):
         self.cast = cast
         self.dtype = dtype
         self.supported = supported
         self.type_details = type_details or {}
         self.parsing_details = parsing_details or {}
+        self.is_complex = is_complex
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         if self.__dict__.get('array', False):
@@ -373,7 +399,7 @@ class DataTypeRule(Rule):
 
     def _default_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         data_type = data_type_of(df, column)
-        if isinstance(data_type, self.dtype):
+        if isinstance(data_type, self.dtype) and not self.is_complex:
             return df
 
         if data_type.typeName() == 'void':
@@ -397,7 +423,7 @@ class DataTypeRule(Rule):
     def _array_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         data_type = data_type_of(df, column)
         element_type = data_type.elementType
-        if isinstance(element_type, self.dtype):
+        if isinstance(element_type, self.dtype) and not self.is_complex:
             return df
 
         if element_type.typeName() == 'void':
@@ -513,8 +539,7 @@ class ObjectTypeRule(Rule):
                     'boolean': BooleanType,
                     'datetime': TimestampType,
                     'date': DateType,
-                    'uuid': StringType,
-                }[col.dtype](),
+                }.get(col.dtype, StringType)(),
                 nullable=True,
                 metadata={}
             )

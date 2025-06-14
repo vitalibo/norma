@@ -191,9 +191,10 @@ Norma supports a variety of validation rules, including:
 | `date_parsing`       | ✅      | ✅       | ✅               | ✅              |
 | `datetime_parsing`   | ✅      | ✅       | ✅               | ✅              |
 | `uuid_parsing`       | ✅      | ✅       | ✅               | ✅              |
+| `ipv4`               | ✅      | ✅       | ✅               | ✅              |
+| `ipv6`               | ✅      | ✅       | ✅               | ✅              |
 | `object_parsing`     | ❌      | ✅       | ✅               | ❌              |
 | `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
-
 ### Errors
 
 The error format is a dictionary where the key is the column name, and value is a structure with two fields: `details`

@@ -73,6 +73,8 @@ class Column:
                 norma.rules.datetime_parsing: ['datetime'],
                 norma.rules.date_parsing: ['date'],
                 norma.rules.uuid_parsing: ['uuid'],
+                norma.rules.ipv4_address: ['ipv4'],
+                norma.rules.ipv6_address: ['ipv6'],
                 partial(norma.rules.object_parsing, inner_schema): ['object'],
                 partial(norma.rules.array_parsing, inner_schema): ['array', 'list'],
             }.items() for alias in aliases
@@ -213,6 +215,8 @@ class Schema:
             ('string', 'date-time'): 'datetime',
             ('string', 'time'): 'time',
             ('string', 'uuid'): 'uuid',
+            ('string', 'ipv4'): 'ipv4',
+            ('string', 'ipv6'): 'ipv6',
         }
 
         def column_from(nullable, properties):

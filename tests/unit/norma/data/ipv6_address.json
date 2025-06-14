@@ -1,0 +1,1305 @@
+[
+  {
+    "description": "cast(null as IPv6) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ],
+          "type": "struct"
+        },
+        "pandas": {
+          "col": "object"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4:5:6:7:8' as IPv6) => '1:2:3:4:5:6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('::1' as IPv6) => '::1'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "::1"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "::1",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4:5:6:7::' as IPv6) => '1:2:3:4:5:6:7::'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6:7::"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6:7::",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1::8' as IPv6) => '1::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4:5:6::8' as IPv6) => '1:2:3:4:5:6::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4:5:6::8' as IPv6) => '1:2:3:4:5:6::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4:5:6::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1::7:8' as IPv6) => '1::7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1::7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1::7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4:5::7:8' as IPv6) => '1:2:3:4:5::7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4:5::7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4:5::7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4:5::8' as IPv6) => '1:2:3:4:5::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4:5::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4:5::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1::6:7:8' as IPv6) => '1::6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1::6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1::6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4::6:7:8' as IPv6) => '1:2:3:4::6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4::6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4::6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2:3:4::8' as IPv6) => '1:2:3:4::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2:3:4::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2:3:4::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1::4:5:6:7:8' as IPv6) => '1::4:5:6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1::4:5:6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1::4:5:6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2::4:5:6:7:8' as IPv6) => '1:2::4:5:6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2::4:5:6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2::4:5:6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1:2::8' as IPv6) => '1:2::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1:2::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1:2::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1::3:4:5:6:7:8' as IPv6) => '1::3:4:5:6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1::3:4:5:6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1::3:4:5:6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1::3:4:5:6:7:8' as IPv6) => '1::3:4:5:6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1::3:4:5:6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1::3:4:5:6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('1::8' as IPv6) => '1::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "1::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "1::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('::2:3:4:5:6:7:8' as IPv6) => '::2:3:4:5:6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "::2:3:4:5:6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "::2:3:4:5:6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('::2:3:4:5:6:7:8' as IPv6) => '::2:3:4:5:6:7:8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "::2:3:4:5:6:7:8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "::2:3:4:5:6:7:8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('::8' as IPv6) => '::8'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "::8"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "::8",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('fe80::7:8%eth0' as IPv6) => 'fe08::7:8%eth0'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "fe80::7:8%eth0"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "fe80::7:8%eth0",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('fe80::7:8%1' as IPv6) => 'fe08::7:8%1'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "fe80::7:8%1"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "fe80::7:8%1",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('::255.255.255.255' as IPv6) => '::255.255.255.255'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "::255.255.255.255"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "::255.255.255.255",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('::ffff:255.255.255.255' as IPv6) => '::ffff:255.255.255.255'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "::ffff:255.255.255.255"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "::ffff:255.255.255.255",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('::ffff:0:255.255.255.255' as IPv6) => '::ffff:0:255.255.255.255'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "::ffff:0:255.255.255.255"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "::ffff:0:255.255.255.255",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('2001:db8:3:4::192.0.2.33' as IPv6) => '2001:db8:3:4::192.0.2.33'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2001:db8:3:4::192.0.2.33"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2001:db8:3:4::192.0.2.33",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('64:ff9b::192.0.2.33' as IPv6) => '64:ff9b::192.0.2.33'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "64:ff9b::192.0.2.33"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "ipv6"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "64:ff9b::192.0.2.33",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11='::1'} as IPv6) => '::1'",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "::1"
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "ipv6"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "::1"
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11=123} as IPv6) => null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": 123
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "ipv6"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": null
+            }
+          },
+          "errors": {
+            "col.col1.col11": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv6 address",
+                  "type": "ipv6"
+                }
+              ],
+              "original": "123"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11='foo'} as IPv6) => null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "foo"
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "ipv6"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": null
+            }
+          },
+          "errors": {
+            "col.col1.col11": {
+              "details": [
+                {
+                  "msg": "Input is not a valid IPv6 address",
+                  "type": "ipv6"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['::1', '1::8', null] as array<IPv6>) => ['::1', '1::8', null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "::1",
+            "1::8",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "ipv6"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "::1",
+            "1::8",
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<IPv6) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "ipv6"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input is not a valid IPv6 address",
+                  "type": "ipv6"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['fe80::/10', '::1', 'foo', null] as array<IPv4>) => [null, '::1', null, null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "fe80::/10",
+            "::1",
+            "foo",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "ipv6"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null,
+            "::1",
+            null,
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    0,
+                    2
+                  ],
+                  "msg": "Input is not a valid IPv6 address",
+                  "type": "ipv6"
+                }
+              ],
+              "original": "[\"fe80::/10\",\"::1\",\"foo\",null]"
+            }
+          }
+        }
+      ]
+    }
+  }
+]
