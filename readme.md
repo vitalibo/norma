@@ -191,8 +191,9 @@ Norma supports a variety of validation rules, including:
 | `date_parsing`       | ✅      | ✅       | ✅               | ✅              |
 | `datetime_parsing`   | ✅      | ✅       | ✅               | ✅              |
 | `uuid_parsing`       | ✅      | ✅       | ✅               | ✅              |
-| `ipv4`               | ✅      | ✅       | ✅               | ✅              |
-| `ipv6`               | ✅      | ✅       | ✅               | ✅              |
+| `ipv4_address`       | ✅      | ✅       | ✅               | ✅              |
+| `ipv6_address`       | ✅      | ✅       | ✅               | ✅              |
+| `uri_parsing`        | ✅      | ✅       | ✅               | ✅              |
 | `object_parsing`     | ❌      | ✅       | ✅               | ❌              |
 | `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
 ### Errors

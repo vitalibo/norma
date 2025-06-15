@@ -75,6 +75,7 @@ class Column:
                 norma.rules.uuid_parsing: ['uuid'],
                 norma.rules.ipv4_address: ['ipv4'],
                 norma.rules.ipv6_address: ['ipv6'],
+                norma.rules.uri_parsing: ['uri'],
                 partial(norma.rules.object_parsing, inner_schema): ['object'],
                 partial(norma.rules.array_parsing, inner_schema): ['array', 'list'],
             }.items() for alias in aliases
@@ -217,6 +218,7 @@ class Schema:
             ('string', 'uuid'): 'uuid',
             ('string', 'ipv4'): 'ipv4',
             ('string', 'ipv6'): 'ipv6',
+            ('string', 'uri'): 'uri'
         }
 
         def column_from(nullable, properties):

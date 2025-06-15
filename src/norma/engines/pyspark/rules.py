@@ -368,6 +368,19 @@ def ipv6_address() -> Rule:
         StringType, (StringType,), errors.IPV6, errors.IPV6, is_complex=True
     )
 
+def uri_parsing() -> Rule:
+    uri_regex = (
+        r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
+        r"()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9"
+        r"]|[!$&'()*+,;=:@])+)*)?(\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(\#(?:[a-z0-9-._"
+        r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$"
+    )
+
+    return DataTypeRule(
+        lambda col: fn.when(col.rlike(uri_regex), col),
+        StringType, (StringType,), errors.URI_TYPE, errors.URI_PARSING, is_complex=True
+    )
+
 
 def object_parsing(schema) -> Rule:
     return ObjectTypeRule(schema)

@@ -1,0 +1,605 @@
+[
+  {
+    "description": "cast(null as URI) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ],
+          "type": "struct"
+        },
+        "pandas": {
+          "col": "object"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('http://example.com' as URI) => 'http://example.com'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "http://example.com"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "http://example.com",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('https://example.com/foo/bar?k=v' as URI) => 'https://example.com/foo/bar?k=v'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "https://example.com/foo/bar?k=v"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "https://example.com/foo/bar?k=v",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('urn:isbn:978-3-16-148410-0' as URI) => 'urn:isbn:978-3-16-148410-0'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "urn:isbn:978-3-16-148410-0"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "urn:isbn:978-3-16-148410-0",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('mailto:info@example.com' as URI) => 'mailto:info@example.com'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "mailto:info@example.com"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "mailto:info@example.com",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('tel:+1-212-555-1212' as URI) => 'tel:+1-212-555-1212'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "tel:+1-212-555-1212"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "tel:+1-212-555-1212",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('telnet://192.0.2.16:80/' as URI) => 'telnet://192.0.2.16:80/'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "telnet://192.0.2.16:80/"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "telnet://192.0.2.16:80/",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('foo' as URI) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input should be a valid URI, unable to parse string as a URI",
+                  "type": "uri_parsing"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(123 as URI) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input should be a valid URI",
+                  "type": "uri_type"
+                }
+              ],
+              "original": "123"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11='https://example.com'} as URI) => 'https://example.com'",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "https://example.com"
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "https://example.com"
+            }
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col.col1.col11='foo'} as URI) => null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": "foo"
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col11": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col11": null
+            }
+          },
+          "errors": {
+            "col.col1.col11": {
+              "details": [
+                {
+                  "msg": "Input should be a valid URI, unable to parse string as a URI",
+                  "type": "uri_parsing"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['tel:+1-212-555-1212', 'ftp://ftp.example.com/mydirectory/myfile.txt', null] as array<URI>) => ['tel:+1-212-555-1212', 'ftp://ftp.example.com/mydirectory/myfile.txt', null]",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "tel:+1-212-555-1212",
+            "ftp://ftp.example.com/mydirectory/myfile.txt",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "tel:+1-212-555-1212",
+            "ftp://ftp.example.com/mydirectory/myfile.txt",
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast([{co1:'foo'}] as array<URI>) => [null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "co1": "foo"
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid URI",
+                  "type": "uri_type"
+                }
+              ],
+              "original": "[{\"co1\":\"foo\"}]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['192.168.0.1', 'tel:+1-212-555-1212', 'foo', null] as array<URI>) => [null, 'tel:+1-212-555-1212', null, null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "192.168.0.1",
+            "tel:+1-212-555-1212",
+            "foo",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            null,
+            "tel:+1-212-555-1212",
+            null,
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    0,
+                    2
+                  ],
+                  "msg": "Input should be a valid URI, unable to parse string as a URI",
+                  "type": "uri_parsing"
+                }
+              ],
+              "original": "[\"192.168.0.1\",\"tel:+1-212-555-1212\",\"foo\",null]"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

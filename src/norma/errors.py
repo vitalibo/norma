@@ -98,3 +98,5 @@ TOO_SHORT = Details('too_short', '{_type_} should have at least {min_length} ite
 TOO_LONG = Details('too_long', '{_type_} should have at most {max_length} item{_plural_}')
 IPV4 = Details('ipv4', 'Input is not a valid IPv4 address')
 IPV6 = Details('ipv6', 'Input is not a valid IPv6 address')
+URI_TYPE = Details('uri_type', 'Input should be a valid URI')
+URI_PARSING = Details('uri_parsing', 'Input should be a valid URI, unable to parse string as a URI')

@@ -332,6 +332,14 @@ def ipv6_address() -> Rule:
     return RuleProxy('ipv6_address', 1)
 
 
+def uri_parsing() -> Rule:
+    """
+    Ensure that the values are valid URIs
+    """
+
+    return RuleProxy('uri_parsing', 1)
+
+
 def object_parsing(schema) -> Rule:
     """
     Ensure that the values are objects or parse as objects if possible
