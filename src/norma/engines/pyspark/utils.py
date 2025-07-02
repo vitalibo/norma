@@ -120,7 +120,11 @@ def with_nested_column(col_name: str, col: Column) -> Callable[[DataFrame], Data
                     struct_cols.append(col.alias(field))
 
             if nested[0] not in fields:
-                struct_cols.append(fn.lit(None).alias(nested[0]))
+                expr = fn.lit(None)
+                if len(nested) > 1:
+                    expr = build_struct([], nested[1:], f'{path}.{nested[0]}')
+
+                struct_cols.append(expr.alias(nested[0]))
 
             return fn.struct(*struct_cols)
 
