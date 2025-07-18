@@ -1,0 +1,29 @@
+{
+  "fields": [
+    {
+      "name": "f1",
+      "type": "string"
+    },
+    {
+      "name": "f2",
+      "type": {
+        "fields": [
+          {
+            "name": "f3",
+            "type": {
+              "fields": [
+                {
+                  "name": "f4",
+                  "type": "string"
+                }
+              ],
+              "type": "struct"
+            }
+          }
+        ],
+        "type": "struct"
+      }
+    }
+  ],
+  "type": "struct"
+}

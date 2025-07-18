@@ -1,0 +1,9 @@
+{
+  "type": "struct",
+  "fields": [
+    {
+      "name": "f1",
+      "type": "string"
+    }
+  ]
+}
