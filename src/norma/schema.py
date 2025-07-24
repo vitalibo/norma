@@ -179,6 +179,10 @@ class Schema:
                 yield f'{root}{name}', column
                 if column.inner_schema is not None and column.dtype == 'object':
                     yield from traverse(column.inner_schema, f'{root}{name}.')
+                if column.inner_schema is not None and column.dtype in ('array', 'list'):
+                    yield f'{root}{name}[]', column.inner_schema
+                    if column.inner_schema.dtype == 'object':
+                        yield from traverse(column.inner_schema.inner_schema, f'{root}{name}[].')
 
         return dict(traverse(self, ''))
 

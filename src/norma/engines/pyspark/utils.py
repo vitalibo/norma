@@ -143,6 +143,10 @@ def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], Data
                         if isinstance(val, Column):
                             fn_val = lambda x: val
                         expr = fn.transform(col.getField(field), fn_val).alias(field)
+                    else:
+                        if not isinstance(val, Column):
+                            expr = val(col.getField(field))
+
                     struct_cols.append(expr.alias(field))
 
             if nested[0].rstrip('[]') not in fields:

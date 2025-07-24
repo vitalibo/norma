@@ -17,6 +17,8 @@ from norma.engines.pyspark.utils import (
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
+DataFrame.withNestedColumn = lambda self, col_name, val: with_nested_column(col_name, val)(self)
+
 
 class ErrorState(IErrorState):
     """
@@ -45,7 +47,7 @@ class ErrorState(IErrorState):
             cols.append(indexes.alias('loc'))
 
             details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*cols))
-            error_column = f'{self.error_column}_{suffix_col(column + "[]", self)}'
+            error_column = f'{self.error_column}_{suffix_col(column, self)}'
             if error_column not in df.columns:
                 df = df.withColumn(error_column, fn.array())
             return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
@@ -117,7 +119,21 @@ class BaseRule(Rule):
         if not self.__dict__.get('array', False):
             return df.transform(error_state.add_errors(self.func(**func_params), column, details=self.details))
 
-        indexes = fn.transform(fn.col(column), self.func)
+        if column.endswith('[]'):
+            indexes = fn.transform(fn.col(column[:-2]), self.func)
+        else:
+            root, *nested = column.split('[].')
+
+            def nested_value(x):
+                for part in nested[0].split('.'):
+                    x = x[part]
+                if 'col' in func_params:
+                    func_params['col'] = x
+                else:
+                    func_params['column'] = x
+                return self.func(**func_params)
+
+            indexes = fn.transform(fn.col(root), nested_value)
         return df.transform(error_state.add_errors(indexes, column, details=self.details))
 
 
@@ -434,29 +450,43 @@ class DataTypeRule(Rule):
                                               details=self.parsing_details))
 
     def _array_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        data_type = data_type_of(df, column)
-        element_type = data_type.elementType
+        element_type = data_type_of(df, column)
         if isinstance(element_type, self.dtype) and not self.is_complex:
             return df
 
         if element_type.typeName() == 'void':
-            return df.withColumn(column, fn.col(column).cast(ArrayType(self.dtype())))
+            # TODO: think how to better handle this case
+            return df.transform(with_nested_column(column, fn.lit(None).cast(self.dtype())))
+
+        root, *nested = column.split('[].')
+
+        def nested_value(x):
+            for part in nested[0].split('.'):
+                x = x[part]
+            return x
 
         backup_column = backup_col(column, error_state)
-        df = df.withColumn(f'{backup_column}_array', fn.col(column))
+        if column.endswith('[]'):
+            df = df.withColumn(f'{backup_column}_array', fn.col(column[:-2]))
+        else:
+            df = df.withColumn(f'{backup_column}_array', fn.transform(fn.col(root), nested_value))
+
         if not isinstance(element_type, self.supported):
-            indexes = fn.transform(fn.col(column), lambda x: fn.lit(True))
+            indexes = fn.transform(fn.col(root.removesuffix('[]')), lambda x: fn.lit(True))
             return df \
-                .transform(with_nested_column(
-                column, fn.transform(fn.col(column), lambda x: fn.lit(None).cast(self.dtype())))) \
+                .transform(with_nested_column(column, fn.lit(None).cast(self.dtype()))) \
                 .transform(error_state.add_errors(indexes, column, details=self.type_details))
 
-        df = df.transform(with_nested_column(column, fn.transform(fn.col(column), self.cast)))
+        df = df.transform(with_nested_column(column, self.cast))
         if not self.parsing_details:
             return df
 
-        indexes = fn.zip_with(
-            fn.col(column), fn.col(f'{backup_column}_array'), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        if column.endswith('[]'):
+            actual = fn.col(column[:-2])
+        else:
+            actual = fn.transform(fn.col(root), nested_value)
+
+        indexes = fn.zip_with(actual, fn.col(f'{backup_column}_array'), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
         return df.transform(error_state.add_errors(indexes, column, details=self.parsing_details))
 
 
