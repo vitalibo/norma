@@ -1126,5 +1126,121 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast({col1.col2[{col3.col4=1}, {col3.col4=4}, ...] as array<bool>) < 3, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": 1
+                }
+              },
+              {
+                "col3": {
+                  "col4": 4
+                }
+              },
+              {
+                "col3": {
+                  "col4": 2
+                }
+              },
+              {
+                "col3": {
+                  "col4": 3
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col3": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "integer",
+                          "exclusiveMaximum": 3
+                        }
+                      },
+                      "required": [
+                        "col4"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "col3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": 1
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              },
+              {
+                "col3": {
+                  "col4": 2
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              }
+            ]
+          },
+          "errors": {
+            "col1.col2[].col3.col4": {
+              "details": [
+                {
+                  "loc": [
+                    1,
+                    3
+                  ],
+                  "msg": "Input should be less than 3",
+                  "type": "less_than"
+                }
+              ],
+              "original": "[1,4,2,3]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

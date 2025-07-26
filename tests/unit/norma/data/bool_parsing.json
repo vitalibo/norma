@@ -2353,5 +2353,267 @@
         }
       ]
     }
+  },
+  {
+    "description": "cast({col1.col2[{col3.col4='true'}, {col3.col4='false'}, ...] as array<bool>) => {col1.col2[{col3.col4=true}, {col3.col4=false}, ...]}",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": "true"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "false"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "yes"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "no"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "on"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "off"
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col3": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "col4"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "col3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": true
+                }
+              },
+              {
+                "col3": {
+                  "col4": false
+                }
+              },
+              {
+                "col3": {
+                  "col4": true
+                }
+              },
+              {
+                "col3": {
+                  "col4": false
+                }
+              },
+              {
+                "col3": {
+                  "col4": true
+                }
+              },
+              {
+                "col3": {
+                  "col4": false
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              }
+            ]
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast({col1.col2[{col3.col4='true'}, {col3.col4='false'}, ...] as array<bool>) => {col1.col2[{col3.col4=null}, {col3.col4=false}, ...]}, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": "123"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "false"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "yes"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "bar"
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col3": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "col4"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "col3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": null
+                }
+              },
+              {
+                "col3": {
+                  "col4": false
+                }
+              },
+              {
+                "col3": {
+                  "col4": true
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              }
+            ]
+          },
+          "errors": {
+            "col1.col2[].col3.col4": {
+              "details": [
+                {
+                  "loc": [
+                    0,
+                    3
+                  ],
+                  "msg": "Input should be a valid boolean, unable to interpret input",
+                  "type": "bool_parsing"
+                }
+              ],
+              "original": "[\"123\",\"false\",\"yes\",\"bar\",null]"
+            }
+          }
+        }
+      ]
+    }
   }
 ]

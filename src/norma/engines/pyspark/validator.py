@@ -3,7 +3,9 @@ from pyspark.sql import functions as fn
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, data_type_of, extra_forbidden
-from norma.engines.pyspark.utils import backup_col, default_if_null, suffix_col, with_nested_column
+from norma.engines.pyspark.utils import (
+    backup_col, default_if_null, suffix_col, with_nested_column, zip_with_nested_columns
+)
 
 
 def validate(
@@ -37,13 +39,10 @@ def validate(
     for name, column in reversed(schema.nested_columns.items()):
         if '[]' in name:
             if f'{suffix_col(name, error_state)}_indexes' in df.columns:
-                if name.endswith('[]'):
-                    df = df.transform(with_nested_column(
-                        name[:-2], fn.zip_with(
-                            fn.col(name[:-2]), fn.col(f'{suffix_col(name, error_state)}_indexes'),
-                            lambda x, y: fn.when(~y, x).otherwise(fn.lit(None)))))
-                else:
-                    raise ValueError('not supported yet')
+                df = df.transform(zip_with_nested_columns(
+                    name, fn.col(f'{suffix_col(name, error_state)}_indexes'),
+                    lambda x, y: fn.when(~y, x).otherwise(fn.lit(None))
+                ))
 
             continue
 
@@ -139,6 +138,16 @@ def _validate_df(df, schema, error_state, original_cols, parent=''):
                 rule.array = True
 
                 df = rule.verify(df, f'{parent}{column}[]', error_state)
+
+            if data_type_of(df, f'{parent}{column}[]').typeName() == 'struct':
+                df = _validate_df(
+                    df,
+                    schema.columns[column].inner_schema.inner_schema,
+                    error_state,
+                    data_type_of(df, f'{parent}{column}[]').fieldNames(),
+                    parent=f'{parent}{column}[].'
+                )
+
             continue
 
         df = _validate_df(
@@ -157,11 +166,27 @@ def _make_origin(df: DataFrame, column, error_state):
     Format the original value of a column for error reporting
     """
 
-    column = column.replace('[]', '')
+    column = column.removesuffix('[]')
     backup_column = backup_col(column, error_state)
     column = f'{backup_column}_array' if f'{backup_column}_array' in df.columns else (
         backup_column if backup_column in df.columns else column)
     dtype = data_type_of(df, column).typeName()
+
+    if '[]' in column:
+        root, *nested_names = column.split('[].')
+
+        def nested_value(x):
+            for field in nested_names[0].split('.'):
+                x = x.getField(field)
+
+            null = fn.when(x.isNull(), fn.lit('null'))
+            if dtype in ('string',):
+                return null.otherwise(fn.concat(fn.lit('"'), x, fn.lit('"')))
+            elif dtype in ('array', 'map', 'struct'):
+                return null.otherwise(fn.to_json(x))
+            return null.otherwise(x.cast('string'))
+
+        return fn.array_join(fn.transform(fn.col(root), nested_value), ',')
 
     null = fn.when(fn.col(column).isNull(), fn.lit('null'))
     if dtype in ('string',):

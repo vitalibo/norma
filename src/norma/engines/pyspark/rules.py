@@ -17,8 +17,6 @@ from norma.engines.pyspark.utils import (
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
-DataFrame.withNestedColumn = lambda self, col_name, val: with_nested_column(col_name, val)(self)
-
 
 class ErrorState(IErrorState):
     """
@@ -116,7 +114,7 @@ class BaseRule(Rule):
             pre_func = self.kwargs['__pre_func__']
             df = pre_func(**inspect_params(pre_func))
 
-        if not self.__dict__.get('array', False):
+        if '[]' not in column:
             return df.transform(error_state.add_errors(self.func(**func_params), column, details=self.details))
 
         if column.endswith('[]'):
@@ -127,11 +125,7 @@ class BaseRule(Rule):
             def nested_value(x):
                 for part in nested[0].split('.'):
                     x = x[part]
-                if 'col' in func_params:
-                    func_params['col'] = x
-                else:
-                    func_params['column'] = x
-                return self.func(**func_params)
+                return self.func(x)
 
             indexes = fn.transform(fn.col(root), nested_value)
         return df.transform(error_state.add_errors(indexes, column, details=self.details))
@@ -154,7 +148,7 @@ def required() -> Rule:
             )
 
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-            if self.__dict__.get('array', False):
+            if '[]' in column:
                 return super().verify(df, column, error_state)
 
             mask = fn.isnull(fn.col(column))
@@ -384,6 +378,7 @@ def ipv6_address() -> Rule:
         StringType, (StringType,), errors.IPV6, errors.IPV6, is_complex=True
     )
 
+
 def uri_parsing() -> Rule:
     uri_regex = (
         r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
@@ -422,7 +417,7 @@ class DataTypeRule(Rule):
         self.is_complex = is_complex
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        if self.__dict__.get('array', False):
+        if '[]' in column:
             return self._array_verify_strategy(df, column, error_state)
         return self._default_verify_strategy(df, column, error_state)
 
@@ -519,6 +514,11 @@ class ObjectTypeRule(Rule):
         self.struct_type = self.parse_struct_type(schema)
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        if '[]' in column:
+            return self._array_verify_strategy(df, column, error_state)
+        return self._default_verify_strategy(df, column, error_state)
+
+    def _default_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         data_type = data_type_of(df, column)
         if isinstance(data_type, StructType):
             return df
@@ -538,6 +538,66 @@ class ObjectTypeRule(Rule):
             return df.transform(with_nested_column(column, new_struct))
 
         return self._cast_json_str(df, column, fn.col(backup_column), error_state)
+
+    def _array_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        element_type = data_type_of(df, column)
+        if isinstance(element_type, StructType):
+            return df
+
+        if element_type.typeName() == 'void':
+            return df.transform(with_nested_column(column, fn.lit(None).cast(self.struct_type)))
+
+        root, *nested = column.split('[].')
+
+        def nested_value(x):
+            if column.endswith('[]'):
+                return x
+
+            for part in nested[0].split('.'):
+                x = x[part]
+            return x
+
+        backup_column = backup_col(column, error_state)
+        if column.endswith('[]'):
+            df = df.withColumn(f'{backup_column}_array', fn.col(column[:-2]))
+        else:
+            df = df.withColumn(f'{backup_column}_array', fn.transform(fn.col(root), nested_value))
+
+        if not isinstance(element_type, (StringType, MapType)):
+            indexes = fn.transform(fn.col(root.removesuffix('[]')), lambda x: fn.lit(True))
+            return df \
+                .transform(with_nested_column(column, fn.lit(None).cast(self.struct_type))) \
+                .transform(error_state.add_errors(indexes, column, details=errors.OBJECT_TYPE))
+
+        if isinstance(element_type, MapType):
+            def new_struct(col):
+                return fn.struct(*(col[field].alias(field) for field in self.struct_type.fieldNames()))
+
+            return df.transform(with_nested_column(column, new_struct))
+
+        return self._cast_array_json_str(df, column, fn.col(backup_column), error_state)
+
+    def _cast_array_json_str(self, df: DataFrame, column: str, backup_column: Column,
+                             error_state: ErrorState) -> DataFrame:
+        root, *nested = column.split('[].')
+
+        def nested_value(x):
+            if column.endswith('[]'):
+                return x
+
+            for part in nested[0].split('.'):
+                x = x[part]
+            return x
+
+        df = df.transform(with_nested_column(column, lambda x: fn.from_json(x, self.struct_type)))
+
+        if column.endswith('[]'):
+            actual = fn.col(column[:-2])
+        else:
+            actual = fn.transform(fn.col(root), nested_value)
+
+        indexes = fn.zip_with(actual, fn.col(f'{backup_column}_array'), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        return df.transform(error_state.add_errors(indexes, column, details=errors.OBJECT_PARSING))
 
     def _cast_json_str(self, df: DataFrame, column: str, backup_column: Column, error_state: ErrorState) -> DataFrame:
         @fn.udf(returnType=BooleanType())
@@ -619,8 +679,9 @@ class ArrayTypeRule(Rule):
                                               details=errors.ARRAY_PARSING))
 
     @staticmethod
-    def parse_array_type(schema) -> ArrayType:  # pylint: disable=unused-argument
-        # TODO: support nested structs in arrays
+    def parse_array_type(schema) -> ArrayType:
+        if schema.inner_schema is not None:
+            return ArrayType(ObjectTypeRule.parse_struct_type(schema.inner_schema))
         return ArrayType(StringType())
 
 
@@ -636,7 +697,7 @@ class SequenceRule(BaseRule):
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> Optional[DataFrame]:
         data_type = data_type_of(df, column)
-        if isinstance(data_type, ArrayType) and not self.__dict__.get('array', False):
+        if isinstance(data_type, ArrayType) and not '[]' in column:
             self.func = self.array_func
             self.details = self.array_details
 

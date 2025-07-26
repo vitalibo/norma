@@ -92,6 +92,33 @@ def with_nested_column_renamed(existing: str, new: str) -> Callable[[DataFrame],
     return transform
 
 
+def zip_with_nested_columns(col_name: str, other_col: Column, func) -> Callable[[DataFrame], DataFrame]:
+    """
+    Create a function that zips two nested columns together using a custom function.
+    :param col_name: A nested column name (e.g. "a.b.c[]")
+    :param other_col: Another column to zip with the nested column.
+    :param func: A function that takes two arguments (the values from the two columns) and returns a new value.
+    :return: A function that can be used to transform a DataFrame.
+    """
+
+    root, *nested = col_name.split('[].')
+    root = root.removesuffix('[]')
+    nested = nested[0].split('.') if nested else []
+
+    def nested_zip(x, y, nodes):
+        if not nodes:
+            return func(x, y)
+
+        return x.withField(nodes[0], nested_zip(x.getField(nodes[0]), y, nodes[1:]))
+
+    def transform(df):
+        return df.transform(with_nested_column(
+            root, fn.zip_with(fn.col(root), other_col, lambda x, y: nested_zip(x, y, nested))
+        ))
+
+    return transform
+
+
 def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], DataFrame]:
     """
     Create a new column in a DataFrame with a nested structure.
