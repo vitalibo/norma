@@ -43,7 +43,57 @@
           "col": null,
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -57,7 +107,18 @@
         {
           "col": "165.104.209.139"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -76,7 +137,57 @@
           "col": "165.104.209.139",
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -90,7 +201,18 @@
         {
           "col": "255.255.255.255"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -109,7 +231,57 @@
           "col": "255.255.255.255",
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -123,7 +295,18 @@
         {
           "col": "0.0.0.0"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -142,7 +325,57 @@
           "col": "0.0.0.0",
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -156,7 +389,18 @@
         {
           "col": "256.256.256.256"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -185,7 +429,57 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -199,7 +493,18 @@
         {
           "col": "1.1.1.01"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -228,7 +533,57 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -242,7 +597,18 @@
         {
           "col": "192.168.1.1.1"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -271,7 +637,57 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -285,7 +701,18 @@
         {
           "col": "127.1"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -314,7 +741,57 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -328,7 +805,18 @@
         {
           "col": "192.168.1.256"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -357,7 +845,57 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -371,7 +909,18 @@
         {
           "col": "-1.2.3.4"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -400,7 +949,57 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -414,7 +1013,18 @@
         {
           "col": "1.1.1.1."
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -443,7 +1053,57 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -457,7 +1117,18 @@
         {
           "col": "3...3"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -486,36 +1157,113 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
-    "description": "cast({col.col1.col11='127.0.0.1'} as IPv4) => '127.0.0.1'",
+    "description": "cast($.col1.col2.col3='127.0.0.1' as struct<IPv4>) => '127.0.0.1'",
     "engines": [
       "pyspark"
     ],
     "given": {
       "data": [
         {
-          "col": {
-            "col1": {
-              "col11": "127.0.0.1"
+          "col1": {
+            "col2": {
+              "col3": "127.0.0.1"
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
         "type": "object",
         "properties": {
-          "col": {
+          "col1": {
             "type": "object",
             "properties": {
-              "col1": {
+              "col2": {
                 "type": "object",
                 "properties": {
-                  "col11": {
+                  "col3": {
                     "type": "string",
                     "format": "ipv4"
                   }
@@ -529,43 +1277,136 @@
     "then": {
       "data": [
         {
-          "col": {
-            "col1": {
-              "col11": "127.0.0.1"
+          "col1": {
+            "col2": {
+              "col3": "127.0.0.1"
             }
           },
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
-    "description": "cast({col.col1.col11=123} as IPv4) => null, error is raised",
+    "description": "cast($.col1.col2.col3=123 as struct<IPv4>) => null, error is raised",
     "engines": [
       "pyspark"
     ],
     "given": {
       "data": [
         {
-          "col": {
-            "col1": {
-              "col11": 123
+          "col1": {
+            "col2": {
+              "col3": 123
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "integer"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
         "type": "object",
         "properties": {
-          "col": {
+          "col1": {
             "type": "object",
             "properties": {
-              "col1": {
+              "col2": {
                 "type": "object",
                 "properties": {
-                  "col11": {
+                  "col3": {
                     "type": "string",
                     "format": "ipv4"
                   }
@@ -579,13 +1420,13 @@
     "then": {
       "data": [
         {
-          "col": {
-            "col1": {
-              "col11": null
+          "col1": {
+            "col2": {
+              "col3": null
             }
           },
           "errors": {
-            "col.col1.col11": {
+            "col1.col2.col3": {
               "details": [
                 {
                   "msg": "Input is not a valid IPv4 address",
@@ -596,36 +1437,129 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
-    "description": "cast({col.col1.col11='foo'} as IPv4) => null, error is raised",
+    "description": "cast($.col1.col2.col3='foo' as struct<IPv4>) => null, error is raised",
     "engines": [
       "pyspark"
     ],
     "given": {
       "data": [
         {
-          "col": {
-            "col1": {
-              "col11": "foo"
+          "col1": {
+            "col2": {
+              "col3": "foo"
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
         "type": "object",
         "properties": {
-          "col": {
+          "col1": {
             "type": "object",
             "properties": {
-              "col1": {
+              "col2": {
                 "type": "object",
                 "properties": {
-                  "col11": {
+                  "col3": {
                     "type": "string",
                     "format": "ipv4"
                   }
@@ -639,13 +1573,13 @@
     "then": {
       "data": [
         {
-          "col": {
-            "col1": {
-              "col11": null
+          "col1": {
+            "col2": {
+              "col3": null
             }
           },
           "errors": {
-            "col.col1.col11": {
+            "col1.col2.col3": {
               "details": [
                 {
                   "msg": "Input is not a valid IPv4 address",
@@ -656,7 +1590,73 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   },
   {
@@ -673,7 +1673,22 @@
             null
           ]
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -702,61 +1717,69 @@
           ],
           "errors": {}
         }
-      ]
-    }
-  },
-  {
-    "description": "cast([{co1:'foo'}] as array<IPv4>) => [null], error is raised",
-    "engines": [
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": [
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
             {
-              "co1": "foo"
+              "name": "col",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "containsNull": true,
+                                "type": "array",
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
             }
-          ]
-        }
-      ]
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "ipv4"
-            }
-          }
+          ],
+          "type": "struct"
         }
       }
-    },
-    "then": {
-      "data": [
-        {
-          "col": [
-            null
-          ],
-          "errors": {
-            "col[]": {
-              "details": [
-                {
-                  "loc": [
-                    0
-                  ],
-                  "msg": "Input is not a valid IPv4 address",
-                  "type": "ipv4"
-                }
-              ],
-              "original": "[{\"co1\":\"foo\"}]"
-            }
-          }
-        }
-      ]
     }
   },
   {
@@ -774,7 +1797,22 @@
             null
           ]
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -818,7 +1856,69 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "containsNull": true,
+                                "type": "array",
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "struct"
+        }
+      }
     }
   }
 ]

@@ -71,8 +71,6 @@ def validate(
         ).alias(error_column)
     )
 
-    df = df.fillna({name: col.default for name, col in schema.columns.items() if col.default is not None})
-
     for name, col in schema.nested_columns.items():
         if col.default is None:
             continue
@@ -102,8 +100,13 @@ def _validate_df(df, schema, error_state, original_cols, parent=''):
         columns_with_extra = set(original_cols + list(schema.columns.keys()))
 
     for column in columns_with_extra:  # pylint: disable=too-many-nested-blocks
+        try:
+            data_type_of(df, f'{parent}{column}')
+        except KeyError:
+            df = df.transform(with_nested_column(f'{parent}{column}', fn.lit(None).cast('void')))
+
         suffix = suffix_col(f'{parent}{column}', error_state)
-        df = df.withColumn(f'{error_state.error_column}_{suffix}', fn.array())
+        df = df.withColumn(f'{error_state.error_column}_{suffix}', error_state.empty_errors())
 
         rules = schema.columns[column].rules if column in schema.columns else []
         if not schema.allow_extra:
@@ -186,7 +189,7 @@ def _make_origin(df: DataFrame, column, error_state):
                 return null.otherwise(fn.to_json(x))
             return null.otherwise(x.cast('string'))
 
-        return fn.array_join(fn.transform(fn.col(root), nested_value), ',')
+        return fn.concat(fn.lit('['), fn.array_join(fn.transform(fn.col(root), nested_value), ','), fn.lit(']'))
 
     null = fn.when(fn.col(column).isNull(), fn.lit('null'))
     if dtype in ('string',):

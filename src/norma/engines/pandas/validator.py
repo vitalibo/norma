@@ -22,6 +22,9 @@ def validate(  # pylint: disable=too-many-branches
 
     error_state = ErrorState(df.index)
     for column in set(list(original_df.columns) + list(schema.columns.keys())):
+        if column not in original_df.columns:
+            df[column] = np.nan
+
         rules = schema.columns[column].rules if column in schema.columns else []
         if not schema.allow_extra:
             rules.append(extra_forbidden(schema.columns.keys()))

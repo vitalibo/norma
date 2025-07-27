@@ -1,6 +1,6 @@
 [
   {
-    "description": "fill missing values with derived",
+    "description": "$.col1 ?: df['col2'].str.upper()",
     "engines": [
       "pandas"
     ],
@@ -67,7 +67,7 @@
     }
   },
   {
-    "description": "fill missing values with derived",
+    "description": "$.col1 ?: fn.upper(fn.col('col2'))",
     "engines": [
       "pyspark"
     ],
@@ -89,7 +89,22 @@
           "col1": null,
           "col2": null
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            },
+            {
+              "name": "col2",
+              "type": "string"
+            }
+          ]
+        }
+      }
     },
     "when": {
       "schema": {
@@ -130,11 +145,288 @@
           "col2": "<default>",
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string",
+              "nullable": false
+            },
+            {
+              "name": "col2",
+              "type": "string",
+              "nullable": false
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   },
   {
-    "description": "fill missing values in array with derived",
+    "description": "$.col1.col2.col3 ?: fn.upper(fn.col('col4.col5'))",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": "foo"
+            }
+          },
+          "col4": {
+            "col5": "bar"
+          }
+        },
+        {
+          "col1": null,
+          "col4": {
+            "col5": "qux"
+          }
+        },
+        {
+          "col1": {
+            "col2": null
+          },
+          "col4": null
+        },
+        {
+          "col1": null,
+          "col4": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "col4",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col5",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col1": {
+            "dtype": "object",
+            "inner_schema": {
+              "expr": "Schema({'col2': Column('object', inner_schema=Schema({'col3': Column('str', default_factory=lambda x: fn.upper(fn.col('col4.col5')))}))})"
+            }
+          },
+          "col4": {
+            "dtype": "object",
+            "inner_schema": {
+              "expr": "Schema({'col5': Column('str')})"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": "foo"
+            }
+          },
+          "col4": {
+            "col5": "bar"
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": {
+              "col3": "QUX"
+            }
+          },
+          "col4": {
+            "col5": "qux"
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": {
+              "col3": null
+            }
+          },
+          "col4": {
+            "col5": null
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": {
+              "col3": null
+            }
+          },
+          "col4": {
+            "col5": null
+          },
+          "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "nullable": false
+                  }
+                ]
+              },
+              "nullable": false
+            },
+            {
+              "name": "col4",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col5",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "each($.col2[]) ?: fn.upper(fn.col('col1'))",
     "engines": [
       "pyspark"
     ],
@@ -149,7 +441,26 @@
             null
           ]
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            },
+            {
+              "name": "col2",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              }
+            }
+          ]
+        }
+      }
     },
     "when": {
       "schema": {
@@ -178,11 +489,77 @@
           ],
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            },
+            {
+              "name": "col2",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "containsNull": true,
+                                "type": "array",
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   },
   {
-    "description": "fill missing values in array of objects with derived",
+    "description": "each($.col2[].col3) ?: fn.upper(fn.col('col1'))",
     "engines": [
       "pyspark"
     ],
@@ -205,7 +582,34 @@
             }
           ]
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            },
+            {
+              "name": "col2",
+              "type": {
+                "type": "array",
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col3",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "containsNull": true
+              }
+            }
+          ]
+        }
+      }
     },
     "when": {
       "schema": {
@@ -242,7 +646,81 @@
           ],
           "errors": {}
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            },
+            {
+              "name": "col2",
+              "type": {
+                "type": "array",
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col3",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "containsNull": false
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "keyType": "string",
+                "type": "map",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "containsNull": true,
+                        "type": "array",
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "containsNull": true,
+                                "type": "array",
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   }
 ]

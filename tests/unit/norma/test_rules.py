@@ -12,7 +12,6 @@ from pyxis.pyspark import StructType
 
 from norma import rules  # noqa pylint: disable=unused-import
 from norma.engines.pandas import rules as pandas_rules
-from norma.engines.pyspark import rules as pyspark_rules
 from norma.schema import Column, Schema
 
 
@@ -27,7 +26,6 @@ def make_test(test_name, value):
             'pandas': make_test_pandas,
             'pandas_api': partial(make_test_pandas_api, test_name),
             'pyspark': partial(make_test_pyspark, spark_session),
-            'pyspark_api': partial(make_test_pyspark_api, spark_session, test_name),
         }[engine](case)
 
     return func
@@ -50,7 +48,7 @@ def make_test_pandas(case):
             return None
         return str(x)
 
-    if 'schema' in case['given']:
+    if 'schema' in case['given'] and 'pandas' in case['given']['schema']:
         df = pd.DataFrame({
             k: pd.Series([v[k] for v in case['given']['data']], dtype=t)
             for k, t in case['given']['schema']['pandas'].items()
@@ -77,11 +75,9 @@ def make_test_pandas(case):
 
 
 def make_test_pyspark(spark_session, case):
-    params = {}
-    if 'schema' in case['given']:
-        params['schema'] = StructType.from_json(case['given']['schema']['pyspark'])
-
-    df = spark_session.createDataFrame(case['given']['data'], **params)
+    df = spark_session.createDataFrame(
+        case['given']['data'], schema=StructType.from_json(case['given']['schema']['pyspark'])
+    )
 
     with (
             pytest.raises(Exception, match=case['then']['raises']['match'])
@@ -95,34 +91,7 @@ def make_test_pyspark(spark_session, case):
         actual = schema.validate(df)
 
         assert list(map(json.loads, actual.toJSON().collect())) == case['then']['data']
-        return
-
-    assert e.type.__name__ == case['then']['raises']['type']
-
-
-def make_test_pyspark_api(spark_session, test_name, case):
-    # given
-    df = spark_session.createDataFrame(
-        case['given']['data'], StructType.from_json(case['given']['schema']))
-    error_state = pyspark_rules.ErrorState('errors', False)
-
-    with (
-            pytest.raises(Exception, match=case['then']['raises']['match'])
-            if 'raises' in case['then'] else mock.MagicMock()
-    ) as e:
-        # when
-        args = {
-            k: eval(v['expr'], globals()) if isinstance(v, dict) and 'expr' in v else v  # pylint: disable=eval-used
-            for k, v in case['when']['args'].items()
-        }
-        rule = getattr(pyspark_rules, test_name)(**args)
-        column = case['when'].get('column', 'col')
-        error_state.suffixes = {column: column}
-        actual = rule.verify(df, column, error_state)
-
-        # then
-        assert actual.schema.json() == StructType.from_json(case['then']['schema']).json()
-        assert actual.toJSON().map(json.loads).collect() == case['then']['data']
+        assert actual.schema.json() == StructType.from_json(case['then']['schema']['pyspark']).json()
         return
 
     assert e.type.__name__ == case['then']['raises']['type']

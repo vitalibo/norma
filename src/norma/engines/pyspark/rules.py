@@ -1,6 +1,6 @@
 import inspect
 import json
-from functools import partial, reduce
+from functools import reduce
 from typing import Any, Iterable, Optional
 
 from pyspark.sql import Column, DataFrame
@@ -73,6 +73,11 @@ class ErrorState(IErrorState):
         suffix = suffix_col(column, self)
         details = dict(kwargs.get('details'))
         return func
+
+    def empty_errors(self):
+        if self.has_array:
+            return fn.array().cast('array<struct<type:string,msg:string,loc:array<int>>>')
+        return fn.array().cast('array<struct<type:string,msg:string>>')
 
 
 class BaseRule(Rule):
@@ -452,7 +457,7 @@ class DataTypeRule(Rule):
             return df
 
         if data_type.typeName() == 'void':
-            return df.withColumn(column, fn.col(column).cast(self.dtype.typeName()))
+            return df.transform(with_nested_column(column, fn.col(column).cast(self.dtype.typeName())))
 
         backup_column = backup_col(column, error_state)
         df = df.withColumn(backup_column, fn.col(column))
@@ -549,7 +554,7 @@ class ObjectTypeRule(Rule):
             return df
 
         if data_type.typeName() == 'void':
-            return df.withColumn(column, fn.col(column).cast(self.struct_type))
+            return df.transform(with_nested_column(column, fn.lit(None).cast(self.struct_type)))
 
         backup_column = backup_col(column, error_state)
         df = df.withColumn(backup_column, fn.col(column))
@@ -600,7 +605,7 @@ class ObjectTypeRule(Rule):
 
             return df.transform(with_nested_column(column, new_struct))
 
-        return self._cast_array_json_str(df, column, fn.col(backup_column), error_state)
+        return self._cast_array_json_str(df, column, fn.col(f'{backup_column}_array'), error_state)
 
     def _cast_array_json_str(self, df: DataFrame, column: str, backup_column: Column,
                              error_state: ErrorState) -> DataFrame:
@@ -621,7 +626,7 @@ class ObjectTypeRule(Rule):
         else:
             actual = fn.transform(fn.col(root), nested_value)
 
-        indexes = fn.zip_with(actual, fn.col(f'{backup_column}_array'), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        indexes = fn.zip_with(actual, backup_column, lambda x, y: fn.isnull(x) & fn.isnotnull(y))
         return df.transform(error_state.add_errors(indexes, column, details=errors.OBJECT_PARSING))
 
     def _cast_json_str(self, df: DataFrame, column: str, backup_column: Column, error_state: ErrorState) -> DataFrame:
@@ -643,36 +648,17 @@ class ObjectTypeRule(Rule):
             fn.isnotnull(backup_column), backup_column)
 
         return df \
-            .withColumn(column, fn.from_json(fn.col(column), self.struct_type)) \
+            .transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type))) \
             .transform(with_nested_column(column, fn.when(~is_malformed, fn.col(column)))) \
             .transform(error_state.add_errors(fn.isnull(fn.col(column)) & fn.isnotnull(backup_column), column,
                                               details=errors.OBJECT_PARSING))
 
     @staticmethod
     def parse_struct_type(schema) -> StructType:
-        def struct_field(name, col):
-            return StructField(
-                name,
-                {
-                    'object': partial(ObjectTypeRule.parse_struct_type, col.inner_schema),
-                    'array': partial(ArrayTypeRule.parse_array_type, col.inner_schema),
-                    'str': StringType,
-                    'string': StringType,
-                    'int': IntegerType,
-                    'integer': IntegerType,
-                    'float': FloatType,
-                    'double': FloatType,
-                    'number': FloatType,
-                    'bool': BooleanType,
-                    'boolean': BooleanType,
-                    'datetime': TimestampType,
-                    'date': DateType,
-                }.get(col.dtype, StringType)(),
-                nullable=True,
-                metadata={}
-            )
+        def struct_field(name):
+            return StructField(name, StringType(), nullable=True, metadata={})
 
-        return StructType([struct_field(k, v) for k, v in schema.columns.items()])
+        return StructType([struct_field(k) for k, v in schema.columns.items()])
 
 
 class ArrayTypeRule(Rule):
@@ -706,7 +692,9 @@ class ArrayTypeRule(Rule):
     @staticmethod
     def parse_array_type(schema) -> ArrayType:
         if schema.inner_schema is not None:
-            return ArrayType(ObjectTypeRule.parse_struct_type(schema.inner_schema))
+            s = StructType([StructField(k, StringType(), nullable=True, metadata={}) for k, v in
+                            schema.inner_schema.columns.items()])
+            return ArrayType(s)
         return ArrayType(StringType())
 
 
