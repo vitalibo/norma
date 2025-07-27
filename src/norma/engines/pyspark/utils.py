@@ -119,7 +119,9 @@ def zip_with_nested_columns(col_name: str, other_col: Column, func) -> Callable[
     return transform
 
 
-def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], DataFrame]:
+def with_nested_column(  # pylint: disable=too-many-statements
+        col_name: str, val: Column
+) -> Callable[[DataFrame], DataFrame]:
     """
     Create a new column in a DataFrame with a nested structure.
 
@@ -128,7 +130,7 @@ def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], Data
     :return: function that can be used to transform a DataFrame
     """
 
-    def transform(df):
+    def transform(df):  # pylint: disable=too-many-statements
         root, *nested_names = col_name.split('.')
         if is_array_root := root.endswith('[]'):
             root = root[:-2]
@@ -139,7 +141,7 @@ def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], Data
                     return df.withColumn(root, fn.array())
                 fn_val = val
                 if isinstance(val, Column):
-                    fn_val = lambda x: val
+                    fn_val = lambda x: val  # pylint: disable=unnecessary-lambda-assignment
                 return df.withColumn(root, fn.transform(fn.col(root), fn_val))
             return df.withColumn(root, val)
 
@@ -157,6 +159,7 @@ def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], Data
 
                     if is_array:
                         def build_array(x):
+                            # pylint: disable=cell-var-from-loop
                             return build_struct(nested_fields, nested[1:], f'{path}.{nested[0]}', x)
 
                         expr = fn.transform(col.getField(field), build_array)
@@ -168,7 +171,7 @@ def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], Data
                     if is_array:
                         fn_val = val
                         if isinstance(val, Column):
-                            fn_val = lambda x: val
+                            fn_val = lambda x: val  # pylint: disable=unnecessary-lambda-assignment
                         expr = fn.transform(col.getField(field), fn_val).alias(field)
                     else:
                         if not isinstance(val, Column):
@@ -188,7 +191,13 @@ def with_nested_column(col_name: str, val: Column) -> Callable[[DataFrame], Data
             return fn.struct(*struct_cols)
 
         try:
-            field_names = df.schema[root].dataType.names
+            data_type = df.schema[root].dataType
+            if data_type.typeName() == 'struct':
+                field_names = data_type.names
+            elif data_type.typeName() == 'array' and data_type.elementType.typeName() == 'struct':
+                field_names = data_type.elementType.names
+            else:
+                field_names = []
         except KeyError:
             field_names = []
 

@@ -250,5 +250,130 @@
         }
       ]
     }
+  },
+  {
+    "description": "fill missing values in array of objects with default",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": "foo"
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              },
+              {
+                "col3": {
+                  "col4": "bar"
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              },
+              {
+                "col3": {
+                  "col4": "baz"
+                }
+              },
+              {
+                "col3": {
+                  "col4": null
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col3": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "default": "undefined"
+                        }
+                      },
+                      "required": [
+                        "col4"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "col3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": {
+                  "col4": "foo"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "undefined"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "bar"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "undefined"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "baz"
+                }
+              },
+              {
+                "col3": {
+                  "col4": "undefined"
+                }
+              }
+            ]
+          },
+          "errors": {}
+        }
+      ]
+    }
   }
 ]

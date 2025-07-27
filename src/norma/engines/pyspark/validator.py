@@ -78,7 +78,7 @@ def validate(
             continue
         if '[]' not in name:
             df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), fn.lit(col.default))))
-        if name.endswith('[]'):
+        else:
             df = df.transform(with_nested_column(name, default_if_null(fn.lit(col.default))))
 
     for name, col in schema.nested_columns.items():
@@ -86,7 +86,7 @@ def validate(
             continue
         if '[]' not in name:
             df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), col.default_factory(df))))
-        if name.endswith('[]'):
+        else:
             df = df.transform(with_nested_column(name, default_if_null(col.default_factory(df))))
 
     return df

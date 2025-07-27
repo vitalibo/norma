@@ -180,5 +180,69 @@
         }
       ]
     }
+  },
+  {
+    "description": "fill missing values in array of objects with derived",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": [
+            {
+              "col3": "bar"
+            },
+            {
+              "col3": null
+            },
+            {
+              "col3": "baz"
+            },
+            {
+              "col3": null
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "schema": {
+        "columns": {
+          "col1": {
+            "dtype": "str"
+          },
+          "col2": {
+            "dtype": "array",
+            "inner_schema": {
+              "expr": "Column('object', inner_schema=Schema({'col3': Column('str', default_factory=lambda x: fn.upper(fn.col('col1')))}))"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": [
+            {
+              "col3": "bar"
+            },
+            {
+              "col3": "FOO"
+            },
+            {
+              "col3": "baz"
+            },
+            {
+              "col3": "FOO"
+            }
+          ],
+          "errors": {}
+        }
+      ]
+    }
   }
 ]

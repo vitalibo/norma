@@ -297,8 +297,33 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
         if column in allowed:
             return df
 
+        bak_col = backup_col(column, error_state)
+
+        if '[]' in column and not column.endswith('[]'):
+            root, *nested_names = column.split('[].')
+            nested_names = nested_names[0].split('.')
+
+            def nested_value(x):
+                for part in nested_names:
+                    x = x[part]
+                return x
+
+            def drop_nested_column(x, nodes):
+                if len(nodes) <= 1:
+                    return x.dropFields(nodes[0])
+
+                return x.withField(
+                    nodes[0],
+                    drop_nested_column(x[nodes[0]], nodes[1:]))
+
+            return df \
+                .transform(with_nested_column(bak_col, fn.transform(fn.col(root), nested_value))) \
+                .transform(with_nested_column(root + '[]', lambda x: drop_nested_column(x, nested_names))) \
+                .transform(error_state.add_errors(fn.transform(fn.col(root), lambda x: fn.lit(True)),
+                                                  column, details=errors.EXTRA_FORBIDDEN))
+
         return df \
-            .transform(with_nested_column_renamed(column, backup_col(column, error_state))) \
+            .transform(with_nested_column_renamed(column.removesuffix('[]'), bak_col)) \
             .transform(error_state.add_errors(fn.lit(True), column, details=errors.EXTRA_FORBIDDEN))
 
     return verify
