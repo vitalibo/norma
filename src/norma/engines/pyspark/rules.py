@@ -213,15 +213,15 @@ def less_than_equal(le: Any) -> Rule:
 def multiple_of(multiple: Any) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
-        if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, NumericType):
-                raise ValueError('multiple_of rule can only be applied to numeric columns')
-        elif not isinstance(data_type, NumericType):
+        if not isinstance(data_type, NumericType):
             raise ValueError('multiple_of rule can only be applied to numeric columns')
         return df
 
+    if multiple <= 0:
+        raise ValueError('multiple_of must be greater than zero')
+
     return rule(
-        lambda col_expr: (col_expr % fn.lit(multiple)) != fn.lit(0),
+        lambda col_expr: (col_expr < fn.lit(0)) | ((col_expr % fn.lit(multiple)) != fn.lit(0)),
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
         __pre_func__=before
     )
@@ -231,8 +231,7 @@ def min_length(value: int) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
         if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, StringType):
-                raise ValueError('min_length rule can only be applied to string columns')
+            return df
         elif not isinstance(data_type, StringType):
             raise ValueError('min_length rule can only be applied to string columns')
         return df
@@ -250,8 +249,7 @@ def max_length(value: int) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
         if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, StringType):
-                raise ValueError('max_length rule can only be applied to string columns')
+            return df
         elif not isinstance(data_type, StringType):
             raise ValueError('max_length rule can only be applied to string columns')
         return df
@@ -268,10 +266,7 @@ def max_length(value: int) -> Rule:
 def pattern(regex: str) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
-        if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, StringType):
-                raise ValueError('pattern rule can only be applied to string columns')
-        elif not isinstance(data_type, StringType):
+        if not isinstance(data_type, StringType):
             raise ValueError('pattern rule can only be applied to string columns')
         return df
 

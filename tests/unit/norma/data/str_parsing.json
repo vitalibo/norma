@@ -16,13 +16,13 @@
           "col": "string[python]"
         },
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": "void"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -45,6 +45,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -52,20 +53,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -79,7 +78,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -87,10 +87,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -109,13 +109,13 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": "string"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -138,6 +138,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -145,20 +146,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -172,7 +171,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -180,10 +180,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -202,13 +202,13 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": "integer"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -231,6 +231,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -238,20 +239,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -265,7 +264,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -273,10 +273,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -295,13 +295,13 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": "float"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -324,6 +324,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -331,20 +332,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -358,7 +357,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -366,10 +366,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -388,13 +388,13 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": "boolean"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -417,6 +417,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -424,20 +425,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -451,7 +450,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -459,16 +459,16 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
   },
   {
-    "description": "cast({foo='bar'} as str) => null, error is raised",
+    "description": "cast({'foo':'bar'} as str) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -483,6 +483,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -496,8 +497,7 @@
                 ]
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -530,6 +530,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -537,20 +538,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -564,7 +563,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -572,10 +572,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -596,17 +596,17 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": {
                 "type": "array",
-                "elementType": "integer",
-                "containsNull": true
+                "containsNull": true,
+                "elementType": "integer"
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -639,6 +639,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -646,20 +647,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -673,7 +672,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -681,10 +681,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -791,13 +791,13 @@
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": "void"
                   }
-                ],
-                "type": "struct"
+                ]
               }
             }
           ]
@@ -830,35 +830,34 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": "string"
                   }
-                ],
-                "type": "struct"
+                ]
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -872,7 +871,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -880,10 +880,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -903,21 +903,21 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": "integer"
                   }
-                ],
-                "type": "struct"
+                ]
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -947,35 +947,34 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": "string"
                   }
-                ],
-                "type": "struct"
+                ]
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -989,7 +988,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -997,10 +997,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -1028,29 +1028,29 @@
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
+                            "type": "struct",
                             "fields": [
                               {
                                 "name": "col4",
                                 "type": "string"
                               }
-                            ],
-                            "type": "struct"
+                            ]
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             }
           ]
@@ -1097,51 +1097,50 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
+                            "type": "struct",
                             "fields": [
                               {
                                 "name": "col4",
                                 "type": "string"
                               }
-                            ],
-                            "type": "struct"
+                            ]
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1155,7 +1154,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1163,10 +1163,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -1194,29 +1194,29 @@
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
+                            "type": "struct",
                             "fields": [
                               {
                                 "name": "col4",
                                 "type": "boolean"
                               }
-                            ],
-                            "type": "struct"
+                            ]
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             }
           ]
@@ -1263,51 +1263,50 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
+                            "type": "struct",
                             "fields": [
                               {
                                 "name": "col4",
                                 "type": "string"
                               }
-                            ],
-                            "type": "struct"
+                            ]
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1321,7 +1320,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1329,10 +1329,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -1353,17 +1353,17 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": {
                 "type": "array",
-                "elementType": "integer",
-                "containsNull": true
+                "containsNull": true,
+                "elementType": "integer"
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -1395,31 +1395,30 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": {
                 "type": "array",
-                "elementType": "string",
-                "containsNull": true
+                "containsNull": true,
+                "elementType": "string"
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1434,14 +1433,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1449,16 +1449,16 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
   },
   {
-    "description": "cast([{foo='bar'}] as array<str>) => [null], error is raised",
+    "description": "cast([{'foo':'bar'}] as array<str>) => [null], error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1474,11 +1474,13 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": {
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
@@ -1487,12 +1489,10 @@
                       "type": "string"
                     }
                   ]
-                },
-                "containsNull": true
+                }
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -1533,31 +1533,30 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": {
                 "type": "array",
-                "elementType": "string",
-                "containsNull": true
+                "containsNull": true,
+                "elementType": "string"
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1572,14 +1571,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1587,10 +1587,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -1615,33 +1615,33 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
                             "type": "array",
-                            "elementType": "integer",
-                            "containsNull": true
+                            "containsNull": true,
+                            "elementType": "integer"
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -1687,47 +1687,46 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
                             "type": "array",
-                            "elementType": "string",
-                            "containsNull": true
+                            "containsNull": true,
+                            "elementType": "string"
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1742,14 +1741,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1757,16 +1757,16 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
   },
   {
-    "description": "cast($.col1.col2.col3=[col4.col5.col6=123, .=null, .=456]} as array<str>) => ['123', null, '456']",
+    "description": "cast($.col1.col2.col3=[.col4.col5.col6=123, =null, =456]} as array<struct<str>>) => ['123', null, '456']",
     "engines": [
       "pyspark"
     ],
@@ -1800,57 +1800,57 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
                             "type": "array",
+                            "containsNull": true,
                             "elementType": {
                               "type": "struct",
                               "fields": [
                                 {
                                   "name": "col4",
                                   "type": {
+                                    "type": "struct",
                                     "fields": [
                                       {
                                         "name": "col5",
                                         "type": {
+                                          "type": "struct",
                                           "fields": [
                                             {
                                               "name": "col6",
                                               "type": "integer"
                                             }
-                                          ],
-                                          "type": "struct"
+                                          ]
                                         }
                                       }
-                                    ],
-                                    "type": "struct"
+                                    ]
                                   }
                                 }
                               ]
-                            },
-                            "containsNull": true
+                            }
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -1927,73 +1927,72 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
                             "type": "array",
+                            "containsNull": true,
                             "elementType": {
                               "type": "struct",
                               "fields": [
                                 {
                                   "name": "col4",
                                   "type": {
+                                    "type": "struct",
                                     "fields": [
                                       {
                                         "name": "col5",
                                         "type": {
+                                          "type": "struct",
                                           "fields": [
                                             {
                                               "name": "col6",
                                               "type": "string"
                                             }
-                                          ],
-                                          "type": "struct"
+                                          ]
                                         },
                                         "nullable": false
                                       }
-                                    ],
-                                    "type": "struct"
+                                    ]
                                   },
                                   "nullable": false
                                 }
                               ]
-                            },
-                            "containsNull": true
+                            }
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -2008,14 +2007,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -2023,16 +2023,16 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
   },
   {
-    "description": "cast($.col1.col2.col3=[col4.col5={foo='bar'}, .=null]} as array<str>) => [null, null], error is raised",
+    "description": "cast($.col1.col2.col3=[.col4.col5={'foo':'bar'}, =null]} as array<struct<str>>) => [null, null], error is raised",
     "engines": [
       "pyspark"
     ],
@@ -2059,57 +2059,57 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
                             "type": "array",
+                            "containsNull": true,
                             "elementType": {
                               "type": "struct",
                               "fields": [
                                 {
                                   "name": "col4",
                                   "type": {
+                                    "type": "struct",
                                     "fields": [
                                       {
                                         "name": "col5",
                                         "type": {
+                                          "type": "struct",
                                           "fields": [
                                             {
                                               "name": "foo",
                                               "type": "string"
                                             }
-                                          ],
-                                          "type": "struct"
+                                          ]
                                         }
                                       }
-                                    ],
-                                    "type": "struct"
+                                    ]
                                   }
                                 }
                               ]
-                            },
-                            "containsNull": true
+                            }
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -2184,63 +2184,62 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col1",
               "type": {
+                "type": "struct",
                 "fields": [
                   {
                     "name": "col2",
                     "type": {
+                      "type": "struct",
                       "fields": [
                         {
                           "name": "col3",
                           "type": {
                             "type": "array",
+                            "containsNull": true,
                             "elementType": {
                               "type": "struct",
                               "fields": [
                                 {
                                   "name": "col4",
                                   "type": {
+                                    "type": "struct",
                                     "fields": [
                                       {
                                         "name": "col5",
                                         "type": "string"
                                       }
-                                    ],
-                                    "type": "struct"
+                                    ]
                                   }
                                 }
                               ]
-                            },
-                            "containsNull": true
+                            }
                           }
                         }
-                      ],
-                      "type": "struct"
+                      ]
                     }
                   }
-                ],
-                "type": "struct"
+                ]
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -2255,14 +2254,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -2270,10 +2270,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -2304,8 +2304,7 @@
           false
         ]
       },
-      "errors": {
-      }
+      "errors": {}
     }
   },
   {
@@ -2334,8 +2333,7 @@
           false
         ]
       },
-      "errors": {
-      }
+      "errors": {}
     }
   },
   {
@@ -2364,8 +2362,7 @@
           false
         ]
       },
-      "errors": {
-      }
+      "errors": {}
     }
   },
   {
@@ -2394,8 +2391,7 @@
           false
         ]
       },
-      "errors": {
-      }
+      "errors": {}
     }
   },
   {
@@ -2424,8 +2420,7 @@
           false
         ]
       },
-      "errors": {
-      }
+      "errors": {}
     }
   },
   {
@@ -2454,12 +2449,11 @@
           false
         ]
       },
-      "errors": {
-      }
+      "errors": {}
     }
   },
   {
-    "description": "cast({foo='bar'} <object> as string) => null, error is raised",
+    "description": "cast({'foo':'bar'} <object> as string) => null, error is raised",
     "engines": [
       "pandas_api"
     ],

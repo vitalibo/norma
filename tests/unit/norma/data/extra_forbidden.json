@@ -1,6 +1,6 @@
 [
   {
-    "description": "extra fields are allowed",
+    "description": "allowed in $.",
     "engines": [
       "pandas",
       "pyspark"
@@ -8,12 +8,8 @@
     "given": {
       "data": [
         {
-          "name": "John",
-          "age": 30
-        },
-        {
-          "name": "Nancy",
-          "age": 25
+          "col1": "foo",
+          "col2": 30
         }
       ],
       "schema": {
@@ -21,11 +17,11 @@
           "type": "struct",
           "fields": [
             {
-              "name": "name",
+              "name": "col1",
               "type": "string"
             },
             {
-              "name": "age",
+              "name": "col2",
               "type": "integer"
             }
           ]
@@ -35,24 +31,19 @@
     "when": {
       "json_schema": {
         "type": "object",
+        "additionalProperties": true,
         "properties": {
-          "name": {
+          "col1": {
             "type": "string"
           }
-        },
-        "additionalProperties": true
+        }
       }
     },
     "then": {
       "data": [
         {
-          "name": "John",
-          "age": 30,
-          "errors": {}
-        },
-        {
-          "name": "Nancy",
-          "age": 25,
+          "col1": "foo",
+          "col2": 30,
           "errors": {}
         }
       ],
@@ -61,29 +52,27 @@
           "type": "struct",
           "fields": [
             {
-              "name": "name",
+              "name": "col1",
               "type": "string"
             },
             {
-              "name": "age",
+              "name": "col2",
               "type": "integer"
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -97,7 +86,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -105,7 +95,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -113,7 +104,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden",
+    "description": "forbidden in $., error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -121,12 +112,8 @@
     "given": {
       "data": [
         {
-          "name": "John",
-          "age": 30
-        },
-        {
-          "name": "Nancy",
-          "age": 25
+          "col1": "foo",
+          "col2": 30
         }
       ],
       "schema": {
@@ -134,11 +121,11 @@
           "type": "struct",
           "fields": [
             {
-              "name": "name",
+              "name": "col1",
               "type": "string"
             },
             {
-              "name": "age",
+              "name": "col2",
               "type": "integer"
             }
           ]
@@ -148,20 +135,20 @@
     "when": {
       "json_schema": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
-          "name": {
+          "col1": {
             "type": "string"
           }
-        },
-        "additionalProperties": false
+        }
       }
     },
     "then": {
       "data": [
         {
-          "name": "John",
+          "col1": "foo",
           "errors": {
-            "age": {
+            "col2": {
               "details": [
                 {
                   "type": "extra_forbidden",
@@ -171,20 +158,6 @@
               "original": "30"
             }
           }
-        },
-        {
-          "name": "Nancy",
-          "errors": {
-            "age": {
-              "details": [
-                {
-                  "type": "extra_forbidden",
-                  "msg": "Extra inputs are not permitted"
-                }
-              ],
-              "original": "25"
-            }
-          }
         }
       ],
       "schema": {
@@ -192,25 +165,23 @@
           "type": "struct",
           "fields": [
             {
-              "name": "name",
+              "name": "col1",
               "type": "string"
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -224,7 +195,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -232,7 +204,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -240,7 +213,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1",
+    "description": "allowed in $.col1",
     "engines": [
       "pyspark"
     ],
@@ -248,8 +221,8 @@
       "data": [
         {
           "col1": {
-            "age": 30,
-            "name": "John"
+            "col2": 30,
+            "col3": "foo"
           }
         }
       ],
@@ -263,11 +236,11 @@
                 "type": "struct",
                 "fields": [
                   {
-                    "name": "age",
+                    "name": "col2",
                     "type": "integer"
                   },
                   {
-                    "name": "name",
+                    "name": "col3",
                     "type": "string"
                   }
                 ]
@@ -283,12 +256,12 @@
         "properties": {
           "col1": {
             "type": "object",
+            "additionalProperties": true,
             "properties": {
-              "age": {
+              "col2": {
                 "type": "integer"
               }
-            },
-            "additionalProperties": true
+            }
           }
         }
       }
@@ -297,8 +270,8 @@
       "data": [
         {
           "col1": {
-            "age": 30,
-            "name": "John"
+            "col2": 30,
+            "col3": "foo"
           },
           "errors": {}
         }
@@ -313,11 +286,11 @@
                 "type": "struct",
                 "fields": [
                   {
-                    "name": "age",
+                    "name": "col2",
                     "type": "integer"
                   },
                   {
-                    "name": "name",
+                    "name": "col3",
                     "type": "string"
                   }
                 ]
@@ -325,20 +298,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -352,7 +323,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -360,7 +332,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -368,7 +341,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1, error is raised",
+    "description": "forbidden in $.col1, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -376,8 +349,8 @@
       "data": [
         {
           "col1": {
-            "age": 30,
-            "name": "John"
+            "col2": 30,
+            "col3": "foo"
           }
         }
       ],
@@ -391,11 +364,11 @@
                 "type": "struct",
                 "fields": [
                   {
-                    "name": "age",
+                    "name": "col2",
                     "type": "integer"
                   },
                   {
-                    "name": "name",
+                    "name": "col3",
                     "type": "string"
                   }
                 ]
@@ -411,12 +384,12 @@
         "properties": {
           "col1": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
-              "age": {
+              "col2": {
                 "type": "integer"
               }
-            },
-            "additionalProperties": false
+            }
           }
         }
       }
@@ -425,17 +398,17 @@
       "data": [
         {
           "col1": {
-            "age": 30
+            "col2": 30
           },
           "errors": {
-            "col1.name": {
+            "col1.col3": {
               "details": [
                 {
                   "msg": "Extra inputs are not permitted",
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "\"John\""
+              "original": "\"foo\""
             }
           }
         }
@@ -450,7 +423,7 @@
                 "type": "struct",
                 "fields": [
                   {
-                    "name": "age",
+                    "name": "col2",
                     "type": "integer"
                   }
                 ]
@@ -458,20 +431,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -485,7 +456,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -493,7 +465,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -501,7 +474,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1.col2",
+    "description": "allowed in $.col1.col2",
     "engines": [
       "pyspark"
     ],
@@ -510,8 +483,8 @@
         {
           "col1": {
             "col2": {
-              "age": 30,
-              "name": "John"
+              "col3": 30,
+              "col4": "foo"
             }
           }
         }
@@ -531,11 +504,11 @@
                       "type": "struct",
                       "fields": [
                         {
-                          "name": "age",
+                          "name": "col3",
                           "type": "integer"
                         },
                         {
-                          "name": "name",
+                          "name": "col4",
                           "type": "string"
                         }
                       ]
@@ -557,12 +530,12 @@
             "properties": {
               "col2": {
                 "type": "object",
+                "additionalProperties": true,
                 "properties": {
-                  "age": {
+                  "col3": {
                     "type": "integer"
                   }
-                },
-                "additionalProperties": true
+                }
               }
             }
           }
@@ -574,8 +547,8 @@
         {
           "col1": {
             "col2": {
-              "age": 30,
-              "name": "John"
+              "col3": 30,
+              "col4": "foo"
             }
           },
           "errors": {}
@@ -596,11 +569,11 @@
                       "type": "struct",
                       "fields": [
                         {
-                          "name": "age",
+                          "name": "col3",
                           "type": "integer"
                         },
                         {
-                          "name": "name",
+                          "name": "col4",
                           "type": "string"
                         }
                       ]
@@ -611,20 +584,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -638,7 +609,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -646,7 +618,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -654,7 +627,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1.col2, error is raised",
+    "description": "forbidden in $.col1.col2, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -663,8 +636,8 @@
         {
           "col1": {
             "col2": {
-              "age": 30,
-              "name": "John"
+              "col3": 30,
+              "col4": "foo"
             }
           }
         }
@@ -684,11 +657,11 @@
                       "type": "struct",
                       "fields": [
                         {
-                          "name": "age",
+                          "name": "col3",
                           "type": "integer"
                         },
                         {
-                          "name": "name",
+                          "name": "col4",
                           "type": "string"
                         }
                       ]
@@ -710,12 +683,12 @@
             "properties": {
               "col2": {
                 "type": "object",
+                "additionalProperties": false,
                 "properties": {
-                  "age": {
+                  "col3": {
                     "type": "integer"
                   }
-                },
-                "additionalProperties": false
+                }
               }
             }
           }
@@ -727,18 +700,18 @@
         {
           "col1": {
             "col2": {
-              "age": 30
+              "col3": 30
             }
           },
           "errors": {
-            "col1.col2.name": {
+            "col1.col2.col4": {
               "details": [
                 {
                   "msg": "Extra inputs are not permitted",
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "\"John\""
+              "original": "\"foo\""
             }
           }
         }
@@ -758,7 +731,7 @@
                       "type": "struct",
                       "fields": [
                         {
-                          "name": "age",
+                          "name": "col3",
                           "type": "integer"
                         }
                       ]
@@ -769,20 +742,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -796,7 +767,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -804,7 +776,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -812,7 +785,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1.col2.col3",
+    "description": "allowed in $.col1.col2.col3",
     "engines": [
       "pyspark"
     ],
@@ -822,10 +795,10 @@
           "col1": {
             "col2": {
               "col3": {
-                "age": 30,
-                "name": "John",
-                "address": {
-                  "city": "New York"
+                "col4": 30,
+                "col5": "foo",
+                "col6": {
+                  "col7": "bar"
                 }
               }
             }
@@ -852,20 +825,20 @@
                             "type": "struct",
                             "fields": [
                               {
-                                "name": "age",
+                                "name": "col4",
                                 "type": "integer"
                               },
                               {
-                                "name": "name",
+                                "name": "col5",
                                 "type": "string"
                               },
                               {
-                                "name": "address",
+                                "name": "col6",
                                 "type": {
                                   "type": "struct",
                                   "fields": [
                                     {
-                                      "name": "city",
+                                      "name": "col7",
                                       "type": "string"
                                     }
                                   ]
@@ -896,12 +869,12 @@
                 "properties": {
                   "col3": {
                     "type": "object",
+                    "additionalProperties": true,
                     "properties": {
-                      "age": {
+                      "col4": {
                         "type": "integer"
                       }
-                    },
-                    "additionalProperties": true
+                    }
                   }
                 }
               }
@@ -916,10 +889,10 @@
           "col1": {
             "col2": {
               "col3": {
-                "age": 30,
-                "name": "John",
-                "address": {
-                  "city": "New York"
+                "col4": 30,
+                "col5": "foo",
+                "col6": {
+                  "col7": "bar"
                 }
               }
             }
@@ -947,20 +920,20 @@
                             "type": "struct",
                             "fields": [
                               {
-                                "name": "age",
+                                "name": "col4",
                                 "type": "integer"
                               },
                               {
-                                "name": "name",
+                                "name": "col5",
                                 "type": "string"
                               },
                               {
-                                "name": "address",
+                                "name": "col6",
                                 "type": {
                                   "type": "struct",
                                   "fields": [
                                     {
-                                      "name": "city",
+                                      "name": "col7",
                                       "type": "string"
                                     }
                                   ]
@@ -977,20 +950,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1004,7 +975,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1012,7 +984,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -1020,7 +993,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1.col2.col3, error is raised",
+    "description": "forbidden in $.col1.col2.col3, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1030,10 +1003,10 @@
           "col1": {
             "col2": {
               "col3": {
-                "age": 30,
-                "name": "John",
-                "address": {
-                  "city": "New York"
+                "col4": 30,
+                "col5": "foo",
+                "col6": {
+                  "col7": "bar"
                 }
               }
             }
@@ -1060,20 +1033,20 @@
                             "type": "struct",
                             "fields": [
                               {
-                                "name": "age",
+                                "name": "col4",
                                 "type": "integer"
                               },
                               {
-                                "name": "name",
+                                "name": "col5",
                                 "type": "string"
                               },
                               {
-                                "name": "address",
+                                "name": "col6",
                                 "type": {
                                   "type": "struct",
                                   "fields": [
                                     {
-                                      "name": "city",
+                                      "name": "col7",
                                       "type": "string"
                                     }
                                   ]
@@ -1104,12 +1077,12 @@
                 "properties": {
                   "col3": {
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
-                      "age": {
+                      "col4": {
                         "type": "integer"
                       }
-                    },
-                    "additionalProperties": false
+                    }
                   }
                 }
               }
@@ -1124,28 +1097,28 @@
           "col1": {
             "col2": {
               "col3": {
-                "age": 30
+                "col4": 30
               }
             }
           },
           "errors": {
-            "col1.col2.col3.name": {
+            "col1.col2.col3.col5": {
               "details": [
                 {
                   "msg": "Extra inputs are not permitted",
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "\"John\""
+              "original": "\"foo\""
             },
-            "col1.col2.col3.address": {
+            "col1.col2.col3.col6": {
               "details": [
                 {
                   "msg": "Extra inputs are not permitted",
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "{\"city\":\"New York\"}"
+              "original": "{\"col7\":\"bar\"}"
             }
           }
         }
@@ -1170,7 +1143,7 @@
                             "type": "struct",
                             "fields": [
                               {
-                                "name": "age",
+                                "name": "col4",
                                 "type": "integer"
                               }
                             ]
@@ -1184,20 +1157,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1211,7 +1182,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1219,7 +1191,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -1227,7 +1200,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1[]",
+    "description": "allowed in $.col1[]",
     "engines": [
       "pyspark"
     ],
@@ -1236,12 +1209,12 @@
         {
           "col1": [
             {
-              "age": 30,
-              "name": "John"
+              "col2": 30,
+              "col3": "foo"
             },
             {
-              "age": 25,
-              "name": "Nancy"
+              "col2": 25,
+              "col3": "bar"
             }
           ]
         }
@@ -1253,17 +1226,17 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
                     {
-                      "name": "age",
+                      "name": "col2",
                       "type": "integer"
                     },
                     {
-                      "name": "name",
+                      "name": "col3",
                       "type": "string"
                     }
                   ]
@@ -1282,12 +1255,12 @@
             "type": "array",
             "items": {
               "type": "object",
+              "additionalProperties": true,
               "properties": {
-                "age": {
+                "col2": {
                   "type": "integer"
                 }
-              },
-              "additionalProperties": true
+              }
             }
           }
         }
@@ -1298,12 +1271,12 @@
         {
           "col1": [
             {
-              "age": 30,
-              "name": "John"
+              "col2": 30,
+              "col3": "foo"
             },
             {
-              "age": 25,
-              "name": "Nancy"
+              "col2": 25,
+              "col3": "bar"
             }
           ],
           "errors": {}
@@ -1316,17 +1289,17 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
                     {
-                      "name": "age",
+                      "name": "col2",
                       "type": "integer"
                     },
                     {
-                      "name": "name",
+                      "name": "col3",
                       "type": "string"
                     }
                   ]
@@ -1335,20 +1308,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1363,14 +1334,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1378,7 +1350,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -1386,7 +1359,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1[], error is raised",
+    "description": "forbidden in $.col1[], error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1395,12 +1368,12 @@
         {
           "col1": [
             {
-              "age": 30,
-              "name": "John"
+              "col2": 30,
+              "col3": "foo"
             },
             {
-              "age": 25,
-              "name": "Nancy"
+              "col2": 25,
+              "col3": "bar"
             }
           ]
         }
@@ -1412,17 +1385,17 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
                     {
-                      "name": "age",
+                      "name": "col2",
                       "type": "integer"
                     },
                     {
-                      "name": "name",
+                      "name": "col3",
                       "type": "string"
                     }
                   ]
@@ -1441,12 +1414,12 @@
             "type": "array",
             "items": {
               "type": "object",
+              "additionalProperties": false,
               "properties": {
-                "age": {
+                "col2": {
                   "type": "integer"
                 }
-              },
-              "additionalProperties": false
+              }
             }
           }
         }
@@ -1457,14 +1430,14 @@
         {
           "col1": [
             {
-              "age": 30
+              "col2": 30
             },
             {
-              "age": 25
+              "col2": 25
             }
           ],
           "errors": {
-            "col1[].name": {
+            "col1[].col3": {
               "details": [
                 {
                   "loc": [
@@ -1475,7 +1448,7 @@
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "[\"John\",\"Nancy\"]"
+              "original": "[\"foo\",\"bar\"]"
             }
           }
         }
@@ -1487,13 +1460,13 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
                     {
-                      "name": "age",
+                      "name": "col2",
                       "type": "integer"
                     }
                   ]
@@ -1502,20 +1475,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1530,14 +1501,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1545,7 +1517,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -1553,7 +1526,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1[].col2",
+    "description": "allowed in $.col1[].col2",
     "engines": [
       "pyspark"
     ],
@@ -1563,14 +1536,14 @@
           "col1": [
             {
               "col2": {
-                "age": 30,
-                "name": "John"
+                "col3": 30,
+                "col4": "foo"
               }
             },
             {
               "col2": {
-                "age": 25,
-                "name": "Nancy"
+                "col3": 25,
+                "col4": "bar"
               }
             }
           ]
@@ -1583,8 +1556,8 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
@@ -1594,11 +1567,11 @@
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           },
                           {
-                            "name": "name",
+                            "name": "col4",
                             "type": "string"
                           }
                         ]
@@ -1623,12 +1596,12 @@
               "properties": {
                 "col2": {
                   "type": "object",
+                  "additionalProperties": true,
                   "properties": {
-                    "age": {
+                    "col3": {
                       "type": "integer"
                     }
-                  },
-                  "additionalProperties": true
+                  }
                 }
               }
             }
@@ -1642,14 +1615,14 @@
           "col1": [
             {
               "col2": {
-                "age": 30,
-                "name": "John"
+                "col3": 30,
+                "col4": "foo"
               }
             },
             {
               "col2": {
-                "age": 25,
-                "name": "Nancy"
+                "col3": 25,
+                "col4": "bar"
               }
             }
           ],
@@ -1663,8 +1636,8 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
@@ -1674,11 +1647,11 @@
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           },
                           {
-                            "name": "name",
+                            "name": "col4",
                             "type": "string"
                           }
                         ]
@@ -1690,20 +1663,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1718,14 +1689,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1733,7 +1705,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -1741,7 +1714,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1[].col2, error is raised",
+    "description": "forbidden in $.col1[].col2, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1751,14 +1724,14 @@
           "col1": [
             {
               "col2": {
-                "age": 30,
-                "name": "John"
+                "col3": 30,
+                "col4": "foo"
               }
             },
             {
               "col2": {
-                "age": 25,
-                "name": "Nancy"
+                "col3": 25,
+                "col4": "bar"
               }
             }
           ]
@@ -1771,8 +1744,8 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
@@ -1782,11 +1755,11 @@
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           },
                           {
-                            "name": "name",
+                            "name": "col4",
                             "type": "string"
                           }
                         ]
@@ -1811,12 +1784,12 @@
               "properties": {
                 "col2": {
                   "type": "object",
+                  "additionalProperties": false,
                   "properties": {
-                    "age": {
+                    "col3": {
                       "type": "integer"
                     }
-                  },
-                  "additionalProperties": false
+                  }
                 }
               }
             }
@@ -1830,17 +1803,17 @@
           "col1": [
             {
               "col2": {
-                "age": 30
+                "col3": 30
               }
             },
             {
               "col2": {
-                "age": 25
+                "col3": 25
               }
             }
           ],
           "errors": {
-            "col1[].col2.name": {
+            "col1[].col2.col4": {
               "details": [
                 {
                   "loc": [
@@ -1851,7 +1824,7 @@
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "[\"John\",\"Nancy\"]"
+              "original": "[\"foo\",\"bar\"]"
             }
           }
         }
@@ -1863,8 +1836,8 @@
             {
               "name": "col1",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
@@ -1874,7 +1847,7 @@
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           }
                         ]
@@ -1886,20 +1859,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1914,14 +1885,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1929,7 +1901,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -1937,7 +1910,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1.col2[]",
+    "description": "allowed in $.col1.col2[]",
     "engines": [
       "pyspark"
     ],
@@ -1947,12 +1920,12 @@
           "col1": {
             "col2": [
               {
-                "age": 30,
-                "name": "John"
+                "col3": 30,
+                "col4": "foo"
               },
               {
-                "age": 25,
-                "name": "Nancy"
+                "col3": 25,
+                "col4": "bar"
               }
             ]
           }
@@ -1970,17 +1943,17 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           },
                           {
-                            "name": "name",
+                            "name": "col4",
                             "type": "string"
                           }
                         ]
@@ -2005,12 +1978,12 @@
                 "type": "array",
                 "items": {
                   "type": "object",
+                  "additionalProperties": true,
                   "properties": {
-                    "age": {
+                    "col3": {
                       "type": "integer"
                     }
-                  },
-                  "additionalProperties": true
+                  }
                 }
               }
             }
@@ -2024,12 +1997,12 @@
           "col1": {
             "col2": [
               {
-                "age": 30,
-                "name": "John"
+                "col3": 30,
+                "col4": "foo"
               },
               {
-                "age": 25,
-                "name": "Nancy"
+                "col3": 25,
+                "col4": "bar"
               }
             ]
           },
@@ -2048,17 +2021,17 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           },
                           {
-                            "name": "name",
+                            "name": "col4",
                             "type": "string"
                           }
                         ]
@@ -2070,20 +2043,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -2098,14 +2069,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -2113,7 +2085,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -2121,7 +2094,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1.col2[], error is raised",
+    "description": "forbidden in $.col1.col2[], error is raised",
     "engines": [
       "pyspark"
     ],
@@ -2131,12 +2104,12 @@
           "col1": {
             "col2": [
               {
-                "age": 30,
-                "name": "John"
+                "col3": 30,
+                "col4": "foo"
               },
               {
-                "age": 25,
-                "name": "Nancy"
+                "col3": 25,
+                "col4": "bar"
               }
             ]
           }
@@ -2154,17 +2127,17 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           },
                           {
-                            "name": "name",
+                            "name": "col4",
                             "type": "string"
                           }
                         ]
@@ -2189,12 +2162,12 @@
                 "type": "array",
                 "items": {
                   "type": "object",
+                  "additionalProperties": false,
                   "properties": {
-                    "age": {
+                    "col3": {
                       "type": "integer"
                     }
-                  },
-                  "additionalProperties": false
+                  }
                 }
               }
             }
@@ -2208,15 +2181,15 @@
           "col1": {
             "col2": [
               {
-                "age": 30
+                "col3": 30
               },
               {
-                "age": 25
+                "col3": 25
               }
             ]
           },
           "errors": {
-            "col1.col2[].name": {
+            "col1.col2[].col4": {
               "details": [
                 {
                   "loc": [
@@ -2227,7 +2200,7 @@
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "[\"John\",\"Nancy\"]"
+              "original": "[\"foo\",\"bar\"]"
             }
           }
         }
@@ -2244,13 +2217,13 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
                           {
-                            "name": "age",
+                            "name": "col3",
                             "type": "integer"
                           }
                         ]
@@ -2262,20 +2235,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -2290,14 +2261,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -2305,7 +2277,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -2313,7 +2286,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1.col2[].col3",
+    "description": "allowed in $.col1.col2[].col3",
     "engines": [
       "pyspark"
     ],
@@ -2324,14 +2297,14 @@
             "col2": [
               {
                 "col3": {
-                  "name": "John",
-                  "age": 30
+                  "col4": "foo",
+                  "col5": 30
                 }
               },
               {
                 "col3": {
-                  "name": "Nancy",
-                  "age": 25
+                  "col4": "bar",
+                  "col5": 25
                 }
               }
             ]
@@ -2350,8 +2323,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -2361,11 +2334,11 @@
                               "type": "struct",
                               "fields": [
                                 {
-                                  "name": "name",
+                                  "name": "col4",
                                   "type": "string"
                                 },
                                 {
-                                  "name": "age",
+                                  "name": "col5",
                                   "type": "integer"
                                 }
                               ]
@@ -2396,12 +2369,12 @@
                   "properties": {
                     "col3": {
                       "type": "object",
+                      "additionalProperties": true,
                       "properties": {
-                        "name": {
+                        "col4": {
                           "type": "string"
                         }
-                      },
-                      "additionalProperties": true
+                      }
                     }
                   }
                 }
@@ -2418,14 +2391,14 @@
             "col2": [
               {
                 "col3": {
-                  "name": "John",
-                  "age": 30
+                  "col4": "foo",
+                  "col5": 30
                 }
               },
               {
                 "col3": {
-                  "name": "Nancy",
-                  "age": 25
+                  "col4": "bar",
+                  "col5": 25
                 }
               }
             ]
@@ -2445,8 +2418,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -2456,11 +2429,11 @@
                               "type": "struct",
                               "fields": [
                                 {
-                                  "name": "name",
+                                  "name": "col4",
                                   "type": "string"
                                 },
                                 {
-                                  "name": "age",
+                                  "name": "col5",
                                   "type": "integer"
                                 }
                               ]
@@ -2475,19 +2448,20 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
+                  "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
+                        "type": "array",
                         "containsNull": true,
                         "elementType": {
+                          "type": "struct",
                           "fields": [
                             {
                               "name": "type",
@@ -2500,25 +2474,24 @@
                             {
                               "name": "loc",
                               "type": {
+                                "type": "array",
                                 "containsNull": true,
-                                "elementType": "integer",
-                                "type": "array"
+                                "elementType": "integer"
                               }
                             }
-                          ],
-                          "type": "struct"
-                        },
-                        "type": "array"
-                      }
+                          ]
+                        }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
                       "type": "string"
                     }
-                  ],
-                  "type": "struct"
+                  ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -2526,7 +2499,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1.col2[].col3, error is raised",
+    "description": "forbidden in $.col1.col2[].col3, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -2537,14 +2510,14 @@
             "col2": [
               {
                 "col3": {
-                  "name": "John",
-                  "age": 30
+                  "col4": "foo",
+                  "col5": 30
                 }
               },
               {
                 "col3": {
-                  "name": "Nancy",
-                  "age": 25
+                  "col4": "bar",
+                  "col5": 25
                 }
               }
             ]
@@ -2563,8 +2536,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -2574,11 +2547,11 @@
                               "type": "struct",
                               "fields": [
                                 {
-                                  "name": "name",
+                                  "name": "col4",
                                   "type": "string"
                                 },
                                 {
-                                  "name": "age",
+                                  "name": "col5",
                                   "type": "integer"
                                 }
                               ]
@@ -2609,12 +2582,12 @@
                   "properties": {
                     "col3": {
                       "type": "object",
+                      "additionalProperties": false,
                       "properties": {
-                        "name": {
+                        "col4": {
                           "type": "string"
                         }
-                      },
-                      "additionalProperties": false
+                      }
                     }
                   }
                 }
@@ -2631,18 +2604,18 @@
             "col2": [
               {
                 "col3": {
-                  "name": "John"
+                  "col4": "foo"
                 }
               },
               {
                 "col3": {
-                  "name": "Nancy"
+                  "col4": "bar"
                 }
               }
             ]
           },
           "errors": {
-            "col1.col2[].col3.age": {
+            "col1.col2[].col3.col5": {
               "details": [
                 {
                   "loc": [
@@ -2670,8 +2643,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -2681,7 +2654,7 @@
                               "type": "struct",
                               "fields": [
                                 {
-                                  "name": "name",
+                                  "name": "col4",
                                   "type": "string"
                                 }
                               ]
@@ -2696,19 +2669,20 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
+                  "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
+                        "type": "array",
                         "containsNull": true,
                         "elementType": {
+                          "type": "struct",
                           "fields": [
                             {
                               "name": "type",
@@ -2721,25 +2695,24 @@
                             {
                               "name": "loc",
                               "type": {
+                                "type": "array",
                                 "containsNull": true,
-                                "elementType": "integer",
-                                "type": "array"
+                                "elementType": "integer"
                               }
                             }
-                          ],
-                          "type": "struct"
-                        },
-                        "type": "array"
-                      }
+                          ]
+                        }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
                       "type": "string"
                     }
-                  ],
-                  "type": "struct"
+                  ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -2747,7 +2720,7 @@
     }
   },
   {
-    "description": "extra fields are allowed in $.col1.col2[].col3.col4",
+    "description": "allowed in $.col1.col2[].col3.col4",
     "engines": [
       "pyspark"
     ],
@@ -2759,10 +2732,10 @@
               {
                 "col3": {
                   "col4": {
-                    "age": 30,
-                    "name": "John",
-                    "address": {
-                      "city": "New York"
+                    "col5": 30,
+                    "col6": "foo",
+                    "col7": {
+                      "col8": "bar"
                     }
                   }
                 }
@@ -2770,10 +2743,10 @@
               {
                 "col3": {
                   "col4": {
-                    "age": 25,
-                    "name": "Nancy",
-                    "address": {
-                      "city": "Los Angeles"
+                    "col5": 25,
+                    "col6": "baz",
+                    "col7": {
+                      "col8": "qux"
                     }
                   }
                 }
@@ -2794,8 +2767,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -2810,20 +2783,20 @@
                                     "type": "struct",
                                     "fields": [
                                       {
-                                        "name": "age",
+                                        "name": "col5",
                                         "type": "integer"
                                       },
                                       {
-                                        "name": "name",
+                                        "name": "col6",
                                         "type": "string"
                                       },
                                       {
-                                        "name": "address",
+                                        "name": "col7",
                                         "type": {
                                           "type": "struct",
                                           "fields": [
                                             {
-                                              "name": "city",
+                                              "name": "col8",
                                               "type": "string"
                                             }
                                           ]
@@ -2863,12 +2836,12 @@
                       "properties": {
                         "col4": {
                           "type": "object",
+                          "additionalProperties": true,
                           "properties": {
-                            "age": {
+                            "col5": {
                               "type": "integer"
                             }
-                          },
-                          "additionalProperties": true
+                          }
                         }
                       }
                     }
@@ -2888,10 +2861,10 @@
               {
                 "col3": {
                   "col4": {
-                    "age": 30,
-                    "name": "John",
-                    "address": {
-                      "city": "New York"
+                    "col5": 30,
+                    "col6": "foo",
+                    "col7": {
+                      "col8": "bar"
                     }
                   }
                 }
@@ -2899,10 +2872,10 @@
               {
                 "col3": {
                   "col4": {
-                    "age": 25,
-                    "name": "Nancy",
-                    "address": {
-                      "city": "Los Angeles"
+                    "col5": 25,
+                    "col6": "baz",
+                    "col7": {
+                      "col8": "qux"
                     }
                   }
                 }
@@ -2924,8 +2897,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -2940,20 +2913,20 @@
                                     "type": "struct",
                                     "fields": [
                                       {
-                                        "name": "age",
+                                        "name": "col5",
                                         "type": "integer"
                                       },
                                       {
-                                        "name": "name",
+                                        "name": "col6",
                                         "type": "string"
                                       },
                                       {
-                                        "name": "address",
+                                        "name": "col7",
                                         "type": {
                                           "type": "struct",
                                           "fields": [
                                             {
-                                              "name": "city",
+                                              "name": "col8",
                                               "type": "string"
                                             }
                                           ]
@@ -2974,20 +2947,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -3002,14 +2973,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -3017,7 +2989,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -3025,7 +2998,7 @@
     }
   },
   {
-    "description": "extra fields are forbidden in $.col1.col2[].col3.col4, error is raised",
+    "description": "forbidden in $.col1.col2[].col3.col4, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -3037,10 +3010,10 @@
               {
                 "col3": {
                   "col4": {
-                    "age": 30,
-                    "name": "John",
-                    "address": {
-                      "city": "New York"
+                    "col5": 30,
+                    "col6": "foo",
+                    "col7": {
+                      "col8": "bar"
                     }
                   }
                 }
@@ -3048,10 +3021,10 @@
               {
                 "col3": {
                   "col4": {
-                    "age": 25,
-                    "name": "Nancy",
-                    "address": {
-                      "city": "Los Angeles"
+                    "col5": 25,
+                    "col6": "baz",
+                    "col7": {
+                      "col8": "qux"
                     }
                   }
                 }
@@ -3072,8 +3045,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -3088,20 +3061,20 @@
                                     "type": "struct",
                                     "fields": [
                                       {
-                                        "name": "age",
+                                        "name": "col5",
                                         "type": "integer"
                                       },
                                       {
-                                        "name": "name",
+                                        "name": "col6",
                                         "type": "string"
                                       },
                                       {
-                                        "name": "address",
+                                        "name": "col7",
                                         "type": {
                                           "type": "struct",
                                           "fields": [
                                             {
-                                              "name": "city",
+                                              "name": "col8",
                                               "type": "string"
                                             }
                                           ]
@@ -3141,12 +3114,12 @@
                       "properties": {
                         "col4": {
                           "type": "object",
+                          "additionalProperties": false,
                           "properties": {
-                            "age": {
+                            "col5": {
                               "type": "integer"
                             }
-                          },
-                          "additionalProperties": false
+                          }
                         }
                       }
                     }
@@ -3166,21 +3139,21 @@
               {
                 "col3": {
                   "col4": {
-                    "age": 30
+                    "col5": 30
                   }
                 }
               },
               {
                 "col3": {
                   "col4": {
-                    "age": 25
+                    "col5": 25
                   }
                 }
               }
             ]
           },
           "errors": {
-            "col1.col2[].col3.col4.name": {
+            "col1.col2[].col3.col4.col6": {
               "details": [
                 {
                   "loc": [
@@ -3191,9 +3164,9 @@
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "[\"John\",\"Nancy\"]"
+              "original": "[\"foo\",\"baz\"]"
             },
-            "col1.col2[].col3.col4.address": {
+            "col1.col2[].col3.col4.col7": {
               "details": [
                 {
                   "loc": [
@@ -3204,7 +3177,7 @@
                   "type": "extra_forbidden"
                 }
               ],
-              "original": "[{\"city\":\"New York\"},{\"city\":\"Los Angeles\"}]"
+              "original": "[{\"col8\":\"bar\"},{\"col8\":\"qux\"}]"
             }
           }
         }
@@ -3221,8 +3194,8 @@
                   {
                     "name": "col2",
                     "type": {
-                      "containsNull": true,
                       "type": "array",
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -3237,7 +3210,7 @@
                                     "type": "struct",
                                     "fields": [
                                       {
-                                        "name": "age",
+                                        "name": "col5",
                                         "type": "integer"
                                       }
                                     ]
@@ -3255,20 +3228,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -3283,14 +3254,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -3298,7 +3270,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
           ]
         }
@@ -3306,7 +3279,7 @@
     }
   },
   {
-    "description": "low-level: extra fields are allowed",
+    "description": "allowed",
     "engines": [
       "pandas_api"
     ],
@@ -3338,12 +3311,11 @@
           false
         ]
       },
-      "errors": {
-      }
+      "errors": {}
     }
   },
   {
-    "description": "low-level: extra fields are forbidden, error is raised",
+    "description": "forbidden, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -3366,8 +3338,7 @@
     },
     "then": {
       "data": null,
-      "masks": {
-      },
+      "masks": {},
       "errors": {
         "0": {
           "col2": {

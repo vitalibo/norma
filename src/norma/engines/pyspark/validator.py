@@ -6,6 +6,7 @@ from norma.engines.pyspark.rules import ErrorState, data_type_of, extra_forbidde
 from norma.engines.pyspark.utils import (
     backup_col, default_if_null, suffix_col, with_nested_column, zip_with_nested_columns
 )
+from norma.schema import Column
 
 
 def validate(
@@ -19,11 +20,13 @@ def validate(
     :param error_column: The name of the column to store error information
     """
 
-    has_array = any(
-        name
-        for name, column in schema.nested_columns.items()
-        if column.dtype == 'array'
-    )
+    has_array = False
+    for name in schema.nested_columns:
+        if '[]' in name:
+            has_array = True
+        if name.count('[]') > 1:
+            raise NotImplementedError('nested arrays are not supported yet')
+
     error_state = ErrorState(error_column, has_array)
     original_cols = df.columns
     df = _validate_df(df, schema, error_state, original_cols)
@@ -75,9 +78,9 @@ def validate(
         if col.default is None:
             continue
         if '[]' not in name:
-            df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), fn.lit(col.default))))
+            df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), default_as_lit(col))))
         else:
-            df = df.transform(with_nested_column(name, default_if_null(fn.lit(col.default))))
+            df = df.transform(with_nested_column(name, default_if_null(default_as_lit(col))))
 
     for name, col in schema.nested_columns.items():
         if col.default_factory is None:
@@ -198,3 +201,11 @@ def _make_origin(df: DataFrame, column, error_state):
         return null.otherwise(fn.to_json(fn.col(column)))
 
     return null.otherwise(fn.col(column).cast('string'))
+
+
+def default_as_lit(col: Column):
+    if col.dtype == 'date':
+        return fn.lit(col.default).cast('date')
+    if col.dtype == 'datetime':
+        return fn.lit(col.default).cast('timestamp')
+    return fn.lit(col.default)

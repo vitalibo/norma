@@ -74,6 +74,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "name",
@@ -99,8 +100,7 @@
               "name": "email",
               "type": "string"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -118,8 +118,8 @@
           },
           "age": {
             "type": "integer",
-            "minimum": 0,
-            "maximum": 100
+            "maximum": 100,
+            "minimum": 0
           },
           "sex": {
             "type": "string",
@@ -319,6 +319,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "name",
@@ -346,20 +347,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -373,7 +372,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -381,10 +381,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
@@ -526,6 +526,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "name",
@@ -559,13 +560,12 @@
             {
               "name": "tags",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": "string"
               }
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -583,8 +583,8 @@
           },
           "age": {
             "type": "integer",
-            "minimum": 0,
-            "maximum": 100
+            "maximum": 100,
+            "minimum": 0
           },
           "sex": {
             "type": "string",
@@ -633,8 +633,8 @@
                 "other"
               ]
             },
-            "minItems": 1,
-            "maxItems": 3
+            "maxItems": 3,
+            "minItems": 1
           }
         },
         "required": [
@@ -937,6 +937,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "name",
@@ -985,27 +986,25 @@
             {
               "name": "tags",
               "type": {
-                "containsNull": true,
                 "type": "array",
+                "containsNull": true,
                 "elementType": "string"
               }
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -1020,14 +1019,15 @@
                             {
                               "name": "loc",
                               "type": {
-                                "containsNull": true,
                                 "type": "array",
+                                "containsNull": true,
                                 "elementType": "integer"
                               }
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -1035,10 +1035,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }

@@ -142,9 +142,12 @@ def multiple_of(multiple: Union[int, float]) -> Rule:
             raise ValueError('multiple_of rule can only be applied to numeric columns')
         return df
 
+    if multiple <= 0:
+        raise ValueError('multiple_of must be greater than zero')
+
     return rule(
         # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
-        lambda df, col: df[col][df[col].notna()] % multiple != 0.0,
+        lambda df, col: (df[col][df[col].notna()] < 0) | (df[col][df[col].notna()] % multiple != 0.0),
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
         __pre_func__=before
     )

@@ -1,6 +1,6 @@
 [
   {
-    "description": "rule(col => col.startswith('f')), error is raised [vectorized]",
+    "description": "() -> $.col.startswith('f'), error is raised [vectorized]",
     "engines": [
       "pandas"
     ],
@@ -50,7 +50,7 @@
     }
   },
   {
-    "description": "rule(col => col.startswith('f')), error is raised [vectorized]",
+    "description": "() -> $.col.startswith('f'), error is raised [vectorized]",
     "engines": [
       "pyspark"
     ],
@@ -65,13 +65,13 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": "string"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -110,6 +110,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -117,20 +118,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -144,7 +143,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -152,16 +152,16 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
   },
   {
-    "description": "rule(col => col == 'foo'), error is raised",
+    "description": "() -> $.col == 'foo', error is raised",
     "engines": [
       "pandas"
     ],
@@ -211,7 +211,7 @@
     }
   },
   {
-    "description": "rule(col => col == 'foo'), error is raised",
+    "description": "() -> $.col == 'foo', error is raised",
     "engines": [
       "pyspark"
     ],
@@ -226,13 +226,13 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
               "type": "string"
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     },
@@ -271,6 +271,7 @@
       ],
       "schema": {
         "pyspark": {
+          "type": "struct",
           "fields": [
             {
               "name": "col",
@@ -278,20 +279,18 @@
             },
             {
               "name": "errors",
-              "nullable": false,
               "type": {
-                "keyType": "string",
                 "type": "map",
+                "keyType": "string",
                 "valueContainsNull": true,
                 "valueType": {
                   "type": "struct",
                   "fields": [
                     {
                       "name": "details",
-                      "nullable": false,
                       "type": {
-                        "containsNull": true,
                         "type": "array",
+                        "containsNull": true,
                         "elementType": {
                           "type": "struct",
                           "fields": [
@@ -305,7 +304,8 @@
                             }
                           ]
                         }
-                      }
+                      },
+                      "nullable": false
                     },
                     {
                       "name": "original",
@@ -313,10 +313,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "nullable": false
             }
-          ],
-          "type": "struct"
+          ]
         }
       }
     }
