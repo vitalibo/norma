@@ -30,7 +30,7 @@ def test_with_nested_column(case, column, spark):
         f'data/with_nested_column/{case}/exp.json',
         f'data/with_nested_column/{case}/exp_schema.json'
     )
-    schema = StructType.from_json(
+    schema = StructType.from_json(  # pylint:disable=no-member
         resources.resource_as_json(
             __file__,
             f'data/with_nested_column/{case}/exp_schema.json'
