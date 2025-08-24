@@ -194,7 +194,7 @@ Norma supports a variety of validation rules, including:
 | `ipv4_address`       | ✅      | ✅       | ✅               | ✅              |
 | `ipv6_address`       | ✅      | ✅       | ✅               | ✅              |
 | `uri_parsing`        | ✅      | ✅       | ✅               | ✅              |
-| `object_parsing`     | ❌      | ✅       | ✅               | ❌              |
+| `object_parsing`     | ❌      | ✅       | ✅               | ✅              |
 | `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
 ### Errors
 
@@ -251,7 +251,7 @@ failed validation and incorrect values are replaced with `null` in an array.
           "msg": "Input should be \"tag1\", \"tag2\" or \"tag3\""
         }
       ],
-      "original": "[\"tag0\",\"tag1\",\"tag3\"]"
+      "original": "[\"tag0\",\"tag1\",\"tag4\"]"
     }
   }
 }
