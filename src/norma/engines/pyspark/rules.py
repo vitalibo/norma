@@ -371,6 +371,16 @@ def date_parsing() -> Rule:
     )
 
 
+def time_parsing() -> Rule:
+    time_regex = (
+        r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$'
+    )
+    return DataTypeRule(
+        lambda col: fn.when(col.rlike(time_regex), col),
+        StringType, (StringType,), errors.TIME_TYPE, errors.TIME_PARSING, is_complex=True
+    )
+
+
 def uuid_parsing() -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
     return DataTypeRule(

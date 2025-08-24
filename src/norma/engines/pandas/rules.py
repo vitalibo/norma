@@ -230,6 +230,13 @@ def date_parsing() -> Rule:
     return DatetimeTypeRule('datetime64[D]', errors.DATE_TYPE, errors.DATE_PARSING)
 
 
+def time_parsing() -> Rule:
+    return RegexStringDerivedTypeRule(
+        r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$',
+        errors.TIME_TYPE, errors.TIME_PARSING
+    )
+
+
 def extra_forbidden(allowed: Iterable[str]) -> Rule:
     @Rule.new
     def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:

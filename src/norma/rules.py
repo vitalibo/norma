@@ -308,6 +308,14 @@ def date_parsing() -> Rule:
     return RuleProxy('date_parsing', 1)
 
 
+def time_parsing() -> Rule:
+    """
+    Ensure that the values are times or parse as times if possible
+    """
+
+    return RuleProxy('time_parsing', 1)
+
+
 def uuid_parsing() -> Rule:
     """
     Ensure that the values are valid UUIDs

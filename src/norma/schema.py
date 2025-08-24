@@ -72,6 +72,7 @@ class Column:
                 norma.rules.bool_parsing: ['boolean', 'bool'],
                 norma.rules.datetime_parsing: ['datetime'],
                 norma.rules.date_parsing: ['date'],
+                norma.rules.time_parsing: ['time'],
                 norma.rules.uuid_parsing: ['uuid'],
                 norma.rules.ipv4_address: ['ipv4'],
                 norma.rules.ipv6_address: ['ipv6'],
