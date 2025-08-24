@@ -2727,7 +2727,7 @@
     }
   },
   {
-    "description": "each(cast(['01:45:27', '23:18:39', null] as array<date>)) => ['01:45:27', '23:18:39', null]",
+    "description": "each(cast(['01:45:27', '23:18:39', null] as array<time>)) => ['01:45:27', '23:18:39', null]",
     "engines": [
       "pyspark"
     ],
@@ -2850,7 +2850,7 @@
     }
   },
   {
-    "description": "each(cast(['foo', '23:18:39', null] as array<date>)) => [null, '23:18:39', null]",
+    "description": "each(cast(['foo', '23:18:39', null] as array<time>)) => [null, '23:18:39', null]",
     "engines": [
       "pyspark"
     ],
@@ -2986,7 +2986,7 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='01:45:27', ='23:18:39', =null] as array<struct<date>>)) => ['01:45:27', '23:18:39', null]",
+    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='01:45:27', ='23:18:39', =null] as array<struct<time>>)) => ['01:45:27', '23:18:39', null]",
     "engines": [
       "pyspark"
     ],
@@ -3255,7 +3255,7 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='foo', ='23:18:39', =null] as array<struct<date>>)) => [null, '23:18:39', null], error is raised",
+    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='foo', ='23:18:39', =null] as array<struct<time>>)) => [null, '23:18:39', null], error is raised",
     "engines": [
       "pyspark"
     ],
@@ -3537,4 +3537,3 @@
     }
   }
 ]
-
