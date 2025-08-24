@@ -316,6 +316,14 @@ def time_parsing() -> Rule:
     return RuleProxy('time_parsing', 1)
 
 
+def duration_parsing() -> Rule:
+    """
+    Ensure that the values are durations or parse as durations if possible
+    """
+
+    return RuleProxy('duration_parsing', 1)
+
+
 def uuid_parsing() -> Rule:
     """
     Ensure that the values are valid UUIDs

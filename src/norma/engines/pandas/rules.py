@@ -237,6 +237,13 @@ def time_parsing() -> Rule:
     )
 
 
+def duration_parsing() -> Rule:
+    return RegexStringDerivedTypeRule(
+        r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$',
+        errors.DURATION_TYPE, errors.DURATION_PARSING
+    )
+
+
 def extra_forbidden(allowed: Iterable[str]) -> Rule:
     @Rule.new
     def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:

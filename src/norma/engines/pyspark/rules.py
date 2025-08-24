@@ -381,6 +381,14 @@ def time_parsing() -> Rule:
     )
 
 
+def duration_parsing() -> Rule:
+    duration_regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
+    return DataTypeRule(
+        lambda col: fn.when(col.rlike(duration_regex), col),
+        StringType, (StringType,), errors.DURATION_TYPE, errors.DURATION_PARSING, is_complex=True
+    )
+
+
 def uuid_parsing() -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
     return DataTypeRule(
