@@ -1,4 +1,8 @@
 import pytest
+
+pytest.register_assert_rewrite('pyxis.pyspark')  # noqa isort:skip
+
+# pylint: disable=wrong-import-position
 from pyspark.sql import SparkSession
 from pyxis.pyspark import LocalTestSpark
 

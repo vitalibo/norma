@@ -1,6 +1,6 @@
 import inspect
 import json
-from functools import partial, reduce
+from functools import reduce
 from typing import Any, Iterable, Optional
 
 from pyspark.sql import Column, DataFrame
@@ -45,7 +45,7 @@ class ErrorState(IErrorState):
             cols.append(indexes.alias('loc'))
 
             details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*cols))
-            error_column = f'{self.error_column}_{suffix_col(column + "[]", self)}'
+            error_column = f'{self.error_column}_{suffix_col(column, self)}'
             if error_column not in df.columns:
                 df = df.withColumn(error_column, fn.array())
             return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
@@ -73,6 +73,11 @@ class ErrorState(IErrorState):
         suffix = suffix_col(column, self)
         details = dict(kwargs.get('details'))
         return func
+
+    def empty_errors(self):
+        if self.has_array:
+            return fn.array().cast('array<struct<type:string,msg:string,loc:array<int>>>')
+        return fn.array().cast('array<struct<type:string,msg:string>>')
 
 
 class BaseRule(Rule):
@@ -114,10 +119,20 @@ class BaseRule(Rule):
             pre_func = self.kwargs['__pre_func__']
             df = pre_func(**inspect_params(pre_func))
 
-        if not self.__dict__.get('array', False):
+        if '[]' not in column:
             return df.transform(error_state.add_errors(self.func(**func_params), column, details=self.details))
 
-        indexes = fn.transform(fn.col(column), self.func)
+        if column.endswith('[]'):
+            indexes = fn.transform(fn.col(column[:-2]), self.func)
+        else:
+            root, *nested = column.split('[].')
+
+            def nested_value(x):
+                for part in nested[0].split('.'):
+                    x = x[part]
+                return self.func(x)
+
+            indexes = fn.transform(fn.col(root), nested_value)
         return df.transform(error_state.add_errors(indexes, column, details=self.details))
 
 
@@ -138,7 +153,7 @@ def required() -> Rule:
             )
 
         def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-            if self.__dict__.get('array', False):
+            if '[]' in column:
                 return super().verify(df, column, error_state)
 
             mask = fn.isnull(fn.col(column))
@@ -198,15 +213,15 @@ def less_than_equal(le: Any) -> Rule:
 def multiple_of(multiple: Any) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
-        if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, NumericType):
-                raise ValueError('multiple_of rule can only be applied to numeric columns')
-        elif not isinstance(data_type, NumericType):
+        if not isinstance(data_type, NumericType):
             raise ValueError('multiple_of rule can only be applied to numeric columns')
         return df
 
+    if multiple <= 0:
+        raise ValueError('multiple_of must be greater than zero')
+
     return rule(
-        lambda col_expr: (col_expr % fn.lit(multiple)) != fn.lit(0),
+        lambda col_expr: (col_expr < fn.lit(0)) | ((col_expr % fn.lit(multiple)) != fn.lit(0)),
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
         __pre_func__=before
     )
@@ -216,8 +231,7 @@ def min_length(value: int) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
         if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, StringType):
-                raise ValueError('min_length rule can only be applied to string columns')
+            return df
         elif not isinstance(data_type, StringType):
             raise ValueError('min_length rule can only be applied to string columns')
         return df
@@ -235,8 +249,7 @@ def max_length(value: int) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
         if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, StringType):
-                raise ValueError('max_length rule can only be applied to string columns')
+            return df
         elif not isinstance(data_type, StringType):
             raise ValueError('max_length rule can only be applied to string columns')
         return df
@@ -253,10 +266,7 @@ def max_length(value: int) -> Rule:
 def pattern(regex: str) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
-        if isinstance(data_type, ArrayType):
-            if not isinstance(data_type.elementType, StringType):
-                raise ValueError('pattern rule can only be applied to string columns')
-        elif not isinstance(data_type, StringType):
+        if not isinstance(data_type, StringType):
             raise ValueError('pattern rule can only be applied to string columns')
         return df
 
@@ -287,8 +297,33 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
         if column in allowed:
             return df
 
+        bak_col = backup_col(column, error_state)
+
+        if '[]' in column and not column.endswith('[]'):
+            root, *nested_names = column.split('[].')
+            nested_names = nested_names[0].split('.')
+
+            def nested_value(x):
+                for part in nested_names:
+                    x = x[part]
+                return x
+
+            def drop_nested_column(x, nodes):
+                if len(nodes) <= 1:
+                    return x.dropFields(nodes[0])
+
+                return x.withField(
+                    nodes[0],
+                    drop_nested_column(x[nodes[0]], nodes[1:]))
+
+            return df \
+                .transform(with_nested_column(bak_col, fn.transform(fn.col(root), nested_value))) \
+                .transform(with_nested_column(root + '[]', lambda x: drop_nested_column(x, nested_names))) \
+                .transform(error_state.add_errors(fn.transform(fn.col(root), lambda x: fn.lit(True)),
+                                                  column, details=errors.EXTRA_FORBIDDEN))
+
         return df \
-            .transform(with_nested_column_renamed(column, backup_col(column, error_state))) \
+            .transform(with_nested_column_renamed(column.removesuffix('[]'), bak_col)) \
             .transform(error_state.add_errors(fn.lit(True), column, details=errors.EXTRA_FORBIDDEN))
 
     return verify
@@ -368,6 +403,7 @@ def ipv6_address() -> Rule:
         StringType, (StringType,), errors.IPV6, errors.IPV6, is_complex=True
     )
 
+
 def uri_parsing() -> Rule:
     uri_regex = (
         r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
@@ -406,7 +442,7 @@ class DataTypeRule(Rule):
         self.is_complex = is_complex
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        if self.__dict__.get('array', False):
+        if '[]' in column:
             return self._array_verify_strategy(df, column, error_state)
         return self._default_verify_strategy(df, column, error_state)
 
@@ -416,7 +452,7 @@ class DataTypeRule(Rule):
             return df
 
         if data_type.typeName() == 'void':
-            return df.withColumn(column, fn.col(column).cast(self.dtype.typeName()))
+            return df.transform(with_nested_column(column, fn.col(column).cast(self.dtype.typeName())))
 
         backup_column = backup_col(column, error_state)
         df = df.withColumn(backup_column, fn.col(column))
@@ -434,29 +470,43 @@ class DataTypeRule(Rule):
                                               details=self.parsing_details))
 
     def _array_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        data_type = data_type_of(df, column)
-        element_type = data_type.elementType
+        element_type = data_type_of(df, column)
         if isinstance(element_type, self.dtype) and not self.is_complex:
             return df
 
         if element_type.typeName() == 'void':
-            return df.withColumn(column, fn.col(column).cast(ArrayType(self.dtype())))
+            # TODO: think how to better handle this case
+            return df.transform(with_nested_column(column, fn.lit(None).cast(self.dtype())))
+
+        root, *nested = column.split('[].')
+
+        def nested_value(x):
+            for part in nested[0].split('.'):
+                x = x[part]
+            return x
 
         backup_column = backup_col(column, error_state)
-        df = df.withColumn(f'{backup_column}_array', fn.col(column))
+        if column.endswith('[]'):
+            df = df.withColumn(f'{backup_column}_array', fn.col(column[:-2]))
+        else:
+            df = df.withColumn(f'{backup_column}_array', fn.transform(fn.col(root), nested_value))
+
         if not isinstance(element_type, self.supported):
-            indexes = fn.transform(fn.col(column), lambda x: fn.lit(True))
+            indexes = fn.transform(fn.col(root.removesuffix('[]')), lambda x: fn.lit(True))
             return df \
-                .transform(with_nested_column(
-                column, fn.transform(fn.col(column), lambda x: fn.lit(None).cast(self.dtype())))) \
+                .transform(with_nested_column(column, fn.lit(None).cast(self.dtype()))) \
                 .transform(error_state.add_errors(indexes, column, details=self.type_details))
 
-        df = df.transform(with_nested_column(column, fn.transform(fn.col(column), self.cast)))
+        df = df.transform(with_nested_column(column, self.cast))
         if not self.parsing_details:
             return df
 
-        indexes = fn.zip_with(
-            fn.col(column), fn.col(f'{backup_column}_array'), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        if column.endswith('[]'):
+            actual = fn.col(column[:-2])
+        else:
+            actual = fn.transform(fn.col(root), nested_value)
+
+        indexes = fn.zip_with(actual, fn.col(f'{backup_column}_array'), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
         return df.transform(error_state.add_errors(indexes, column, details=self.parsing_details))
 
 
@@ -489,12 +539,17 @@ class ObjectTypeRule(Rule):
         self.struct_type = self.parse_struct_type(schema)
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        if '[]' in column:
+            return self._array_verify_strategy(df, column, error_state)
+        return self._default_verify_strategy(df, column, error_state)
+
+    def _default_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         data_type = data_type_of(df, column)
         if isinstance(data_type, StructType):
             return df
 
         if data_type.typeName() == 'void':
-            return df.withColumn(column, fn.col(column).cast(self.struct_type))
+            return df.transform(with_nested_column(column, fn.lit(None).cast(self.struct_type)))
 
         backup_column = backup_col(column, error_state)
         df = df.withColumn(backup_column, fn.col(column))
@@ -508,6 +563,66 @@ class ObjectTypeRule(Rule):
             return df.transform(with_nested_column(column, new_struct))
 
         return self._cast_json_str(df, column, fn.col(backup_column), error_state)
+
+    def _array_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        element_type = data_type_of(df, column)
+        if isinstance(element_type, StructType):
+            return df
+
+        if element_type.typeName() == 'void':
+            return df.transform(with_nested_column(column, fn.lit(None).cast(self.struct_type)))
+
+        root, *nested = column.split('[].')
+
+        def nested_value(x):
+            if column.endswith('[]'):
+                return x
+
+            for part in nested[0].split('.'):
+                x = x[part]
+            return x
+
+        backup_column = backup_col(column, error_state)
+        if column.endswith('[]'):
+            df = df.withColumn(f'{backup_column}_array', fn.col(column[:-2]))
+        else:
+            df = df.withColumn(f'{backup_column}_array', fn.transform(fn.col(root), nested_value))
+
+        if not isinstance(element_type, (StringType, MapType)):
+            indexes = fn.transform(fn.col(root.removesuffix('[]')), lambda x: fn.lit(True))
+            return df \
+                .transform(with_nested_column(column, fn.lit(None).cast(self.struct_type))) \
+                .transform(error_state.add_errors(indexes, column, details=errors.OBJECT_TYPE))
+
+        if isinstance(element_type, MapType):
+            def new_struct(col):
+                return fn.struct(*(col[field].alias(field) for field in self.struct_type.fieldNames()))
+
+            return df.transform(with_nested_column(column, new_struct))
+
+        return self._cast_array_json_str(df, column, fn.col(f'{backup_column}_array'), error_state)
+
+    def _cast_array_json_str(self, df: DataFrame, column: str, backup_column: Column,
+                             error_state: ErrorState) -> DataFrame:
+        root, *nested = column.split('[].')
+
+        def nested_value(x):
+            if column.endswith('[]'):
+                return x
+
+            for part in nested[0].split('.'):
+                x = x[part]
+            return x
+
+        df = df.transform(with_nested_column(column, lambda x: fn.from_json(x, self.struct_type)))
+
+        if column.endswith('[]'):
+            actual = fn.col(column[:-2])
+        else:
+            actual = fn.transform(fn.col(root), nested_value)
+
+        indexes = fn.zip_with(actual, backup_column, lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        return df.transform(error_state.add_errors(indexes, column, details=errors.OBJECT_PARSING))
 
     def _cast_json_str(self, df: DataFrame, column: str, backup_column: Column, error_state: ErrorState) -> DataFrame:
         @fn.udf(returnType=BooleanType())
@@ -528,36 +643,17 @@ class ObjectTypeRule(Rule):
             fn.isnotnull(backup_column), backup_column)
 
         return df \
-            .withColumn(column, fn.from_json(fn.col(column), self.struct_type)) \
+            .transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type))) \
             .transform(with_nested_column(column, fn.when(~is_malformed, fn.col(column)))) \
             .transform(error_state.add_errors(fn.isnull(fn.col(column)) & fn.isnotnull(backup_column), column,
                                               details=errors.OBJECT_PARSING))
 
     @staticmethod
     def parse_struct_type(schema) -> StructType:
-        def struct_field(name, col):
-            return StructField(
-                name,
-                {
-                    'object': partial(ObjectTypeRule.parse_struct_type, col.inner_schema),
-                    'array': partial(ArrayTypeRule.parse_array_type, col.inner_schema),
-                    'str': StringType,
-                    'string': StringType,
-                    'int': IntegerType,
-                    'integer': IntegerType,
-                    'float': FloatType,
-                    'double': FloatType,
-                    'number': FloatType,
-                    'bool': BooleanType,
-                    'boolean': BooleanType,
-                    'datetime': TimestampType,
-                    'date': DateType,
-                }.get(col.dtype, StringType)(),
-                nullable=True,
-                metadata={}
-            )
+        def struct_field(name):
+            return StructField(name, StringType(), nullable=True, metadata={})
 
-        return StructType([struct_field(k, v) for k, v in schema.columns.items()])
+        return StructType([struct_field(k) for k, v in schema.columns.items()])
 
 
 class ArrayTypeRule(Rule):
@@ -589,8 +685,11 @@ class ArrayTypeRule(Rule):
                                               details=errors.ARRAY_PARSING))
 
     @staticmethod
-    def parse_array_type(schema) -> ArrayType:  # pylint: disable=unused-argument
-        # TODO: support nested structs in arrays
+    def parse_array_type(schema) -> ArrayType:
+        if schema.inner_schema is not None:
+            s = StructType([StructField(k, StringType(), nullable=True, metadata={}) for k, v in
+                            schema.inner_schema.columns.items()])
+            return ArrayType(s)
         return ArrayType(StringType())
 
 
@@ -606,7 +705,7 @@ class SequenceRule(BaseRule):
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> Optional[DataFrame]:
         data_type = data_type_of(df, column)
-        if isinstance(data_type, ArrayType) and not self.__dict__.get('array', False):
+        if isinstance(data_type, ArrayType) and not '[]' in column:
             self.func = self.array_func
             self.details = self.array_details
 

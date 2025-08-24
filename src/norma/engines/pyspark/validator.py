@@ -3,7 +3,9 @@ from pyspark.sql import functions as fn
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, data_type_of, extra_forbidden
-from norma.engines.pyspark.utils import backup_col, default_if_null, suffix_col, with_nested_column
+from norma.engines.pyspark.utils import (
+    backup_col, default_if_null, suffix_col, with_nested_column, zip_with_nested_columns
+)
 
 
 def validate(
@@ -17,11 +19,7 @@ def validate(
     :param error_column: The name of the column to store error information
     """
 
-    has_array = any(
-        name
-        for name, column in schema.nested_columns.items()
-        if column.dtype == 'array'
-    )
+    has_array = _has_array_column(schema)
     error_state = ErrorState(error_column, has_array)
     original_cols = df.columns
     df = _validate_df(df, schema, error_state, original_cols)
@@ -31,13 +29,16 @@ def validate(
             fn.filter(fn.col(f'{error_column}_{suffix}'), fn.isnotnull).alias('details'),
             _make_origin(df, column, error_state).alias('original'),
         ).alias(suffix) for column, suffix in error_state.suffixes.items()
+        if f'{error_column}_{suffix}' in df.columns
     ]))
 
     for name, column in reversed(schema.nested_columns.items()):
-        if f'{suffix_col(name, error_state)}_indexes' in df.columns:
-            df = df.transform(with_nested_column(
-                name, fn.zip_with(fn.col(name), fn.col(f'{suffix_col(name, error_state)}_indexes'),
-                                  lambda x, y: fn.when(~y, x).otherwise(fn.lit(None)))))
+        if '[]' in name:
+            if f'{suffix_col(name, error_state)}_indexes' in df.columns:
+                df = df.transform(zip_with_nested_columns(
+                    name, fn.col(f'{suffix_col(name, error_state)}_indexes'),
+                    lambda x, y: fn.when(~y, x).otherwise(fn.lit(None))
+                ))
 
             continue
 
@@ -47,38 +48,40 @@ def validate(
             ).otherwise(fn.col(name)))
         )
 
+    errors = [(k, v) for k, v in error_state.suffixes.items() if v in data_type_of(df, error_column).fieldNames()]
+
     df = df.select(
         *(original_cols if schema.allow_extra else schema.columns),
         fn.map_filter(
             fn.map_from_arrays(
-                fn.array(*[fn.lit(column) for column, suffix in error_state.suffixes.items()]),
+                fn.array(*[fn.lit(column) for column, suffix in errors]),
                 fn.array(*[
                     fn.when(
                         fn.array_size(fn.col(f'{error_column}.{suffix}.details')) > 0,
                         fn.col(f'{error_column}.{suffix}')
                     ).otherwise(fn.lit(None)).alias(suffix)
-                    for column, suffix in error_state.suffixes.items()
+                    for column, suffix in errors
                 ])
             ).alias(error_column),
             lambda k, v: fn.isnotnull(v)
         ).alias(error_column)
     )
 
-    df = df.fillna({name: col.default for name, col in schema.columns.items() if col.default is not None})
+    for name, col in schema.nested_columns.items():
+        if col.default is None:
+            continue
+        if '[]' not in name:
+            df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), default_as_lit(col))))
+        else:
+            df = df.transform(with_nested_column(name, default_if_null(default_as_lit(col))))
 
     for name, col in schema.nested_columns.items():
-        if col.default is not None:
-            df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), fn.lit(col.default))))
-        if col.dtype == 'array' and col.inner_schema.default is not None:
-            df = df.transform(with_nested_column(
-                name, fn.transform(fn.col(name), default_if_null(fn.lit(col.inner_schema.default)))))
-
-    for name, col in schema.nested_columns.items():
-        if col.default_factory is not None:
+        if col.default_factory is None:
+            continue
+        if '[]' not in name:
             df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), col.default_factory(df))))
-        if col.dtype == 'array' and col.inner_schema.default_factory is not None:
-            df = df.transform(with_nested_column(
-                name, fn.transform(fn.col(name), default_if_null(col.inner_schema.default_factory(df)))))
+        else:
+            df = df.transform(with_nested_column(name, default_if_null(col.default_factory(df))))
 
     return df
 
@@ -93,8 +96,13 @@ def _validate_df(df, schema, error_state, original_cols, parent=''):
         columns_with_extra = set(original_cols + list(schema.columns.keys()))
 
     for column in columns_with_extra:  # pylint: disable=too-many-nested-blocks
+        try:
+            data_type_of(df, f'{parent}{column}')
+        except KeyError:
+            df = df.transform(with_nested_column(f'{parent}{column}', fn.lit(None).cast('void')))
+
         suffix = suffix_col(f'{parent}{column}', error_state)
-        df = df.withColumn(f'{error_state.error_column}_{suffix}', fn.array())
+        df = df.withColumn(f'{error_state.error_column}_{suffix}', error_state.empty_errors())
 
         rules = schema.columns[column].rules if column in schema.columns else []
         if not schema.allow_extra:
@@ -128,7 +136,17 @@ def _validate_df(df, schema, error_state, original_cols, parent=''):
                     rule = getattr(norma.engines.pyspark.rules, rule.name)(**rule.kwargs)
                 rule.array = True
 
-                df = rule.verify(df, f'{parent}{column}', error_state)
+                df = rule.verify(df, f'{parent}{column}[]', error_state)
+
+            if data_type_of(df, f'{parent}{column}[]').typeName() == 'struct':
+                df = _validate_df(
+                    df,
+                    schema.columns[column].inner_schema.inner_schema,
+                    error_state,
+                    data_type_of(df, f'{parent}{column}[]').fieldNames(),
+                    parent=f'{parent}{column}[].'
+                )
+
             continue
 
         df = _validate_df(
@@ -147,11 +165,27 @@ def _make_origin(df: DataFrame, column, error_state):
     Format the original value of a column for error reporting
     """
 
-    column = column.replace('[]', '')
+    column = column.removesuffix('[]')
     backup_column = backup_col(column, error_state)
     column = f'{backup_column}_array' if f'{backup_column}_array' in df.columns else (
         backup_column if backup_column in df.columns else column)
     dtype = data_type_of(df, column).typeName()
+
+    if '[]' in column:
+        root, *nested_names = column.split('[].')
+
+        def nested_value(x):
+            for field in nested_names[0].split('.'):
+                x = x.getField(field)
+
+            null = fn.when(x.isNull(), fn.lit('null'))
+            if dtype in ('string',):
+                return null.otherwise(fn.concat(fn.lit('"'), x, fn.lit('"')))
+            elif dtype in ('array', 'map', 'struct'):
+                return null.otherwise(fn.to_json(x))
+            return null.otherwise(x.cast('string'))
+
+        return fn.concat(fn.lit('['), fn.array_join(fn.transform(fn.col(root), nested_value), ','), fn.lit(']'))
 
     null = fn.when(fn.col(column).isNull(), fn.lit('null'))
     if dtype in ('string',):
@@ -160,3 +194,21 @@ def _make_origin(df: DataFrame, column, error_state):
         return null.otherwise(fn.to_json(fn.col(column)))
 
     return null.otherwise(fn.col(column).cast('string'))
+
+
+def default_as_lit(col):
+    if col.dtype == 'date':
+        return fn.lit(col.default).cast('date')
+    if col.dtype == 'datetime':
+        return fn.lit(col.default).cast('timestamp')
+    return fn.lit(col.default)
+
+
+def _has_array_column(schema):
+    has_array = False
+    for name in schema.nested_columns:
+        if '[]' in name:
+            has_array = True
+        if name.count('[]') > 1:
+            raise NotImplementedError('nested arrays are not supported yet')
+    return has_array

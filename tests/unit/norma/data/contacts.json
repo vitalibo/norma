@@ -71,7 +71,38 @@
           "address": "741 Maple St, IL",
           "email": "tom.lee@example.com"
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "lastname",
+              "type": "string"
+            },
+            {
+              "name": "age",
+              "type": "string"
+            },
+            {
+              "name": "sex",
+              "type": "string"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            }
+          ]
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -87,8 +118,8 @@
           },
           "age": {
             "type": "integer",
-            "minimum": 0,
-            "maximum": 100
+            "maximum": 100,
+            "minimum": 0
           },
           "sex": {
             "type": "string",
@@ -285,7 +316,77 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "lastname",
+              "type": "string"
+            },
+            {
+              "name": "age",
+              "type": "integer"
+            },
+            {
+              "name": "sex",
+              "type": "string"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
     }
   },
   {
@@ -422,7 +523,51 @@
             "colleague"
           ]
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "lastname",
+              "type": "string"
+            },
+            {
+              "name": "age",
+              "type": "string"
+            },
+            {
+              "name": "sex",
+              "type": "string"
+            },
+            {
+              "name": "address",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": "string"
+              }
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "tags",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            }
+          ]
+        }
+      }
     },
     "when": {
       "json_schema": {
@@ -438,8 +583,8 @@
           },
           "age": {
             "type": "integer",
-            "minimum": 0,
-            "maximum": 100
+            "maximum": 100,
+            "minimum": 0
           },
           "sex": {
             "type": "string",
@@ -488,8 +633,8 @@
                 "other"
               ]
             },
-            "minItems": 1,
-            "maxItems": 3
+            "maxItems": 3,
+            "minItems": 1
           }
         },
         "required": [
@@ -789,7 +934,113 @@
             }
           }
         }
-      ]
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "lastname",
+              "type": "string"
+            },
+            {
+              "name": "age",
+              "type": "integer"
+            },
+            {
+              "name": "sex",
+              "type": "string"
+            },
+            {
+              "name": "address",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "street",
+                    "type": "string"
+                  },
+                  {
+                    "name": "city",
+                    "type": "string"
+                  },
+                  {
+                    "name": "state",
+                    "type": "string"
+                  },
+                  {
+                    "name": "zip_code",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "tags",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
     }
   }
 ]
