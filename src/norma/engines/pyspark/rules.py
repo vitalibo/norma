@@ -291,6 +291,20 @@ def notin(values: Iterable[Any]) -> Rule:
     )
 
 
+def unique_items() -> Rule:
+    def before(df, col):
+        data_type = data_type_of(df, col)
+        if not isinstance(data_type, ArrayType):
+            raise ValueError('unique_items rule can only be applied to array columns')
+        return df
+
+    return rule(
+        lambda col_expr: fn.size(col_expr) != fn.size(fn.array_distinct(col_expr)),
+        details=errors.UNIQUE_ITEMS,
+        __pre_func__=before
+    )
+
+
 def extra_forbidden(allowed: Iterable[str]) -> Rule:
     @Rule.new
     def verify(df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:

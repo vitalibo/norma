@@ -206,6 +206,10 @@ def notin(values: Iterable[Any]) -> Rule:
     )
 
 
+def unique_items() -> Rule:
+    raise NotImplementedError('unique_items is not implemented yet')
+
+
 def int_parsing() -> Rule:
     return NumberTypeRule('Int64', errors.INT_TYPE, errors.INT_PARSING)
 

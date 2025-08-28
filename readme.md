@@ -183,7 +183,8 @@ Norma supports a variety of validation rules, including:
 | `pattern`            | ✅      | ✅       | ✅               | ✅              |
 | `isin`               | ✅      | ✅       | ✅               | ✅              |
 | `notin`              | ✅      | ✅       | ✅               | ✅              |
-| `extra_forbidden`    | ✅      | ✅       | ✅               | ❌              |
+| `extra_forbidden`    | ✅      | ✅       | ✅               | ➖              |
+| `unique_items`       | ➖      | ➖       | ➖               | ✅              |
 | `int_parsing`        | ✅      | ✅       | ✅               | ✅              |
 | `float_parsing`      | ✅      | ✅       | ✅               | ✅              |
 | `str_parsing`        | ✅      | ✅       | ✅               | ✅              |

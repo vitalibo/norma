@@ -259,6 +259,14 @@ def notin(values: Iterable[Any]) -> Rule:
     return RuleProxy('notin', values=values)
 
 
+def unique_items() -> Rule:
+    """
+    Ensure that the values are unique within the array column
+    """
+
+    return RuleProxy('unique_items')
+
+
 def int_parsing() -> Rule:
     """
     Ensure that the values are integers or parse as integers if possible

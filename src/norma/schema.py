@@ -60,6 +60,7 @@ class Column:
             pattern: Union[str, None] = None,
             isin: Union[List[Any], None] = None,
             notin: Union[List[Any], None] = None,
+            unique_items: bool = False,
             inner_schema: Union[Schema, Column, None] = None,
             default: Any = None,
             default_factory: Union[Callable, None] = None,
@@ -114,6 +115,9 @@ class Column:
                 ] if value is not None
             ]
         }
+
+        if unique_items:
+            defined_rules['unique_items'] = norma.rules.unique_items()
 
         rules = [rules] if isinstance(rules, Rule) else rules
         for priority, rule in enumerate(rules or []):
@@ -211,6 +215,7 @@ class Schema:
             'const': 'eq',
             'minItems': 'min_length',
             'maxItems': 'max_length',
+            'uniqueItems': 'unique_items',
         }
         known_not = {
             'const': 'ne',
