@@ -1,7 +1,7 @@
 import inspect
 import json
 from functools import reduce
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
