@@ -6,13 +6,13 @@ from typing import Any, Iterable
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
 from pyspark.sql.types import (
-    ArrayType, BooleanType, DateType, FloatType, IntegerType, MapType, NumericType, StringType, StructField, StructType,
-    TimestampType
+    ArrayType, BooleanType, DataType, DateType, FloatType, IntegerType, MapType, NumericType, StringType, StructField,
+    StructType, TimestampType
 )
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    backup_col, data_type_of, suffix_col, with_nested_column, with_nested_column_renamed
+    backup_col, data_type_of, flatten_nested_values, suffix_col, with_nested_column, with_nested_column_renamed
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
@@ -406,41 +406,41 @@ def date_parsing() -> Rule:
 
 
 def time_parsing() -> Rule:
-    time_regex = (
+    time_regex = \
         r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$'
-    )
-    return DataTypeRule(
+    return ComplexStringTypeRule(
         lambda col: fn.when(col.rlike(time_regex), col),
-        StringType, (StringType,), errors.TIME_TYPE, errors.TIME_PARSING, is_complex=True
+        StringType, (StringType,), errors.TIME_TYPE, errors.TIME_PARSING
     )
 
 
 def duration_parsing() -> Rule:
     duration_regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
-    return DataTypeRule(
+    return ComplexStringTypeRule(
         lambda col: fn.when(col.rlike(duration_regex), col),
-        StringType, (StringType,), errors.DURATION_TYPE, errors.DURATION_PARSING, is_complex=True
+        StringType, (StringType,), errors.DURATION_TYPE, errors.DURATION_PARSING
     )
 
 
 def uuid_parsing() -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-    return DataTypeRule(
+    return ComplexStringTypeRule(
         lambda col: fn.when(fn.lower(col).rlike(uuid_regex), fn.lower(col)),
-        StringType, (StringType,), errors.UUID_TYPE, errors.UUID_PARSING, is_complex=True
+        StringType, (StringType,), errors.UUID_TYPE, errors.UUID_PARSING
     )
 
 
 def ipv4_address() -> Rule:
     ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
-    return DataTypeRule(
+    return ComplexStringTypeRule(
         lambda col: fn.when(col.rlike(ipv4_regex), col),
-        StringType, (StringType,), errors.IPV4, errors.IPV4, is_complex=True
+        StringType, (StringType,), errors.IPV4, errors.IPV4
     )
 
 
 def ipv6_address() -> Rule:
-    # https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
+    # Regular expression to match valid IPv6 addresses
+    # link: https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
     ipv6_regex = (
         r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:'
         r'[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0'
@@ -450,9 +450,9 @@ def ipv6_address() -> Rule:
         r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
         r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
     )
-    return DataTypeRule(
+    return ComplexStringTypeRule(
         lambda col: fn.when(col.rlike(ipv6_regex), col),
-        StringType, (StringType,), errors.IPV6, errors.IPV6, is_complex=True
+        StringType, (StringType,), errors.IPV6, errors.IPV6
     )
 
 
@@ -464,9 +464,9 @@ def uri_parsing() -> Rule:
         r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$"
     )
 
-    return DataTypeRule(
+    return ComplexStringTypeRule(
         lambda col: fn.when(col.rlike(uri_regex), col),
-        StringType, (StringType,), errors.URI_TYPE, errors.URI_PARSING, is_complex=True
+        StringType, (StringType,), errors.URI_TYPE, errors.URI_PARSING
     )
 
 
@@ -480,91 +480,89 @@ def array_parsing(schema) -> Rule:
 
 class DataTypeRule(Rule):
     """
-    Abstract base class for data type rules
+    Abstract base class for casting to target data type
     """
 
     def __init__(  # pylint: disable=too-many-arguments
-            self, cast, dtype, supported, type_details=None, parsing_details=None, is_complex=False
+            self, caster, dtype, supported_cast_dtypes, type_error_details=None, parsing_error_details=None
     ):
-        self.cast = cast
+        self.caster = caster
         self.dtype = dtype
-        self.supported = supported
-        self.type_details = type_details or {}
-        self.parsing_details = parsing_details or {}
-        self.is_complex = is_complex
+        self.supported_cast_dtypes = supported_cast_dtypes
+        self.type_error_details = type_error_details
+        self.parsing_error_details = parsing_error_details
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        if '[]' in column:
-            return self._array_verify_strategy(df, column, error_state)
-        return self._default_verify_strategy(df, column, error_state)
-
-    def _default_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         data_type = data_type_of(df, column)
-        if isinstance(data_type, self.dtype) and not self.is_complex:
+        if self._is_valid_dtype(data_type):
             return df
 
         if data_type.typeName() == 'void':
-            return df.transform(with_nested_column(column, fn.col(column).cast(self.dtype.typeName())))
+            return df.transform(with_nested_column(column, fn.lit(None).cast(self._target_dtype())))
 
+        if '[]' in column:
+            return self._verify_array(df, column, data_type, error_state)
+        return self._verify_scalar(df, column, data_type, error_state)
+
+    def _verify_scalar(self, df: DataFrame, column: str, data_type: DataType, error_state: ErrorState) -> DataFrame:
         backup_column = backup_col(column, error_state)
         df = df.withColumn(backup_column, fn.col(column))
-        if not isinstance(data_type, self.supported):
+        if not isinstance(data_type, self.supported_cast_dtypes):
             return df \
-                .transform(with_nested_column(column, fn.lit(None).cast(self.dtype.typeName()))) \
-                .transform(error_state.add_errors(fn.lit(True), column, details=self.type_details))
+                .transform(with_nested_column(column, fn.lit(None).cast(self._target_dtype()))) \
+                .transform(error_state.add_errors(fn.lit(True), column, details=self.type_error_details))
 
-        df = df.transform(with_nested_column(column, self.cast(fn.col(column))))
-        if not self.parsing_details:
+        df = self._cast_scalar(df, column, data_type, backup_column, error_state)
+        if not self.parsing_error_details:
             return df
 
         return df \
             .transform(error_state.add_errors(fn.isnull(fn.col(column)) & fn.isnotnull(backup_column), column,
-                                              details=self.parsing_details))
+                                              details=self.parsing_error_details))
 
-    def _array_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        element_type = data_type_of(df, column)
-        if isinstance(element_type, self.dtype) and not self.is_complex:
-            return df
-
-        if element_type.typeName() == 'void':
-            # TODO: think how to better handle this case
-            return df.transform(with_nested_column(column, fn.lit(None).cast(self.dtype())))
-
-        root, *nested = column.split('[].')
-
-        def nested_value(x):
-            for part in nested[0].split('.'):
-                x = x[part]
-            return x
-
-        backup_column = backup_col(column, error_state)
-        if column.endswith('[]'):
-            df = df.withColumn(f'{backup_column}_array', fn.col(column[:-2]))
-        else:
-            df = df.withColumn(f'{backup_column}_array', fn.transform(fn.col(root), nested_value))
-
-        if not isinstance(element_type, self.supported):
-            indexes = fn.transform(fn.col(root.removesuffix('[]')), lambda x: fn.lit(True))
+    def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
+        backup_column = backup_col(column, error_state) + '_array'
+        df = df.withColumn(backup_column, flatten_nested_values(column))
+        if not isinstance(element_type, self.supported_cast_dtypes):
+            indexes = fn.transform(fn.col(column.split('[]')[0]), lambda x: fn.lit(True))
             return df \
-                .transform(with_nested_column(column, fn.lit(None).cast(self.dtype()))) \
-                .transform(error_state.add_errors(indexes, column, details=self.type_details))
+                .transform(with_nested_column(column, fn.lit(None).cast(self._target_dtype()))) \
+                .transform(error_state.add_errors(indexes, column, details=self.type_error_details))
 
-        df = df.transform(with_nested_column(column, self.cast))
-        if not self.parsing_details:
+        df = self._cast_array(df, column, element_type, backup_column, error_state)
+        if not self.parsing_error_details:
             return df
 
-        if column.endswith('[]'):
-            actual = fn.col(column[:-2])
-        else:
-            actual = fn.transform(fn.col(root), nested_value)
+        actual_values = flatten_nested_values(column)
+        indexes = fn.zip_with(actual_values, fn.col(backup_column), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        return df.transform(error_state.add_errors(indexes, column, details=self.parsing_error_details))
 
-        indexes = fn.zip_with(actual, fn.col(f'{backup_column}_array'), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
-        return df.transform(error_state.add_errors(indexes, column, details=self.parsing_details))
+    def _is_valid_dtype(self, data_type) -> bool:
+        return isinstance(data_type, self.dtype)
+
+    def _target_dtype(self):
+        return self.dtype()
+
+    # pylint: disable=too-many-arguments,unused-argument
+    def _cast_scalar(self, df, column, data_type, backup_column, error_state):
+        return df.transform(with_nested_column(column, self.caster(fn.col(column))))
+
+    def _cast_array(self, df, column, element_type, backup_column, error_state):
+        return df.transform(with_nested_column(column, self.caster))
+
+
+class ComplexStringTypeRule(DataTypeRule):
+    """
+    Class for casting to complex string types
+    """
+
+    def _is_valid_dtype(self, data_type) -> bool:
+        return False
 
 
 class BooleanTypeRule(DataTypeRule):
     """
-    Class for boolean type casting rules
+    Class for casting to boolean type
     """
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
@@ -577,108 +575,37 @@ class BooleanTypeRule(DataTypeRule):
         data_type = data_type_of(df, column)
         if (isinstance(data_type, StringType)
                 or (isinstance(data_type, ArrayType) and isinstance(data_type.elementType, StringType))):
-            self.cast = cast_str_as_bool
+            self.caster = cast_str_as_bool
 
         return super().verify(df, column, error_state)
 
 
-class ObjectTypeRule(Rule):
+class ObjectTypeRule(DataTypeRule):
     """
-    Class for object type casting rules
+    Class for casting to object type
     """
 
     def __init__(self, schema):
+        super().__init__(None, StructType, (StringType, MapType), errors.OBJECT_TYPE, errors.OBJECT_PARSING)
         self.struct_type = self.parse_struct_type(schema)
 
-    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        if '[]' in column:
-            return self._array_verify_strategy(df, column, error_state)
-        return self._default_verify_strategy(df, column, error_state)
+    def _is_valid_dtype(self, data_type) -> bool:
+        return isinstance(data_type, StructType)
 
-    def _default_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        data_type = data_type_of(df, column)
-        if isinstance(data_type, StructType):
-            return df
+    def _target_dtype(self):
+        return self.struct_type
 
-        if data_type.typeName() == 'void':
-            return df.transform(with_nested_column(column, fn.lit(None).cast(self.struct_type)))
-
-        backup_column = backup_col(column, error_state)
-        df = df.withColumn(backup_column, fn.col(column))
-        if not isinstance(data_type, (StringType, MapType)):
-            return df \
-                .transform(with_nested_column(column, fn.lit(None).cast(self.struct_type))) \
-                .transform(error_state.add_errors(fn.lit(True), column, details=errors.OBJECT_TYPE))
-
+    def _cast_scalar(self, df, column, data_type, backup_column, error_state):  # pylint: disable=too-many-arguments
         if isinstance(data_type, MapType):
             new_struct = fn.struct(*(fn.col(column)[field].alias(field) for field in self.struct_type.fieldNames()))
             return df.transform(with_nested_column(column, new_struct))
 
-        return self._cast_json_str(df, column, fn.col(backup_column), error_state)
-
-    def _array_verify_strategy(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        element_type = data_type_of(df, column)
-        if isinstance(element_type, StructType):
-            return df
-
-        if element_type.typeName() == 'void':
-            return df.transform(with_nested_column(column, fn.lit(None).cast(self.struct_type)))
-
-        root, *nested = column.split('[].')
-
-        def nested_value(x):
-            if column.endswith('[]'):
-                return x
-
-            for part in nested[0].split('.'):
-                x = x[part]
-            return x
-
-        backup_column = backup_col(column, error_state)
-        if column.endswith('[]'):
-            df = df.withColumn(f'{backup_column}_array', fn.col(column[:-2]))
-        else:
-            df = df.withColumn(f'{backup_column}_array', fn.transform(fn.col(root), nested_value))
-
-        if not isinstance(element_type, (StringType, MapType)):
-            indexes = fn.transform(fn.col(root.removesuffix('[]')), lambda x: fn.lit(True))
-            return df \
-                .transform(with_nested_column(column, fn.lit(None).cast(self.struct_type))) \
-                .transform(error_state.add_errors(indexes, column, details=errors.OBJECT_TYPE))
-
-        if isinstance(element_type, MapType):
-            def new_struct(col):
-                return fn.struct(*(col[field].alias(field) for field in self.struct_type.fieldNames()))
-
-            return df.transform(with_nested_column(column, new_struct))
-
-        return self._cast_array_json_str(df, column, fn.col(f'{backup_column}_array'), error_state)
-
-    def _cast_array_json_str(self, df: DataFrame, column: str, backup_column: Column,
-                             error_state: ErrorState) -> DataFrame:
-        root, *nested = column.split('[].')
-
-        def nested_value(x):
-            if column.endswith('[]'):
-                return x
-
-            for part in nested[0].split('.'):
-                x = x[part]
-            return x
-
-        df = df.transform(with_nested_column(column, lambda x: fn.from_json(x, self.struct_type)))
-
-        if column.endswith('[]'):
-            actual = fn.col(column[:-2])
-        else:
-            actual = fn.transform(fn.col(root), nested_value)
-
-        indexes = fn.zip_with(actual, backup_column, lambda x, y: fn.isnull(x) & fn.isnotnull(y))
-        return df.transform(error_state.add_errors(indexes, column, details=errors.OBJECT_PARSING))
-
-    def _cast_json_str(self, df: DataFrame, column: str, backup_column: Column, error_state: ErrorState) -> DataFrame:
+        # Workaround for Spark issue where from_json does not return null for malformed JSON
+        # As result we need to check if all fields are null and the original value is not null
+        # then for those cases we should try to parse the JSON using Python json.loads
+        # and if it fails then we consider it as malformed JSON
         @fn.udf(returnType=BooleanType())
-        def is_malformed(struct_fields_is_null_and_origin_is_not_null, val):
+        def malformed_json_udf(struct_fields_is_null_and_origin_is_not_null, val):
             if not struct_fields_is_null_and_origin_is_not_null:
                 return False
 
@@ -688,7 +615,7 @@ class ObjectTypeRule(Rule):
             except:  # pylint: disable=bare-except
                 return True
 
-        is_malformed = is_malformed(
+        is_malformed = malformed_json_udf(
             reduce(
                 lambda a, b: a & b,
                 (fn.isnull(fn.col(f'{column}.{field}')) for field in self.struct_type.fieldNames())) &
@@ -696,50 +623,45 @@ class ObjectTypeRule(Rule):
 
         return df \
             .transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type))) \
-            .transform(with_nested_column(column, fn.when(~is_malformed, fn.col(column)))) \
-            .transform(error_state.add_errors(fn.isnull(fn.col(column)) & fn.isnotnull(backup_column), column,
-                                              details=errors.OBJECT_PARSING))
+            .transform(with_nested_column(column, fn.when(~is_malformed, fn.col(column))))
+
+    def _cast_array(self, df, column, element_type, backup_column, error_state):  # pylint: disable=too-many-arguments
+        if isinstance(element_type, MapType):
+            def new_struct(x):
+                return fn.struct(*(x[field].alias(field) for field in self.struct_type.fieldNames()))
+
+            return df.transform(with_nested_column(column, new_struct))
+
+        # for some reason to use same workaround as in _cast_scalar does not work in nested arrays
+        # so currently we do not support malformed JSON detection in nested arrays
+        # this should be revisited in future
+        return df.transform(with_nested_column(column, lambda x: fn.from_json(x, self.struct_type)))  # FIXME
 
     @staticmethod
     def parse_struct_type(schema) -> StructType:
-        def struct_field(name):
-            return StructField(name, StringType(), nullable=True, metadata={})
-
-        return StructType([struct_field(k) for k, v in schema.columns.items()])
+        return StructType([StructField(name, StringType(), nullable=True, metadata={}) for name in schema.columns])
 
 
-class ArrayTypeRule(Rule):
+class ArrayTypeRule(DataTypeRule):
     """
-    Class for array type casting rules
+    Class for casting to array type
     """
 
     def __init__(self, schema):
+        super().__init__(None, ArrayType, (StringType, ArrayType), errors.ARRAY_TYPE, errors.ARRAY_PARSING)
         self.struct_type = self.parse_array_type(schema)
 
-    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        data_type = data_type_of(df, column)
-        if isinstance(data_type, ArrayType):
-            return df
+    def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
+        raise NotImplementedError('nested arrays are not supported yet')
 
-        if data_type.typeName() == 'void':
-            return df.withColumn(column, fn.col(column).cast(self.struct_type))
+    def _target_dtype(self):
+        return self.struct_type
 
-        backup_column = backup_col(column, error_state)
-        df = df.withColumn(backup_column, fn.col(column))
-        if not isinstance(data_type, (StringType, ArrayType)):
-            return df \
-                .transform(with_nested_column(column, fn.lit(None).cast(self.struct_type))) \
-                .transform(error_state.add_errors(fn.lit(True), column, details=errors.ARRAY_TYPE))
-
-        return df \
-            .transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type))) \
-            .transform(error_state.add_errors(fn.isnull(fn.col(column)) & fn.isnotnull(fn.col(backup_column)), column,
-                                              details=errors.ARRAY_PARSING))
+    def _cast_scalar(self, df, column, data_type, backup_column, error_state):  # pylint: disable=too-many-arguments
+        return df.transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type)))
 
     @staticmethod
     def parse_array_type(schema) -> ArrayType:
-        if schema.inner_schema is not None:
-            s = StructType([StructField(k, StringType(), nullable=True, metadata={}) for k, v in
-                            schema.inner_schema.columns.items()])
-            return ArrayType(s)
-        return ArrayType(StringType())
+        if schema.inner_schema is None:
+            return ArrayType(StringType())
+        return ArrayType(ObjectTypeRule.parse_struct_type(schema.inner_schema))

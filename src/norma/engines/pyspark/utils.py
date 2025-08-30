@@ -220,3 +220,20 @@ def default_if_null(default: Column):
         return fn.coalesce(col, default)
 
     return wrap
+
+
+def flatten_nested_values(column):
+    """
+    Return flattened values of a nested column.
+    """
+
+    def get_nested(x):
+        for part in nested[0].split('.'):
+            x = x[part]
+        return x
+
+    if column.endswith('[]'):
+        return fn.col(column[:-2])
+
+    root, *nested = column.split('[].')
+    return fn.transform(fn.col(root), get_nested)
