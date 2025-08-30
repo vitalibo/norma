@@ -184,7 +184,9 @@ Norma supports a variety of validation rules, including:
 | `isin`               | ✅      | ✅       | ✅               | ✅              |
 | `notin`              | ✅      | ✅       | ✅               | ✅              |
 | `extra_forbidden`    | ✅      | ✅       | ✅               | ➖              |
-| `unique_items`       | ➖      | ➖       | ➖               | ✅              |
+| `unique_items`       | ❌      | ✅       | ➖               | ✅              |
+| `max_items`          | ❌      | ✅       | ➖               | ✅              |
+| `min_items`          | ❌      | ✅       | ➖               | ✅              |
 | `int_parsing`        | ✅      | ✅       | ✅               | ✅              |
 | `float_parsing`      | ✅      | ✅       | ✅               | ✅              |
 | `str_parsing`        | ✅      | ✅       | ✅               | ✅              |
@@ -199,6 +201,7 @@ Norma supports a variety of validation rules, including:
 | `uri_parsing`        | ✅      | ✅       | ✅               | ✅              |
 | `object_parsing`     | ❌      | ✅       | ✅               | ✅              |
 | `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
+
 ### Errors
 
 The error format is a dictionary where the key is the column name, and value is a structure with two fields: `details`

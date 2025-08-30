@@ -38,6 +38,9 @@ class Column:
     :param pattern: The regex pattern that the values must match
     :param isin: The values must be in this list
     :param notin: The values must not be in this list
+    :param min_items: The minimum number of items in the array
+    :param max_items: The maximum number of items in the array
+    :param unique_items: Whether the items in the array must be unique
     :param default: The default value for the column
     :param default_factory: A factory function to generate the default value
     """
@@ -60,6 +63,8 @@ class Column:
             pattern: Union[str, None] = None,
             isin: Union[List[Any], None] = None,
             notin: Union[List[Any], None] = None,
+            min_items: Union[int, None] = None,
+            max_items: Union[int, None] = None,
             unique_items: bool = False,
             inner_schema: Union[Schema, Column, None] = None,
             default: Any = None,
@@ -109,6 +114,8 @@ class Column:
                     (norma.rules.multiple_of, multiple_of),
                     (norma.rules.min_length, min_length),
                     (norma.rules.max_length, max_length),
+                    (norma.rules.min_items, min_items),
+                    (norma.rules.max_items, max_items),
                     (norma.rules.pattern, pattern),
                     (norma.rules.isin, isin),
                     (norma.rules.notin, notin),
@@ -213,8 +220,8 @@ class Schema:
             'default': 'default',
             'enum': 'isin',
             'const': 'eq',
-            'minItems': 'min_length',
-            'maxItems': 'max_length',
+            'minItems': 'min_items',
+            'maxItems': 'max_items',
             'uniqueItems': 'unique_items',
         }
         known_not = {

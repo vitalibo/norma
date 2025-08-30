@@ -210,6 +210,14 @@ def unique_items() -> Rule:
     raise NotImplementedError('unique_items is not implemented yet')
 
 
+def max_items(value: int) -> Rule:
+    raise NotImplementedError('max_items is not implemented yet')
+
+
+def min_items(value: int) -> Rule:
+    raise NotImplementedError('min_items is not implemented yet')
+
+
 def int_parsing() -> Rule:
     return NumberTypeRule('Int64', errors.INT_TYPE, errors.INT_PARSING)
 

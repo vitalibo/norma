@@ -230,17 +230,13 @@ def multiple_of(multiple: Any) -> Rule:
 def min_length(value: int) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
-        if isinstance(data_type, ArrayType):
-            return df
-        elif not isinstance(data_type, StringType):
+        if not isinstance(data_type, StringType):
             raise ValueError('min_length rule can only be applied to string columns')
         return df
 
-    return SequenceRule(
+    return rule(
         lambda col_expr: fn.length(col_expr) < value,
-        errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
-        array_func=lambda col_expr: fn.array_size(col_expr) < value,
-        array_details=errors.TOO_SHORT.format(_type_='Array', min_length=value, _plural_='s' if value > 1 else ''),
+        details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
         __pre_func__=before
     )
 
@@ -248,17 +244,13 @@ def min_length(value: int) -> Rule:
 def max_length(value: int) -> Rule:
     def before(df, col):
         data_type = data_type_of(df, col)
-        if isinstance(data_type, ArrayType):
-            return df
-        elif not isinstance(data_type, StringType):
+        if not isinstance(data_type, StringType):
             raise ValueError('max_length rule can only be applied to string columns')
         return df
 
-    return SequenceRule(
+    return rule(
         lambda col_expr: fn.length(col_expr) > value,
-        errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
-        array_func=lambda col_expr: fn.array_size(col_expr) > value,
-        array_details=errors.TOO_LONG.format(_type_='Array', max_length=value, _plural_='s' if value > 1 else ''),
+        details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
         __pre_func__=before
     )
 
@@ -301,6 +293,34 @@ def unique_items() -> Rule:
     return rule(
         lambda col_expr: fn.size(col_expr) != fn.size(fn.array_distinct(col_expr)),
         details=errors.UNIQUE_ITEMS,
+        __pre_func__=before
+    )
+
+
+def max_items(value: int) -> Rule:
+    def before(df, col):
+        data_type = data_type_of(df, col)
+        if not isinstance(data_type, ArrayType):
+            raise ValueError('max_items rule can only be applied to array columns')
+        return df
+
+    return rule(
+        lambda col_expr: fn.array_size(col_expr) > value,
+        details=errors.TOO_LONG.format(_type_='Array', max_length=value, _plural_='s' if value > 1 else ''),
+        __pre_func__=before
+    )
+
+
+def min_items(value: int) -> Rule:
+    def before(df, col):
+        data_type = data_type_of(df, col)
+        if not isinstance(data_type, ArrayType):
+            raise ValueError('min_items rule can only be applied to array columns')
+        return df
+
+    return rule(
+        lambda col_expr: fn.array_size(col_expr) < value,
+        details=errors.TOO_SHORT.format(_type_='Array', min_length=value, _plural_='s' if value > 1 else ''),
         __pre_func__=before
     )
 
@@ -723,22 +743,3 @@ class ArrayTypeRule(Rule):
                             schema.inner_schema.columns.items()])
             return ArrayType(s)
         return ArrayType(StringType())
-
-
-class SequenceRule(BaseRule):
-    """
-    Rule to apply different functions based on the data type of the column.
-    """
-
-    def __init__(self, func, details, array_func, array_details, **kwargs):
-        super().__init__(func, details=details, **kwargs)
-        self.array_func = array_func
-        self.array_details = array_details
-
-    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> Optional[DataFrame]:
-        data_type = data_type_of(df, column)
-        if isinstance(data_type, ArrayType) and not '[]' in column:
-            self.func = self.array_func
-            self.details = self.array_details
-
-        return super().verify(df, column, error_state)

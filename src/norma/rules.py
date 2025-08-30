@@ -267,6 +267,36 @@ def unique_items() -> Rule:
     return RuleProxy('unique_items')
 
 
+def max_items(value: int) -> Rule:
+    """
+    Ensure that the number of items in the array is at most the specified value
+
+    :param value: The maximum number of items allowed
+    """
+
+    if not isinstance(value, int):
+        raise ValueError('max_items must be an integer')
+    if value < 0:
+        raise ValueError('max_items must be a non-negative integer')
+
+    return RuleProxy('max_items', value=value)
+
+
+def min_items(value: int) -> Rule:
+    """
+    Ensure that the number of items in the array is at least the specified value
+
+    :param value: The minimum number of items required
+    """
+
+    if not isinstance(value, int):
+        raise ValueError('min_items must be an integer')
+    if value < 0:
+        raise ValueError('min_items must be a non-negative integer')
+
+    return RuleProxy('min_items', value=value)
+
+
 def int_parsing() -> Rule:
     """
     Ensure that the values are integers or parse as integers if possible
