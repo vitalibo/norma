@@ -12,8 +12,8 @@ from pyspark.sql.types import (
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    backup_col, data_type_of, flatten_nested_values, suffix_col, with_nested_column, with_nested_column_renamed,
-    drop_nested_column
+    backup_col, data_type_of, drop_nested_column, flatten_nested_values, suffix_col, with_nested_column,
+    with_nested_column_renamed
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
@@ -26,43 +26,40 @@ class ErrorState(IErrorState):
     :param error_column: The name of the column to store error information
     """
 
-    def __init__(self, error_column: str, has_array: bool):
+    def __init__(self, error_column: str, schema):
         self.error_column = error_column
-        self.has_array = has_array
+        self.has_array = self._has_array_column(schema)
         self.suffixes = {}
 
     def add_errors(self, boolmask: Column, column: str, **kwargs):
         def array_strategy(df):
-            cols = [fn.lit(v).alias(k) for k, v in details.items()]
-
             indexes_col = f'{suffix}_indexes'
-            if indexes_col in df.columns:
-                df = df.withColumn(indexes_col, fn.zip_with(fn.col(indexes_col), boolmask, lambda x, y: x | y))
-            else:
+            if indexes_col not in df.columns:
                 df = df.withColumn(indexes_col, boolmask)
+            else:
+                df = df.withColumn(indexes_col, fn.zip_with(fn.col(indexes_col), boolmask, lambda x, y: x | y))
 
-            indexes = fn.filter(
-                fn.transform(boolmask, lambda x, i: fn.when(x, i).otherwise(fn.lit(None))), lambda x: x.isNotNull())
-            cols.append(indexes.alias('loc'))
+            details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
+            # pylint: disable=unnecessary-lambda
+            indexes = fn.filter(fn.transform(boolmask, lambda x, i: fn.when(x, i)), lambda x: x.isNotNull())
+            details_lit.append(indexes.alias('loc'))
+            details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*details_lit))
 
-            details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*cols))
-            error_column = f'{self.error_column}_{suffix_col(column, self)}'
             if error_column not in df.columns:
                 df = df.withColumn(error_column, fn.array())
             return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
 
         def default_strategy(df):
-            cols = [fn.lit(v).alias(k) for k, v in details.items()]
+            details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
             # if DataFrame has at least one array column, we need to add indexes
             # because we cannot append a struct to an array with different types
             if self.has_array:
-                cols.append(fn.lit(None).cast('array<int>').alias('loc'))
+                details_lit.append(fn.lit(None).cast('array<int>').alias('loc'))
 
-            details_col = fn.when(boolmask, fn.struct(*cols))
-            error_column = f'{self.error_column}_{suffix}'
+            details_col = fn.when(boolmask, fn.struct(*details_lit))
             return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
 
-        def func(df):
+        def transform(df):
             # hack to infer the data type of the column,
             # and based on that choose the right function
             tmp_df = df.withColumn(f'{suffix}_tmp', boolmask)
@@ -72,13 +69,34 @@ class ErrorState(IErrorState):
             return default_strategy(df)
 
         suffix = suffix_col(column, self)
+        error_column = f'{self.error_column}_{suffix}'
         details = dict(kwargs.get('details'))
-        return func
+        return transform
 
-    def empty_errors(self):
+    def initialize_column(self, df, column):
+        try:
+            data_type_of(df, column)
+        except KeyError:
+            df = df.transform(with_nested_column(column, fn.lit(None).cast('void')))
+
+        suffix = suffix_col(column, self)
+        return df.withColumn(f'{self.error_column}_{suffix}', self._empty_errors_details())
+
+    def _empty_errors_details(self):
+        loc = ''
         if self.has_array:
-            return fn.array().cast('array<struct<type:string,msg:string,loc:array<int>>>')
-        return fn.array().cast('array<struct<type:string,msg:string>>')
+            loc = ',loc:array<int>'
+        return fn.array().cast(f'array<struct<type:string,msg:string{loc}>>')
+
+    @staticmethod
+    def _has_array_column(schema):
+        has_array = False
+        for name in schema.nested_columns:
+            if '[]' in name:
+                has_array = True
+            if name.count('[]') > 1:
+                raise NotImplementedError('nested arrays are not supported yet')
+        return has_array
 
 
 class BaseRule(Rule):

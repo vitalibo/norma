@@ -1,6 +1,6 @@
 import random
 import string
-from typing import Callable
+from typing import Callable, Union
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
@@ -123,7 +123,7 @@ def zip_with_nested_columns(col_name: str, other_col: Column, func) -> Callable[
 
 
 def with_nested_column(  # pylint: disable=too-many-statements
-        col_name: str, val: Column
+        col_name: str, val: Union[Column, Callable[[Column], Column]]
 ) -> Callable[[DataFrame], DataFrame]:
     """
     Create a new column in a DataFrame with a nested structure.
@@ -232,17 +232,6 @@ def drop_nested_column(column: str) -> Callable[[DataFrame], DataFrame]:
             .transform(with_nested_column(root + '[]', lambda x: drop(x, nested[0].split('.'))))
 
     return transform
-
-
-def default_if_null(default: Column):
-    """
-    Create a function that returns a column with a default value if the original column is null.
-    """
-
-    def wrap(col):
-        return fn.coalesce(col, default)
-
-    return wrap
 
 
 def flatten_nested_values(column):
