@@ -12,7 +12,8 @@ from pyspark.sql.types import (
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    backup_col, data_type_of, flatten_nested_values, suffix_col, with_nested_column, with_nested_column_renamed
+    backup_col, data_type_of, flatten_nested_values, suffix_col, with_nested_column, with_nested_column_renamed,
+    drop_nested_column
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
@@ -122,17 +123,7 @@ class BaseRule(Rule):
         if '[]' not in column:
             return df.transform(error_state.add_errors(self.func(**func_params), column, details=self.details))
 
-        if column.endswith('[]'):
-            indexes = fn.transform(fn.col(column[:-2]), self.func)
-        else:
-            root, *nested = column.split('[].')
-
-            def nested_value(x):
-                for part in nested[0].split('.'):
-                    x = x[part]
-                return self.func(x)
-
-            indexes = fn.transform(fn.col(root), nested_value)
+        indexes = fn.transform(flatten_nested_values(column), self.func)
         return df.transform(error_state.add_errors(indexes, column, details=self.details))
 
 
@@ -141,31 +132,10 @@ def rule(func, **kwargs) -> BaseRule:
 
 
 def required() -> Rule:
-    class NewRule(BaseRule):
-        """
-        Rule to check if a column is required (not null)
-        """
-
-        def __init__(self):
-            super().__init__(
-                lambda col_expr: fn.isnull(col_expr),  # pylint: disable=unnecessary-lambda
-                details=errors.MISSING
-            )
-
-        def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-            if '[]' in column:
-                return super().verify(df, column, error_state)
-
-            mask = fn.isnull(fn.col(column))
-            try:
-                data_type_of(df, column)
-            except Exception:  # pylint: disable=broad-except
-                df = df.transform(with_nested_column(column, fn.lit(None)))
-                mask = fn.lit(True)
-
-            return df.transform(error_state.add_errors(mask, column, details=errors.MISSING))
-
-    return NewRule()
+    return rule(
+        lambda col_expr: fn.isnull(col_expr),  # pylint: disable=unnecessary-lambda
+        details=errors.MISSING
+    )
 
 
 def equal_to(eq: Any) -> Rule:
@@ -331,33 +301,16 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
         if column in allowed:
             return df
 
-        bak_col = backup_col(column, error_state)
-
+        backup_column = backup_col(column, error_state)
         if '[]' in column and not column.endswith('[]'):
-            root, *nested_names = column.split('[].')
-            nested_names = nested_names[0].split('.')
-
-            def nested_value(x):
-                for part in nested_names:
-                    x = x[part]
-                return x
-
-            def drop_nested_column(x, nodes):
-                if len(nodes) <= 1:
-                    return x.dropFields(nodes[0])
-
-                return x.withField(
-                    nodes[0],
-                    drop_nested_column(x[nodes[0]], nodes[1:]))
-
             return df \
-                .transform(with_nested_column(bak_col, fn.transform(fn.col(root), nested_value))) \
-                .transform(with_nested_column(root + '[]', lambda x: drop_nested_column(x, nested_names))) \
-                .transform(error_state.add_errors(fn.transform(fn.col(root), lambda x: fn.lit(True)),
+                .transform(with_nested_column(backup_column, flatten_nested_values(column))) \
+                .transform(drop_nested_column(column)) \
+                .transform(error_state.add_errors(fn.transform(fn.col(column.split('[]')[0]), lambda x: fn.lit(True)),
                                                   column, details=errors.EXTRA_FORBIDDEN))
 
         return df \
-            .transform(with_nested_column_renamed(column.removesuffix('[]'), bak_col)) \
+            .transform(with_nested_column_renamed(column.removesuffix('[]'), backup_column)) \
             .transform(error_state.add_errors(fn.lit(True), column, details=errors.EXTRA_FORBIDDEN))
 
     return verify
@@ -408,7 +361,7 @@ def date_parsing() -> Rule:
 def time_parsing() -> Rule:
     time_regex = \
         r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$'
-    return ComplexStringTypeRule(
+    return ComplexTypeRule(
         lambda col: fn.when(col.rlike(time_regex), col),
         StringType, (StringType,), errors.TIME_TYPE, errors.TIME_PARSING
     )
@@ -416,7 +369,7 @@ def time_parsing() -> Rule:
 
 def duration_parsing() -> Rule:
     duration_regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
-    return ComplexStringTypeRule(
+    return ComplexTypeRule(
         lambda col: fn.when(col.rlike(duration_regex), col),
         StringType, (StringType,), errors.DURATION_TYPE, errors.DURATION_PARSING
     )
@@ -424,7 +377,7 @@ def duration_parsing() -> Rule:
 
 def uuid_parsing() -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-    return ComplexStringTypeRule(
+    return ComplexTypeRule(
         lambda col: fn.when(fn.lower(col).rlike(uuid_regex), fn.lower(col)),
         StringType, (StringType,), errors.UUID_TYPE, errors.UUID_PARSING
     )
@@ -432,7 +385,7 @@ def uuid_parsing() -> Rule:
 
 def ipv4_address() -> Rule:
     ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
-    return ComplexStringTypeRule(
+    return ComplexTypeRule(
         lambda col: fn.when(col.rlike(ipv4_regex), col),
         StringType, (StringType,), errors.IPV4, errors.IPV4
     )
@@ -450,7 +403,7 @@ def ipv6_address() -> Rule:
         r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
         r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
     )
-    return ComplexStringTypeRule(
+    return ComplexTypeRule(
         lambda col: fn.when(col.rlike(ipv6_regex), col),
         StringType, (StringType,), errors.IPV6, errors.IPV6
     )
@@ -464,7 +417,7 @@ def uri_parsing() -> Rule:
         r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$"
     )
 
-    return ComplexStringTypeRule(
+    return ComplexTypeRule(
         lambda col: fn.when(col.rlike(uri_regex), col),
         StringType, (StringType,), errors.URI_TYPE, errors.URI_PARSING
     )
@@ -521,7 +474,7 @@ class DataTypeRule(Rule):
                                               details=self.parsing_error_details))
 
     def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
-        backup_column = backup_col(column, error_state) + '_array'
+        backup_column = backup_col(column, error_state)
         df = df.withColumn(backup_column, flatten_nested_values(column))
         if not isinstance(element_type, self.supported_cast_dtypes):
             indexes = fn.transform(fn.col(column.split('[]')[0]), lambda x: fn.lit(True))
@@ -551,7 +504,7 @@ class DataTypeRule(Rule):
         return df.transform(with_nested_column(column, self.caster))
 
 
-class ComplexStringTypeRule(DataTypeRule):
+class ComplexTypeRule(DataTypeRule):
     """
     Class for casting to complex string types
     """
@@ -658,7 +611,8 @@ class ArrayTypeRule(DataTypeRule):
         return self.struct_type
 
     def _cast_scalar(self, df, column, data_type, backup_column, error_state):  # pylint: disable=too-many-arguments
-        return df.transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type)))
+        # same issue as in ObjectTypeRule._cast_scalar with from_json not returning null for malformed JSON
+        return df.transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type)))  # FIXME
 
     @staticmethod
     def parse_array_type(schema) -> ArrayType:

@@ -12,7 +12,10 @@ def backup_col(column, error_state):
     Build a backup column name for a given column
     """
 
-    return f'{suffix_col(column, error_state)}_bak'
+    bak = f'{suffix_col(column, error_state)}_bak'
+    if '[]' in column:
+        return f'{bak}_array'
+    return bak
 
 
 def suffix_col(column, error_state):
@@ -207,6 +210,26 @@ def with_nested_column(  # pylint: disable=too-many-statements
             return df.withColumn(
                 root, fn.transform(fn.col(root), lambda x: build_struct(field_names, nested_names, root + '[]', x)))
         return df.withColumn(root, build_struct(field_names, nested_names, root, fn.col(root)))
+
+    return transform
+
+
+def drop_nested_column(column: str) -> Callable[[DataFrame], DataFrame]:
+    """
+    Drop a nested column from a struct column in a DataFrame.
+    """
+
+    def transform(df: DataFrame) -> DataFrame:
+        root, *nested = column.split('[].')
+
+        def drop(x, nodes):
+            if len(nodes) <= 1:
+                return x.dropFields(nodes[0])
+
+            return x.withField(nodes[0], drop(x[nodes[0]], nodes[1:]))
+
+        return df \
+            .transform(with_nested_column(root + '[]', lambda x: drop(x, nested[0].split('.'))))
 
     return transform
 
