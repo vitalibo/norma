@@ -4,11 +4,8 @@
 
 Norma is a data validation framework designed for Pandas and PySpark DataFrames, leveraging JSON Schema or a Python API
 to enforce data integrity.
-By applying predefined validation rules, it systematically identifies inconsistencies without disrupting the data
-pipeline.
-Instead of halting execution upon encountering invalid data, Norma introduces a dedicated errors column to capture
-validation details while resetting erroneous values to null.
-This approach ensures a resilient, declarative, and non-intrusive method for maintaining data quality at scale.
+Unlike traditional validation libraries that halt execution on errors, Norma introduces a **resilient, non-intrusive
+approach** that captures validation details in a dedicated errors column while resetting erroneous values to null.
 
 ### Install
 
