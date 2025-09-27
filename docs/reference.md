@@ -3,11 +3,11 @@
 This section provides a comprehensive reference for all rules available in Norma.
 Each rule is documented with its purpose, options, and examples of correct and incorrect code.
 
-## Data types conventions
+## Data Type Conventions
 
-In JSON schema, data type of property can be defined using the `type` keyword.
-Norma provides rules to enforce consistent conventions for data types.
-Unlike JSON schema, Norma does coerce other types to the specified type.
+In JSON Schema, the data type of property is defined using the `type` keyword.
+Norma's rules enforce consistent type conventions across your datasets.
+Unlike JSON Schema, Norma attempts to coerce incoming values into the specified type before validation.
 
 - `array`
 - `boolean`
@@ -16,7 +16,10 @@ Unlike JSON schema, Norma does coerce other types to the specified type.
 - `object`
 - `string`
 
-These types have corresponding engine-specific types
+Each section below includes a conversion table that shows sample inputs, their inferred types, the resulting values,
+and any errors raised during coercion.
+
+These types have corresponding engine-specific types:
 
 | JSON    | Python API | Pandas         | PySpark |
 |---------|------------|----------------|---------|
@@ -27,10 +30,10 @@ These types have corresponding engine-specific types
 | object  | object     | object         | struct  |
 | string  | str        | string[python] | string  |
 
-Unlike JSON schema, Norma does not fully support union types (i.e. `type` as an array).
-The exception is `null`, which means that the property can be nullable.
+Unlike JSON Schema, Norma does not fully support union types (i.e. `type` as an array).
+The exception is `null`, which allows properties to be nullable.
 
-Here are some examples of data type rules defined in JSON schema:
+Here are some examples of data type rules defined in JSON Schema:
 
 ```json
 {
@@ -84,7 +87,9 @@ from norma.schema import Column
 Column(bool)
 ```
 
-Use below transformation matrix to coerce other types to `boolean`:
+Norma accepts common truthy and falsy strings or numbers when coercing to `boolean`.
+
+Use the table below to coerce other types to `boolean`:
 
 | Input                                                                  | Type                                           | Output  | Error          | Reason                                                     |
 |------------------------------------------------------------------------|------------------------------------------------|---------|----------------|------------------------------------------------------------|
@@ -120,7 +125,7 @@ from norma.schema import Column
 Column(int)
 ```
 
-Use below transformation matrix to coerce other types to `integer`:
+Use the table below to coerce other types to `integer`:
 
 | Input                              | Type                                           | Output | Error         | Reason                                                                |
 |------------------------------------|------------------------------------------------|--------|---------------|-----------------------------------------------------------------------|
@@ -155,7 +160,7 @@ from norma.schema import Column
 Column(float)
 ```
 
-Use below transformation matrix to coerce other types to `number`:
+Use the table below to coerce other types to `number`:
 
 | Input                              | Type                                           | Output   | Error           | Reason                                                             |
 |------------------------------------|------------------------------------------------|----------|-----------------|--------------------------------------------------------------------|
@@ -189,7 +194,9 @@ from norma.schema import Column
 Column(str)
 ```
 
-Use below transformation matrix to coerce other types to `string`:
+Non-string inputs are stringified using their canonical representations when coercion succeeds.
+
+Use the table below to coerce other types to `string`:
 
 | Input                              | Type                                                          | Output                   | Error         | Reason                         |
 |------------------------------------|---------------------------------------------------------------|--------------------------|---------------|--------------------------------|
@@ -205,9 +212,9 @@ Use below transformation matrix to coerce other types to `string`:
 
 The `array` type is used to represent ordered lists of values of the same type.
 
-> **Note:** Currently, only pyspark arrays are supported.
+> **Note:** Currently, only PySpark arrays are supported.
 
-Nested type of array items can be any supported Norma type, except `array`, i.e. arrays of arrays are not supported yet.
+Array elements can be any supported Norma type except another `array`; nested arrays are not yet supported.
 
 **JSON Schema**
 
@@ -228,7 +235,9 @@ from norma.schema import Column
 Column(list, inner_schema=Column(str))
 ```
 
-Use below transformation matrix to coerce other types to `array`:
+JSON-formatted strings are parsed into arrays when possible; other scalar types raise errors.
+
+Use the table below to coerce other types to `array`:
 
 | Input                                         | Type                                           | Output          | Error           | Reason                                                            |
 |-----------------------------------------------|------------------------------------------------|-----------------|-----------------|-------------------------------------------------------------------|
@@ -243,7 +252,7 @@ Use below transformation matrix to coerce other types to `array`:
 
 The `object` type is used to represent structured data with key-value pairs.
 
-> **Note:** Currently, only pyspark structs are supported.
+> **Note:** Currently, only PySpark structs are supported.
 
 **JSON Schema**
 
@@ -268,7 +277,9 @@ Column(object, inner_schema=Schema({
 }))
 ```
 
-Use below transformation matrix to coerce other types to `object`:
+JSON-formatted strings are parsed into objects when possible; non-mapping inputs raise type errors.
+
+Use the table below to coerce other types to `object`:
 
 | Input                                         | Type                                          | Output          | Error            | Reason                                                              |
 |-----------------------------------------------|-----------------------------------------------|-----------------|------------------|---------------------------------------------------------------------|
@@ -278,17 +289,17 @@ Use below transformation matrix to coerce other types to `object`:
 | `"foo"`                                       | `string`                                      | `null`          | `object_parsing` | Input should be a valid object, unable to parse string as an object |
 | `123`<br>`1.23`<br>`false`<br>`["foo","bar"]` | `integer`<br>`number`<br>`boolean`<br>`array` | `null`          | `object_type`    | Input should be a valid object                                      |
 
-## Data types with formats
+## Data Types with Formats
 
-In addition to basic data types, Norma supports the `format` keyword to define semantic information about the data.
-Formats are string type extensions that validate specific patterns or structures.
+In addition to the basic data types, Norma supports the `format` keyword to capture semantic information about a value.
+Formats extend the base `string` type to validate specific patterns or structures (for example, RFC 3339 timestamps).
 
-All format types are string-based and extend main type with additional validation.
-The format is specified using the `format` keyword in JSON Schema or by using specific type names in the Python API.
+All format types are string-based and add stricter validation to the main type.
+Specify the format with the `format` keyword in JSON Schema or by using the corresponding type name in the Python API.
 
 Norma supports the following format types based on JSON Schema:
 
-- `data-time`
+- `date-time`
 - `date`
 - `time`
 - `duration`
@@ -297,11 +308,11 @@ Norma supports the following format types based on JSON Schema:
 - `uri`
 - `uuid`
 
-These types have corresponding engine-specific types
+These types have corresponding engine-specific types:
 
 | JSON      | Python API | Pandas         | PySpark   |
 |-----------|------------|----------------|-----------|
-| data-time | datetime   | datetime64[ns] | timestamp |
+| date-time | datetime   | datetime64[ns] | timestamp |
 | date      | date       | datetime64[D]  | date      |
 | time      | time       | string[python] | string    |
 | duration  | duration   | string[python] | string    |
@@ -310,7 +321,7 @@ These types have corresponding engine-specific types
 | uri       | str        | string[python] | string    |
 | uuid      | str        | string[python] | string    |
 
-Here are some examples of format rules defined in JSON schema:
+Here are some examples of format rules defined in JSON Schema:
 
 ```json
 {
@@ -356,7 +367,7 @@ from norma.schema import Column
 Column('datetime')
 ```
 
-Use below transformation matrix to coerce other types to `date-time`:
+Use the table below to coerce other types to `date-time`:
 
 | Input                                                 | Type                                          | Output                       | Error              | Reason                                                                 |
 |-------------------------------------------------------|-----------------------------------------------|------------------------------|--------------------|------------------------------------------------------------------------|
@@ -388,7 +399,7 @@ from norma.schema import Column
 Column('date')
 ```
 
-Use below transformation matrix to coerce other types to `date`:
+Use the table below to coerce other types to `date`:
 
 | Input                                                 | Type                                          | Output         | Error          | Reason                                                         |
 |-------------------------------------------------------|-----------------------------------------------|----------------|----------------|----------------------------------------------------------------|
@@ -420,7 +431,7 @@ from norma.schema import Column
 Column('time')
 ```
 
-Use below transformation matrix to coerce other types to `time`:
+Use the table below to coerce other types to `time`:
 
 | Input                                                 | Type                                          | Output            | Error          | Reason                                                         |
 |-------------------------------------------------------|-----------------------------------------------|-------------------|----------------|----------------------------------------------------------------|
@@ -452,7 +463,7 @@ from norma.schema import Column
 Column('duration')
 ```
 
-Use below transformation matrix to coerce other types to `duration`:
+Use the table below to coerce other types to `duration`:
 
 | Input                                                 | Type                                          | Output    | Error              | Reason                                                                 |
 |-------------------------------------------------------|-----------------------------------------------|-----------|--------------------|------------------------------------------------------------------------|
@@ -485,7 +496,7 @@ from norma.schema import Column
 Column('ipv4')
 ```
 
-Use below transformation matrix to coerce other types to `ipv4`:
+Use the table below to coerce other types to `ipv4`:
 
 | Input                                                 | Type                                          | Output          | Error          | Reason                            |
 |-------------------------------------------------------|-----------------------------------------------|-----------------|----------------|-----------------------------------|
@@ -496,7 +507,7 @@ Use below transformation matrix to coerce other types to `ipv4`:
 
 #### `ipv6`
 
-The `ipv6` format represents IPv6 address as defined in RFC 4291
+The `ipv6` format validates compressed or full IPv6 literals as defined in RFC 4291.
 
 **JSON Schema**
 
@@ -515,7 +526,7 @@ from norma.schema import Column
 Column('ipv6')
 ```
 
-Use below transformation matrix to coerce other types to `ipv6`:
+Use the table below to coerce other types to `ipv6`:
 
 | Input                                                 | Type                                          | Output                             | Error          | Reason                            |
 |-------------------------------------------------------|-----------------------------------------------|------------------------------------|----------------|-----------------------------------|
@@ -528,7 +539,8 @@ Use below transformation matrix to coerce other types to `ipv6`:
 
 #### `uri`
 
-The `uri` format represents URI (Uniform Resource Identifier) according to RFC 3986.
+The `uri` format validates Uniform Resource Identifiers as defined in RFC 3986 (absolute or relative with optional query
+and fragment).
 
 **JSON Schema**
 
@@ -547,7 +559,7 @@ from norma.schema import Column
 Column('uri')
 ```
 
-Use below transformation matrix to coerce other types to `uri`:
+Use the table below to coerce other types to `uri`:
 
 | Input                                                 | Type                                          | Output                           | Error         | Reason                                                       |
 |-------------------------------------------------------|-----------------------------------------------|----------------------------------|---------------|--------------------------------------------------------------|
@@ -559,7 +571,7 @@ Use below transformation matrix to coerce other types to `uri`:
 
 #### `uuid`
 
-The `uuid` format represents UUID (Universally Unique Identifier) according to RFC 4122.
+The `uuid` format represents UUIDv4 (Universally Unique Identifier) according to RFC 4122.
 
 **JSON Schema**
 
@@ -578,7 +590,7 @@ from norma.schema import Column
 Column('uuid')
 ```
 
-Use below transformation matrix to coerce other types to `uuid`:
+Use the table below to coerce other types to `uuid`:
 
 | Input                                                 | Type                                          | Output                                   | Error          | Reason                                                         |
 |-------------------------------------------------------|-----------------------------------------------|------------------------------------------|----------------|----------------------------------------------------------------|
@@ -589,7 +601,7 @@ Use below transformation matrix to coerce other types to `uuid`:
 
 ## Value constraints
 
-In addition to data types conversion, Norma supports various constraints to enforce specific rules on the values of
+In addition to data type conversions, Norma supports various constraints to enforce specific rules on the values of
 properties.
 
 These constraints can be applied to different data types and include:
@@ -606,6 +618,9 @@ These constraints can be applied to different data types and include:
 - `minItems` / `maxItems`
 - `uniqueItems`
 - `not`
+
+The examples that follow demonstrate each constraint in JSON Schema and the Python API, alongside representative inputs
+so you can see how Norma evaluates real data.
 
 #### `required`
 

@@ -17,8 +17,7 @@ pip install 'git+https://github.com/vitalibo/norma.git'
 
 ### Quick Start
 
-First, let's create a validation Schema.
-To do this, we can use a JSON Schema.
+First, create a validation schema from JSON Schema:
 
 ```json
 {
@@ -61,7 +60,7 @@ from norma.schema import Schema
 schema = Schema.from_json_schema({... see above ...})
 ```
 
-or, we can use a Python API.
+alternatively, build the schema with the Python API:
 
 ```python
 from norma.schema import Column, Schema
@@ -89,7 +88,7 @@ df = pd.DataFrame({
 })
 ```
 
-or same for PySpark DataFrame.
+or, you can create the same example as a PySpark DataFrame:
 
 ```python
 from pyspark.sql import SparkSession
@@ -103,7 +102,7 @@ df = spark_session.createDataFrame([
 ], ['name', 'age', 'sex', 'email'])
 ```
 
-And validate it.
+Finally, validate the dataframe:
 
 ```python
 actual = schema.validate(df)
@@ -198,6 +197,10 @@ Norma supports a variety of validation rules, including:
 | `uri_parsing`        | ✅      | ✅       | ✅               | ✅              |
 | `object_parsing`     | ❌      | ✅       | ✅               | ✅              |
 | `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
+
+✅ - supported
+❌ - not supported
+➖ - not applicable
 
 ### Errors
 
