@@ -60,11 +60,7 @@ class ErrorState(IErrorState):
             return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
 
         def transform(df):
-            # hack to infer the data type of the column,
-            # and based on that choose the right function
-            tmp_df = df.withColumn(f'{suffix}_tmp', boolmask)
-            tmp_data_type = data_type_of(tmp_df, f'{suffix}_tmp')
-            if tmp_data_type.simpleString() == 'array<boolean>':
+            if '[]' in column:
                 return array_strategy(df)
             return default_strategy(df)
 
