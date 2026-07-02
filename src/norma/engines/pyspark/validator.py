@@ -3,9 +3,7 @@ from pyspark.sql import functions as fn
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, extra_forbidden
-from norma.engines.pyspark.utils import (
-    backup_col, data_type_of, flatten_nested_values, nested_get_expr, nested_set_expr, suffix_col, with_nested_column
-)
+from norma.engines.pyspark.utils import dtype_at, nested_get_expr, nested_set_expr
 
 
 def validate(
@@ -25,6 +23,7 @@ def validate(
 
     df = _validate(df, schema, error_state, original_cols)
     df = error_state.flush(df)
+
     df = _format_error_details(df, error_state)
     df = _nullify_invalid_values(df, schema, error_state)
     df = _fill_defaults(df, schema)
@@ -35,10 +34,6 @@ def validate(
 def _apply_rule(df, rule, column, error_state):
     """
     Apply a single rule to the DataFrame.
-
-    Rules that accumulate expressions record into the error state; rules that transform
-    the DataFrame directly are fenced by materializing the pending state before and
-    refreshing the schema knowledge after.
     """
 
     if isinstance(rule, norma.rules.RuleProxy):
@@ -175,7 +170,7 @@ def _nullify_invalid_values(df, schema, error_state):
         return x.withField(nodes[0], nested_zip(x.getField(nodes[0]), y, nodes[1:]))
 
     for name, _ in reversed(schema.nested_columns.items()):
-        suffix = suffix_col(name, error_state)
+        suffix = error_state.register_or_get_suffix(name)
         if '[]' not in name:
             set_expr(name, fn.when(fn.array_size(fn.col(f'{error_column}_{suffix}')) <= 0, expr_of(name)))
         elif f'{suffix}_indexes' in df.columns:
@@ -217,15 +212,16 @@ def _fill_defaults(df, schema):
             set_expr(name, default_if_null(default_as_lit(col)))
     df = apply(df)
 
-    # default factories receive the DataFrame and may read sibling columns whose defaults
-    # were applied by earlier iterations, so they stay as sequential transforms
     for name, col in schema.nested_columns.items():
         if col.default_factory is None:
             continue
+        root = name.split('.')[0].removesuffix('[]')
+        dtype = df.schema[root].dataType if root in df.columns else None
         if '[]' not in name:
-            df = df.transform(with_nested_column(name, fn.coalesce(fn.col(name), col.default_factory(df))))
+            val = fn.coalesce(fn.col(name), col.default_factory(df))
         else:
-            df = df.transform(with_nested_column(name, default_if_null(col.default_factory(df))))
+            val = default_if_null(col.default_factory(df))
+        df = df.withColumn(root, nested_set_expr(name, val, None, dtype))
 
     return df
 
@@ -243,12 +239,12 @@ def _make_origin(df, column, error_state):
             return null.otherwise(fn.to_json(value))
         return null.otherwise(value.cast('string'))
 
-    backup_column = backup_col(column, error_state)
+    backup_column = error_state.backup_col_name(column)
     if backup_column in df.columns:
         column = backup_column
 
-    dtype = data_type_of(df, column).typeName()
+    dtype = dtype_at(df.schema, column).typeName()
 
     if '[]' in column:
-        return format_value(flatten_nested_values(column), 'array')
+        return format_value(nested_get_expr(column), 'array')
     return format_value(fn.col(column), dtype)

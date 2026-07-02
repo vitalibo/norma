@@ -242,7 +242,7 @@
           "col": {
             "dtype": "str",
             "rules": {
-              "expr": "rules.rule(lambda df, col, error_state: df.transform(error_state.add_errors(fn.col(col) != 'foo', col, details={'type': 'custom_error', 'msg': 'column must equal foo'})))"
+              "expr": "rules.rule(lambda df, col, error_state: (error_state.add_errors(fn.col(col) != 'foo', col, details={'type': 'custom_error', 'msg': 'column must equal foo'}), df)[1])"
             }
           }
         }

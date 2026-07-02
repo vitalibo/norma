@@ -1,5 +1,7 @@
 import inspect
 import json
+import random
+import string
 from functools import reduce
 from typing import Any, Iterable
 
@@ -11,9 +13,7 @@ from pyspark.sql.types import (
 )
 
 from norma import errors
-from norma.engines.pyspark.utils import (
-    backup_col, dtype_drop, dtype_set, nested_drop_expr, nested_get_expr, nested_set_expr, suffix_col
-)
+from norma.engines.pyspark.utils import dtype_drop, dtype_set, nested_drop_expr, nested_get_expr, nested_set_expr
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
@@ -60,6 +60,30 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
         self.created_roots = []
         self.dropped_roots = set()
 
+    def register_or_get_suffix(self, column: str) -> str:
+        """
+        Return the suffix for a given column, registering a new unique one on first use.
+        """
+
+        if column in self.suffixes:
+            return self.suffixes[column]
+
+        while True:
+            suffix = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+            if suffix not in self.suffixes.values():
+                self.suffixes[column] = suffix
+                return suffix
+
+    def backup_col_name(self, column: str) -> str:
+        """
+        Build a backup column name for a given column.
+        """
+
+        bak = self.register_or_get_suffix(column)
+        if '[]' in column:
+            return f'{bak}_bak_array'
+        return f'{bak}_bak'
+
     def resync(self, df: DataFrame) -> None:
         """
         Refresh the schema knowledge after a rule transformed the DataFrame directly.
@@ -87,7 +111,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
             selection[root] = self.exprs[root]
 
         for path, pending in self.pending_errors.items():
-            name = f'{self.error_column}_{suffix_col(path, self)}'
+            name = f'{self.error_column}_{self.register_or_get_suffix(path)}'
             if path in self.initialized_errors:
                 arr = fn.array(*pending).cast(self._details_dtype()) if pending else self._empty_errors_details()
             else:
@@ -98,14 +122,14 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
                 selection[name] = arr
 
         for path, indexes in self.pending_indexes.items():
-            name = f'{suffix_col(path, self)}_indexes'
+            name = f'{self.register_or_get_suffix(path)}_indexes'
             if name in existing:
                 selection[name] = fn.zip_with(fn.col(name), indexes, lambda x, y: x | y)
             else:
                 selection[name] = indexes
 
         for path, backup in self.pending_backups.items():
-            selection[backup_col(path, self)] = backup
+            selection[self.backup_col_name(path)] = backup
 
         result = df.select(*(expr.alias(name) for name, expr in selection.items()))
         self.seed(result)
@@ -120,7 +144,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
     def dtype_of(self, column: str) -> DataType:
         """
-        Return the current data type of a column, mirroring data_type_of on the symbolic state.
+        Return the current data type of a column, mirroring dtype_at on the symbolic state.
         """
 
         def data_type(dtype, col):
@@ -205,14 +229,15 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
         if column in self.pending_backups:
             return self.pending_backups[column]
-        return fn.col(backup_col(column, self))
+        return fn.col(self.backup_col_name(column))
 
-    def record_errors(self, boolmask: Column, column: str, details) -> None:
+    def add_errors(self, boolmask: Column, column: str, details=None, **kwargs) -> None:
         """
         Record an error detail expression for a column (True values in the boolmask indicate errors).
         """
 
-        details = dict(details)
+        self.register_or_get_suffix(column)
+        details = dict(details or kwargs.get('details') or {})
         details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
 
         if '[]' in column:
@@ -233,16 +258,6 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
         self.pending_errors.setdefault(column, []).append(details_col)
 
-    def add_errors(self, boolmask: Column, column: str, **kwargs):
-        details = kwargs.get('details')
-
-        def transform(df):
-            self.record_errors(boolmask, column, details)
-            return df
-
-        suffix_col(column, self)
-        return transform
-
     def initialize_column(self, df, column):
         try:
             self.dtype_of(column)
@@ -250,7 +265,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
             self.set_expr(column, fn.lit(None).cast('void'))
             self.set_dtype(column, NullType())
 
-        suffix_col(column, self)
+        self.register_or_get_suffix(column)
         self.pending_errors.setdefault(column, [])
         self.initialized_errors.add(column)
         return df
@@ -330,11 +345,11 @@ class BaseRule(Rule):
                 # the rule builds fn.col(name) itself: the name must resolve to the current value
                 df = error_state.flush(df)
             boolmask = self.func(**inspect_params(self.func, error_state.expr_of(column)))
-            error_state.record_errors(boolmask, column, self.details)
+            error_state.add_errors(boolmask, column, self.details)
             return df
 
         indexes = fn.transform(error_state.expr_of(column), self.func)
-        error_state.record_errors(indexes, column, self.details)
+        error_state.add_errors(indexes, column, self.details)
         return df
 
 
@@ -516,13 +531,13 @@ class ExtraForbiddenRule(Rule):
         error_state.set_backup(column)
         if '[]' in column and not column.endswith('[]'):
             error_state.drop_column(column)
-            error_state.record_errors(
+            error_state.add_errors(
                 fn.transform(error_state.expr_of(column.split('[]')[0]), lambda x: fn.lit(True)),
                 column, errors.EXTRA_FORBIDDEN)
             return df
 
         error_state.drop_column(column.removesuffix('[]'))
-        error_state.record_errors(fn.lit(True), column, errors.EXTRA_FORBIDDEN)
+        error_state.add_errors(fn.lit(True), column, errors.EXTRA_FORBIDDEN)
         return df
 
 
@@ -680,7 +695,7 @@ class DataTypeRule(Rule):
         if not isinstance(data_type, self.supported_cast_dtypes):
             error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()))
             error_state.set_dtype(column, self._target_dtype())
-            error_state.record_errors(fn.lit(True), column, self.type_error_details)
+            error_state.add_errors(fn.lit(True), column, self.type_error_details)
             return df
 
         self._cast_scalar(column, data_type, error_state)
@@ -688,7 +703,7 @@ class DataTypeRule(Rule):
         if not self.parsing_error_details:
             return df
 
-        error_state.record_errors(
+        error_state.add_errors(
             fn.isnull(error_state.expr_of(column)) & fn.isnotnull(error_state.backup_expr(column)),
             column, self.parsing_error_details)
         return df
@@ -699,7 +714,7 @@ class DataTypeRule(Rule):
             indexes = fn.transform(error_state.expr_of(column.split('[]')[0]), lambda x: fn.lit(True))
             error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()))
             error_state.set_dtype(column, self._target_dtype())
-            error_state.record_errors(indexes, column, self.type_error_details)
+            error_state.add_errors(indexes, column, self.type_error_details)
             return df
 
         self._cast_array(column, element_type, error_state)
@@ -710,7 +725,7 @@ class DataTypeRule(Rule):
         actual_values = error_state.expr_of(column)
         indexes = fn.zip_with(
             actual_values, error_state.backup_expr(column), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
-        error_state.record_errors(indexes, column, self.parsing_error_details)
+        error_state.add_errors(indexes, column, self.parsing_error_details)
         return df
 
     def _is_valid_dtype(self, data_type) -> bool:

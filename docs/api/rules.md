@@ -181,7 +181,6 @@ or, by subclassing `norma.rules.Rule`:
 ```python
 from norma.rules import Rule
 from norma.schema import Schema, Column
-from norma.engines.pyspark.utils import flatten_nested_values
 
 from pyspark.sql import functions as fn
 
@@ -197,13 +196,13 @@ class MyRule(Rule):
         }
 
         if "[]" not in column:
-            return df.transform(
-                error_state.add_errors(func(fn.col(column)), column, details=details))
+            error_state.add_errors(func(fn.col(column)), column, details=details)
+            return df
 
         # handle cases where the column is an array
-        return df.transform(
-            error_state.add_errors(
-                fn.transform(flatten_nested_values(column), func), column, details=details))
+        error_state.add_errors(
+            fn.transform(error_state.expr_of(column), func), column, details=details)
+        return df
 
 
 schema = Schema({
