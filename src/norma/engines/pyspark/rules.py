@@ -6,22 +6,26 @@ from typing import Any, Iterable
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
 from pyspark.sql.types import (
-    ArrayType, BooleanType, DataType, DateType, FloatType, IntegerType, MapType, NumericType, StringType, StructField,
-    StructType, TimestampType
+    ArrayType, BooleanType, DataType, DateType, FloatType, IntegerType, MapType, NullType, NumericType, StringType,
+    StructField, StructType, TimestampType
 )
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    backup_col, data_type_of, drop_nested_column, flatten_nested_values, suffix_col, with_nested_column,
-    with_nested_column_renamed
+    backup_col, dtype_drop, dtype_set, nested_drop_expr, nested_get_expr, nested_set_expr, suffix_col
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
 
-class ErrorState(IErrorState):
+class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
     """
-    Error state for PySpark DataFrame validation
+    Error state for PySpark DataFrame validation.
+
+    Acts as a symbolic accumulator: rules record value/error expressions into the state
+    instead of transforming the DataFrame, and the state is materialized into a single
+    projection by flush(). This keeps the number of Project nodes in the logical plan
+    constant regardless of the number of columns and rules.
 
     :param error_column: The name of the column to store error information
     """
@@ -31,58 +35,239 @@ class ErrorState(IErrorState):
         self.has_array = self._has_array_column(schema)
         self.suffixes = {}
 
-    def add_errors(self, boolmask: Column, column: str, **kwargs):
-        def array_strategy(df):
-            indexes_col = f'{suffix}_indexes'
-            if indexes_col not in df.columns:
-                df = df.withColumn(indexes_col, boolmask)
-            else:
-                df = df.withColumn(indexes_col, fn.zip_with(fn.col(indexes_col), boolmask, lambda x, y: x | y))
+        self.exprs = {}
+        self.dtypes = {}
+        self.input_columns = []
+        self.pending_errors = {}
+        self.pending_indexes = {}
+        self.pending_backups = {}
+        self.initialized_errors = set()
+        self.created_roots = []
+        self.dropped_roots = set()
 
-            details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
+    def seed(self, df: DataFrame) -> None:
+        """
+        Reset the symbolic accumulation state to reflect the given DataFrame.
+        """
+
+        self.exprs = {}
+        self.dtypes = {field.name: field.dataType for field in df.schema.fields}
+        self.input_columns = df.columns
+        self.pending_errors = {}
+        self.pending_indexes = {}
+        self.pending_backups = {}
+        self.initialized_errors = set()
+        self.created_roots = []
+        self.dropped_roots = set()
+
+    def resync(self, df: DataFrame) -> None:
+        """
+        Refresh the schema knowledge after a rule transformed the DataFrame directly.
+        """
+
+        self.dtypes = {field.name: field.dataType for field in df.schema.fields}
+        self.input_columns = df.columns
+
+    def flush(self, df: DataFrame) -> DataFrame:  # pylint: disable=too-many-branches
+        """
+        Materialize all pending symbolic state into the DataFrame using a single projection.
+        """
+
+        if not any((self.exprs, self.pending_errors, self.pending_indexes,
+                    self.pending_backups, self.created_roots, self.dropped_roots)):
+            return df
+
+        existing = set(df.columns)
+        selection = {}
+        for column in df.columns:
+            if column in self.dropped_roots:
+                continue
+            selection[column] = self.exprs.get(column, fn.col(column))
+        for root in self.created_roots:
+            selection[root] = self.exprs[root]
+
+        for path, pending in self.pending_errors.items():
+            name = f'{self.error_column}_{suffix_col(path, self)}'
+            if path in self.initialized_errors:
+                arr = fn.array(*pending).cast(self._details_dtype()) if pending else self._empty_errors_details()
+            else:
+                arr = fn.array(*pending)
+            if name in existing:
+                selection[name] = fn.concat(fn.col(name), arr) if pending else fn.col(name)
+            else:
+                selection[name] = arr
+
+        for path, indexes in self.pending_indexes.items():
+            name = f'{suffix_col(path, self)}_indexes'
+            if name in existing:
+                selection[name] = fn.zip_with(fn.col(name), indexes, lambda x, y: x | y)
+            else:
+                selection[name] = indexes
+
+        for path, backup in self.pending_backups.items():
+            selection[backup_col(path, self)] = backup
+
+        result = df.select(*(expr.alias(name) for name, expr in selection.items()))
+        self.seed(result)
+        return result
+
+    def expr_of(self, column: str) -> Column:
+        """
+        Return the current value expression of a column (flattened values for array columns).
+        """
+
+        return nested_get_expr(column, self.exprs.get(self._root_of(column)))
+
+    def dtype_of(self, column: str) -> DataType:
+        """
+        Return the current data type of a column, mirroring data_type_of on the symbolic state.
+        """
+
+        def data_type(dtype, col):
+            if not isinstance(dtype, StructType):
+                raise ValueError(f'Column "{column}" is not a nested column in the DataFrame schema.')
+            if '[]' in col:
+                return dtype[col[:-2]].dataType.elementType
+            return dtype[col].dataType
+
+        parts = column.split('.')
+        first = parts[0]
+        dtype = self.dtypes[first[:-2] if first.endswith('[]') else first]
+        if first.endswith('[]'):
+            dtype = dtype.elementType
+        for part in parts[1:]:
+            dtype = data_type(dtype, part)
+        return dtype
+
+    def set_expr(self, column: str, val) -> None:
+        """
+        Set the value expression of a (possibly nested) column, rebuilding the root expression.
+        """
+
+        root = self._root_of(column)
+        self.exprs[root] = nested_set_expr(column, val, self.exprs.get(root), self.dtypes.get(root))
+        if root not in self.input_columns and root not in self.created_roots:
+            self.created_roots.append(root)
+
+    def set_dtype(self, column: str, dtype: DataType) -> None:
+        """
+        Update the tracked data type of a (possibly nested) column.
+        """
+
+        parts = column.split('.')
+        first = parts[0]
+        root = first[:-2] if first.endswith('[]') else first
+        rest = '.'.join(parts[1:])
+
+        if first.endswith('[]'):
+            base = self.dtypes.get(root)
+            elem = base.elementType if isinstance(base, ArrayType) else None
+            self.dtypes[root] = ArrayType(dtype_set(elem, rest, dtype) if rest else dtype)
+        elif rest:
+            self.dtypes[root] = dtype_set(self.dtypes.get(root), rest, dtype)
+        else:
+            self.dtypes[root] = dtype
+
+    def drop_column(self, column: str) -> None:
+        """
+        Drop a (possibly nested) column from the symbolic state.
+        """
+
+        parts = column.split('.')
+        first = parts[0]
+        root = first[:-2] if first.endswith('[]') else first
+        rest = '.'.join(parts[1:])
+
+        if not rest:
+            self.dropped_roots.add(root)
+            self.exprs.pop(root, None)
+            self.dtypes.pop(root, None)
+            return
+
+        self.exprs[root] = nested_drop_expr(column, self.exprs.get(root, fn.col(root)), self.dtypes.get(root))
+        if first.endswith('[]'):
+            base = self.dtypes[root]
+            self.dtypes[root] = ArrayType(dtype_drop(base.elementType, rest), base.containsNull)
+        else:
+            self.dtypes[root] = dtype_drop(self.dtypes[root], rest)
+
+    def set_backup(self, column: str) -> None:
+        """
+        Snapshot the current value expression of a column as its backup.
+        """
+
+        self.pending_backups[column] = self.expr_of(column)
+
+    def backup_expr(self, column: str) -> Column:
+        """
+        Return the backup expression of a column (or a reference to the materialized backup column).
+        """
+
+        if column in self.pending_backups:
+            return self.pending_backups[column]
+        return fn.col(backup_col(column, self))
+
+    def record_errors(self, boolmask: Column, column: str, details) -> None:
+        """
+        Record an error detail expression for a column (True values in the boolmask indicate errors).
+        """
+
+        details = dict(details)
+        details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
+
+        if '[]' in column:
             # pylint: disable=unnecessary-lambda
             indexes = fn.filter(fn.transform(boolmask, lambda x, i: fn.when(x, i)), lambda x: x.isNotNull())
             details_lit.append(indexes.alias('loc'))
             details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*details_lit))
 
-            if error_column not in df.columns:
-                df = df.withColumn(error_column, fn.array())
-            return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
-
-        def default_strategy(df):
-            details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
+            prev = self.pending_indexes.get(column)
+            self.pending_indexes[column] = \
+                boolmask if prev is None else fn.zip_with(prev, boolmask, lambda x, y: x | y)
+        else:
             # if DataFrame has at least one array column, we need to add indexes
             # because we cannot append a struct to an array with different types
             if self.has_array:
                 details_lit.append(fn.lit(None).cast('array<int>').alias('loc'))
-
             details_col = fn.when(boolmask, fn.struct(*details_lit))
-            return df.withColumn(error_column, fn.array_append(fn.col(error_column), details_col))
+
+        self.pending_errors.setdefault(column, []).append(details_col)
+
+    def add_errors(self, boolmask: Column, column: str, **kwargs):
+        details = kwargs.get('details')
 
         def transform(df):
-            if '[]' in column:
-                return array_strategy(df)
-            return default_strategy(df)
+            self.record_errors(boolmask, column, details)
+            return df
 
-        suffix = suffix_col(column, self)
-        error_column = f'{self.error_column}_{suffix}'
-        details = dict(kwargs.get('details'))
+        suffix_col(column, self)
         return transform
 
     def initialize_column(self, df, column):
         try:
-            data_type_of(df, column)
+            self.dtype_of(column)
         except KeyError:
-            df = df.transform(with_nested_column(column, fn.lit(None).cast('void')))
+            self.set_expr(column, fn.lit(None).cast('void'))
+            self.set_dtype(column, NullType())
 
-        suffix = suffix_col(column, self)
-        return df.withColumn(f'{self.error_column}_{suffix}', self._empty_errors_details())
+        suffix_col(column, self)
+        self.pending_errors.setdefault(column, [])
+        self.initialized_errors.add(column)
+        return df
 
-    def _empty_errors_details(self):
+    def _details_dtype(self):
         loc = ''
         if self.has_array:
             loc = ',loc:array<int>'
-        return fn.array().cast(f'array<struct<type:string,msg:string{loc}>>')
+        return f'array<struct<type:string,msg:string{loc}>>'
+
+    def _empty_errors_details(self):
+        return fn.array().cast(self._details_dtype())
+
+    @staticmethod
+    def _root_of(column):
+        root = column.split('.')[0]
+        return root[:-2] if root.endswith('[]') else root
 
     @staticmethod
     def _has_array_column(schema):
@@ -103,6 +288,8 @@ class BaseRule(Rule):
     :param kwargs: Additional keyword arguments to pass to the function
     """
 
+    accumulates = True
+
     def __init__(self, func, details=None, **kwargs):
         self.func = func
         self.details = details
@@ -113,7 +300,7 @@ class BaseRule(Rule):
         Verify the DataFrame against the rule
         """
 
-        def inspect_params(f):
+        def inspect_params(f, col_expr):
             signature = inspect.signature(f)
             params = {}
             if 'df' in signature.parameters:
@@ -121,24 +308,34 @@ class BaseRule(Rule):
             if set(signature.parameters) & {'col', 'column'}:
                 params['col' if 'col' in signature.parameters else 'column'] = column
             if set(signature.parameters) & {'col_expr', 'column_expr'}:
-                params['col_expr' if 'col_expr' in signature.parameters else 'column_expr'] = fn.col(column)
+                params['col_expr' if 'col_expr' in signature.parameters else 'column_expr'] = col_expr
             if 'error_state' in signature.parameters:
                 params['error_state'] = error_state
             return params
 
-        func_params = inspect_params(self.func)
-        if 'df' in func_params:
-            return self.func(**func_params)
+        signature = inspect.signature(self.func)
+        if 'df' in signature.parameters:
+            # the rule transforms the DataFrame directly: materialize the pending state first
+            df = error_state.flush(df)
+            df = self.func(**inspect_params(self.func, fn.col(column)))
+            error_state.resync(df)
+            return df
 
         if '__pre_func__' in self.kwargs:
             pre_func = self.kwargs['__pre_func__']
-            df = pre_func(**inspect_params(pre_func))
+            pre_func(**inspect_params(pre_func, None))
 
         if '[]' not in column:
-            return df.transform(error_state.add_errors(self.func(**func_params), column, details=self.details))
+            if set(signature.parameters) & {'col', 'column'}:
+                # the rule builds fn.col(name) itself: the name must resolve to the current value
+                df = error_state.flush(df)
+            boolmask = self.func(**inspect_params(self.func, error_state.expr_of(column)))
+            error_state.record_errors(boolmask, column, self.details)
+            return df
 
-        indexes = fn.transform(flatten_nested_values(column), self.func)
-        return df.transform(error_state.add_errors(indexes, column, details=self.details))
+        indexes = fn.transform(error_state.expr_of(column), self.func)
+        error_state.record_errors(indexes, column, self.details)
+        return df
 
 
 def rule(func, **kwargs) -> BaseRule:
@@ -195,11 +392,10 @@ def less_than_equal(le: Any) -> Rule:
 
 
 def multiple_of(multiple: Any) -> Rule:
-    def before(df, col):
-        data_type = data_type_of(df, col)
+    def before(col, error_state):
+        data_type = error_state.dtype_of(col)
         if not isinstance(data_type, NumericType):
             raise ValueError('multiple_of rule can only be applied to numeric columns')
-        return df
 
     if multiple <= 0:
         raise ValueError('multiple_of must be greater than zero')
@@ -212,11 +408,10 @@ def multiple_of(multiple: Any) -> Rule:
 
 
 def min_length(value: int) -> Rule:
-    def before(df, col):
-        data_type = data_type_of(df, col)
+    def before(col, error_state):
+        data_type = error_state.dtype_of(col)
         if not isinstance(data_type, StringType):
             raise ValueError('min_length rule can only be applied to string columns')
-        return df
 
     return rule(
         lambda col_expr: fn.length(col_expr) < value,
@@ -226,11 +421,10 @@ def min_length(value: int) -> Rule:
 
 
 def max_length(value: int) -> Rule:
-    def before(df, col):
-        data_type = data_type_of(df, col)
+    def before(col, error_state):
+        data_type = error_state.dtype_of(col)
         if not isinstance(data_type, StringType):
             raise ValueError('max_length rule can only be applied to string columns')
-        return df
 
     return rule(
         lambda col_expr: fn.length(col_expr) > value,
@@ -240,11 +434,10 @@ def max_length(value: int) -> Rule:
 
 
 def pattern(regex: str) -> Rule:
-    def before(df, col):
-        data_type = data_type_of(df, col)
+    def before(col, error_state):
+        data_type = error_state.dtype_of(col)
         if not isinstance(data_type, StringType):
             raise ValueError('pattern rule can only be applied to string columns')
-        return df
 
     return rule(
         lambda col_expr: ~col_expr.rlike(regex),
@@ -268,11 +461,10 @@ def notin(values: Iterable[Any]) -> Rule:
 
 
 def unique_items() -> Rule:
-    def before(df, col):
-        data_type = data_type_of(df, col)
+    def before(col, error_state):
+        data_type = error_state.dtype_of(col)
         if not isinstance(data_type, ArrayType):
             raise ValueError('unique_items rule can only be applied to array columns')
-        return df
 
     return rule(
         lambda col_expr: fn.size(col_expr) != fn.size(fn.array_distinct(col_expr)),
@@ -282,11 +474,10 @@ def unique_items() -> Rule:
 
 
 def max_items(value: int) -> Rule:
-    def before(df, col):
-        data_type = data_type_of(df, col)
+    def before(col, error_state):
+        data_type = error_state.dtype_of(col)
         if not isinstance(data_type, ArrayType):
             raise ValueError('max_items rule can only be applied to array columns')
-        return df
 
     return rule(
         lambda col_expr: fn.array_size(col_expr) > value,
@@ -296,11 +487,10 @@ def max_items(value: int) -> Rule:
 
 
 def min_items(value: int) -> Rule:
-    def before(df, col):
-        data_type = data_type_of(df, col)
+    def before(col, error_state):
+        data_type = error_state.dtype_of(col)
         if not isinstance(data_type, ArrayType):
             raise ValueError('min_items rule can only be applied to array columns')
-        return df
 
     return rule(
         lambda col_expr: fn.array_size(col_expr) < value,
@@ -309,25 +499,35 @@ def min_items(value: int) -> Rule:
     )
 
 
-def extra_forbidden(allowed: Iterable[str]) -> Rule:
-    @Rule.new
-    def verify(df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        if column in allowed:
+class ExtraForbiddenRule(Rule):
+    """
+    Rule that forbids columns not defined in the schema, moving their values to backup columns
+    """
+
+    accumulates = True
+
+    def __init__(self, allowed: Iterable[str]):
+        self.allowed = allowed
+
+    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        if column in self.allowed:
             return df
 
-        backup_column = backup_col(column, error_state)
+        error_state.set_backup(column)
         if '[]' in column and not column.endswith('[]'):
-            return df \
-                .transform(with_nested_column(backup_column, flatten_nested_values(column))) \
-                .transform(drop_nested_column(column)) \
-                .transform(error_state.add_errors(fn.transform(fn.col(column.split('[]')[0]), lambda x: fn.lit(True)),
-                                                  column, details=errors.EXTRA_FORBIDDEN))
+            error_state.drop_column(column)
+            error_state.record_errors(
+                fn.transform(error_state.expr_of(column.split('[]')[0]), lambda x: fn.lit(True)),
+                column, errors.EXTRA_FORBIDDEN)
+            return df
 
-        return df \
-            .transform(with_nested_column_renamed(column.removesuffix('[]'), backup_column)) \
-            .transform(error_state.add_errors(fn.lit(True), column, details=errors.EXTRA_FORBIDDEN))
+        error_state.drop_column(column.removesuffix('[]'))
+        error_state.record_errors(fn.lit(True), column, errors.EXTRA_FORBIDDEN)
+        return df
 
-    return verify
+
+def extra_forbidden(allowed: Iterable[str]) -> Rule:
+    return ExtraForbiddenRule(allowed)
 
 
 def int_parsing() -> Rule:
@@ -450,6 +650,8 @@ class DataTypeRule(Rule):
     Abstract base class for casting to target data type
     """
 
+    accumulates = True
+
     def __init__(  # pylint: disable=too-many-arguments
             self, caster, dtype, supported_cast_dtypes, type_error_details=None, parsing_error_details=None
     ):
@@ -460,49 +662,56 @@ class DataTypeRule(Rule):
         self.parsing_error_details = parsing_error_details
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        data_type = data_type_of(df, column)
+        data_type = error_state.dtype_of(column)
         if self._is_valid_dtype(data_type):
             return df
 
         if data_type.typeName() == 'void':
-            return df.transform(with_nested_column(column, fn.lit(None).cast(self._target_dtype())))
+            error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()))
+            error_state.set_dtype(column, self._target_dtype())
+            return df
 
         if '[]' in column:
             return self._verify_array(df, column, data_type, error_state)
         return self._verify_scalar(df, column, data_type, error_state)
 
     def _verify_scalar(self, df: DataFrame, column: str, data_type: DataType, error_state: ErrorState) -> DataFrame:
-        backup_column = backup_col(column, error_state)
-        df = df.withColumn(backup_column, fn.col(column))
+        error_state.set_backup(column)
         if not isinstance(data_type, self.supported_cast_dtypes):
-            return df \
-                .transform(with_nested_column(column, fn.lit(None).cast(self._target_dtype()))) \
-                .transform(error_state.add_errors(fn.lit(True), column, details=self.type_error_details))
+            error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()))
+            error_state.set_dtype(column, self._target_dtype())
+            error_state.record_errors(fn.lit(True), column, self.type_error_details)
+            return df
 
-        df = self._cast_scalar(df, column, data_type, backup_column, error_state)
+        self._cast_scalar(column, data_type, error_state)
+        error_state.set_dtype(column, self._cast_result_dtype(data_type))
         if not self.parsing_error_details:
             return df
 
-        return df \
-            .transform(error_state.add_errors(fn.isnull(fn.col(column)) & fn.isnotnull(backup_column), column,
-                                              details=self.parsing_error_details))
+        error_state.record_errors(
+            fn.isnull(error_state.expr_of(column)) & fn.isnotnull(error_state.backup_expr(column)),
+            column, self.parsing_error_details)
+        return df
 
     def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
-        backup_column = backup_col(column, error_state)
-        df = df.withColumn(backup_column, flatten_nested_values(column))
+        error_state.set_backup(column)
         if not isinstance(element_type, self.supported_cast_dtypes):
-            indexes = fn.transform(fn.col(column.split('[]')[0]), lambda x: fn.lit(True))
-            return df \
-                .transform(with_nested_column(column, fn.lit(None).cast(self._target_dtype()))) \
-                .transform(error_state.add_errors(indexes, column, details=self.type_error_details))
+            indexes = fn.transform(error_state.expr_of(column.split('[]')[0]), lambda x: fn.lit(True))
+            error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()))
+            error_state.set_dtype(column, self._target_dtype())
+            error_state.record_errors(indexes, column, self.type_error_details)
+            return df
 
-        df = self._cast_array(df, column, element_type, backup_column, error_state)
+        self._cast_array(column, element_type, error_state)
+        error_state.set_dtype(column, self._cast_result_dtype(element_type))
         if not self.parsing_error_details:
             return df
 
-        actual_values = flatten_nested_values(column)
-        indexes = fn.zip_with(actual_values, fn.col(backup_column), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
-        return df.transform(error_state.add_errors(indexes, column, details=self.parsing_error_details))
+        actual_values = error_state.expr_of(column)
+        indexes = fn.zip_with(
+            actual_values, error_state.backup_expr(column), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        error_state.record_errors(indexes, column, self.parsing_error_details)
+        return df
 
     def _is_valid_dtype(self, data_type) -> bool:
         return isinstance(data_type, self.dtype)
@@ -510,12 +719,15 @@ class DataTypeRule(Rule):
     def _target_dtype(self):
         return self.dtype()
 
-    # pylint: disable=too-many-arguments,unused-argument
-    def _cast_scalar(self, df, column, data_type, backup_column, error_state):
-        return df.transform(with_nested_column(column, self.caster(fn.col(column))))
+    def _cast_result_dtype(self, data_type):  # pylint: disable=unused-argument
+        return self._target_dtype()
 
-    def _cast_array(self, df, column, element_type, backup_column, error_state):
-        return df.transform(with_nested_column(column, self.caster))
+    # pylint: disable=unused-argument
+    def _cast_scalar(self, column, data_type, error_state):
+        error_state.set_expr(column, self.caster(error_state.expr_of(column)))
+
+    def _cast_array(self, column, element_type, error_state):
+        error_state.set_expr(column, self.caster)
 
 
 class ComplexTypeRule(DataTypeRule):
@@ -539,7 +751,7 @@ class BooleanTypeRule(DataTypeRule):
             expr = fn.when(expr.isin(['on', 'off']), expr == 'on').otherwise(col.cast('boolean'))
             return expr.cast('boolean')
 
-        data_type = data_type_of(df, column)
+        data_type = error_state.dtype_of(column)
         if (isinstance(data_type, StringType)
                 or (isinstance(data_type, ArrayType) and isinstance(data_type.elementType, StringType))):
             self.caster = cast_str_as_bool
@@ -562,10 +774,21 @@ class ObjectTypeRule(DataTypeRule):
     def _target_dtype(self):
         return self.struct_type
 
-    def _cast_scalar(self, df, column, data_type, backup_column, error_state):  # pylint: disable=too-many-arguments
+    def _cast_result_dtype(self, data_type):
+        # a map cast keeps the map's value type in every struct field
         if isinstance(data_type, MapType):
-            new_struct = fn.struct(*(fn.col(column)[field].alias(field) for field in self.struct_type.fieldNames()))
-            return df.transform(with_nested_column(column, new_struct))
+            return StructType([
+                StructField(name, data_type.valueType, nullable=True, metadata={})
+                for name in self.struct_type.fieldNames()
+            ])
+        return self._target_dtype()
+
+    def _cast_scalar(self, column, data_type, error_state):
+        if isinstance(data_type, MapType):
+            col_expr = error_state.expr_of(column)
+            new_struct = fn.struct(*(col_expr[field].alias(field) for field in self.struct_type.fieldNames()))
+            error_state.set_expr(column, new_struct)
+            return
 
         # Workaround for Spark issue where from_json does not return null for malformed JSON
         # As result we need to check if all fields are null and the original value is not null
@@ -582,27 +805,29 @@ class ObjectTypeRule(DataTypeRule):
             except:  # pylint: disable=bare-except
                 return True
 
+        error_state.set_expr(column, fn.from_json(error_state.expr_of(column), self.struct_type))
+        parsed = error_state.expr_of(column)
+        backup = error_state.backup_expr(column)
         is_malformed = malformed_json_udf(
             reduce(
                 lambda a, b: a & b,
-                (fn.isnull(fn.col(f'{column}.{field}')) for field in self.struct_type.fieldNames())) &
-            fn.isnotnull(backup_column), backup_column)
+                (fn.isnull(parsed.getField(field)) for field in self.struct_type.fieldNames())) &
+            fn.isnotnull(backup), backup)
 
-        return df \
-            .transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type))) \
-            .transform(with_nested_column(column, fn.when(~is_malformed, fn.col(column))))
+        error_state.set_expr(column, fn.when(~is_malformed, error_state.expr_of(column)))
 
-    def _cast_array(self, df, column, element_type, backup_column, error_state):  # pylint: disable=too-many-arguments
+    def _cast_array(self, column, element_type, error_state):
         if isinstance(element_type, MapType):
             def new_struct(x):
                 return fn.struct(*(x[field].alias(field) for field in self.struct_type.fieldNames()))
 
-            return df.transform(with_nested_column(column, new_struct))
+            error_state.set_expr(column, new_struct)
+            return
 
         # for some reason to use same workaround as in _cast_scalar does not work in nested arrays
         # so currently we do not support malformed JSON detection in nested arrays
         # this should be revisited in future
-        return df.transform(with_nested_column(column, lambda x: fn.from_json(x, self.struct_type)))  # FIXME
+        error_state.set_expr(column, lambda x: fn.from_json(x, self.struct_type))  # FIXME
 
     @staticmethod
     def parse_struct_type(schema) -> StructType:
@@ -624,9 +849,9 @@ class ArrayTypeRule(DataTypeRule):
     def _target_dtype(self):
         return self.struct_type
 
-    def _cast_scalar(self, df, column, data_type, backup_column, error_state):  # pylint: disable=too-many-arguments
+    def _cast_scalar(self, column, data_type, error_state):
         # same issue as in ObjectTypeRule._cast_scalar with from_json not returning null for malformed JSON
-        return df.transform(with_nested_column(column, fn.from_json(fn.col(column), self.struct_type)))  # FIXME
+        error_state.set_expr(column, fn.from_json(error_state.expr_of(column), self.struct_type))  # FIXME
 
     @staticmethod
     def parse_array_type(schema) -> ArrayType:
