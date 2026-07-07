@@ -1,0 +1,17 @@
+{
+  "type": "struct",
+  "fields": [
+    {
+      "name": "f1",
+      "type": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "f3",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}
