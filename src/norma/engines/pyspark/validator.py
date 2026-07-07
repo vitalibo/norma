@@ -18,7 +18,8 @@ def validate(
     """
 
     error_state = ErrorState(error_column, schema)
-    error_state.seed(df)
+    error_state.seed()
+    error_state.resync(df)
     original_cols = df.columns
 
     df = _validate(df, schema, error_state, original_cols)
@@ -59,7 +60,7 @@ def _validate(df, schema, error_state, original_cols, parent=''):
 
     for column in columns:
         full_column = f'{parent}{column}'
-        df = error_state.initialize_column(df, full_column)
+        error_state.track_column(full_column)
 
         rules = []
         if column in schema.columns:
@@ -102,9 +103,9 @@ def _format_error_details(df, error_state) -> DataFrame:
 
     error_column = error_state.error_column
     errors = {
-        name: column for name, column in (
-            (name, f'{error_column}_{suffix}') for name, suffix in error_state.suffixes.items()
-        ) if column in df.columns
+        name: error_state.errors_col(name)
+        for name in list(error_state.names)
+        if error_state.errors_col(name) in df.columns
     }
 
     return df \
@@ -160,7 +161,6 @@ def _nullify_invalid_values(df, schema, error_state):
     Reset invalid values to null after validation
     """
 
-    error_column = error_state.error_column
     expr_of, set_expr, apply = _expr_accumulator(df)
 
     def nested_zip(x, y, nodes):
@@ -170,15 +170,14 @@ def _nullify_invalid_values(df, schema, error_state):
         return x.withField(nodes[0], nested_zip(x.getField(nodes[0]), y, nodes[1:]))
 
     for name, _ in reversed(schema.nested_columns.items()):
-        suffix = error_state.register_or_get_suffix(name)
         if '[]' not in name:
-            set_expr(name, fn.when(fn.array_size(fn.col(f'{error_column}_{suffix}')) <= 0, expr_of(name)))
-        elif f'{suffix}_indexes' in df.columns:
+            set_expr(name, fn.when(fn.array_size(fn.col(error_state.errors_col(name))) <= 0, expr_of(name)))
+        elif error_state.indexes_col(name) in df.columns:
             root, *nested = name.split('[].')
             root = root.removesuffix('[]')
             nested = nested[0].split('.') if nested else []
             set_expr(root, fn.zip_with(
-                expr_of(root), fn.col(f'{suffix}_indexes'),
+                expr_of(root), fn.col(error_state.indexes_col(name)),
                 lambda x, y: nested_zip(x, y, nested)))  # pylint: disable=cell-var-from-loop
 
     return apply(df)
@@ -239,7 +238,7 @@ def _make_origin(df, column, error_state):
             return null.otherwise(fn.to_json(value))
         return null.otherwise(value.cast('string'))
 
-    backup_column = error_state.backup_col_name(column)
+    backup_column = error_state.backup_col(column)
     if backup_column in df.columns:
         column = backup_column
 

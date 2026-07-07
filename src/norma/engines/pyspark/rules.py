@@ -1,7 +1,5 @@
 import inspect
 import json
-import random
-import string
 from functools import reduce
 from typing import Any, Iterable
 
@@ -21,68 +19,55 @@ from norma.rules import Rule
 class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
     """
     Error state for PySpark DataFrame validation.
-
-    Acts as a symbolic accumulator: rules record value/error expressions into the state
-    instead of transforming the DataFrame, and the state is materialized into a single
-    projection by flush(). This keeps the number of Project nodes in the logical plan
-    constant regardless of the number of columns and rules.
-
-    :param error_column: The name of the column to store error information
     """
 
     def __init__(self, error_column: str, schema):
         self.error_column = error_column
         self.has_array = self._has_array_column(schema)
-        self.suffixes = {}
+        self.names = {}
+        self.reserved_names = set()
 
-        self.exprs = {}
-        self.dtypes = {}
-        self.input_columns = []
-        self.pending_errors = {}
-        self.pending_indexes = {}
-        self.pending_backups = {}
-        self.initialized_errors = set()
-        self.created_roots = []
-        self.dropped_roots = set()
+        self.exprs = self.dtypes = self.input_columns = self.pending_errors = self.pending_indexes = \
+            self.pending_backups = self.initialized_errors = self.created_roots = self.dropped_roots = None
 
-    def seed(self, df: DataFrame) -> None:
+    def add_errors(self, boolmask: Column, column: str, details=None, **kwargs) -> None:
+        """
+        Record an error detail expression for a column (True values in the boolmask indicate errors).
+        """
+
+        details = dict(details or kwargs.get('details') or {})
+        details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
+
+        if '[]' in column:
+            # pylint: disable=unnecessary-lambda
+            indexes = fn.filter(fn.transform(boolmask, lambda x, i: fn.when(x, i)), lambda x: x.isNotNull())
+            details_lit.append(indexes.alias('loc'))
+            details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*details_lit))
+
+            prev = self.pending_indexes.get(column)
+            self.pending_indexes[column] = \
+                boolmask if prev is None else fn.zip_with(prev, boolmask, lambda x, y: x | y)
+        else:
+            # if DataFrame has at least one array column, we need to add indexes
+            # because we cannot append a struct to an array with different types
+            if self.has_array:
+                details_lit.append(fn.lit(None).cast('array<int>').alias('loc'))
+            details_col = fn.when(boolmask, fn.struct(*details_lit))
+
+        self.pending_errors.setdefault(column, []).append(details_col)
+
+    def seed(self) -> None:
         """
         Reset the symbolic accumulation state to reflect the given DataFrame.
         """
 
         self.exprs = {}
-        self.dtypes = {field.name: field.dataType for field in df.schema.fields}
-        self.input_columns = df.columns
         self.pending_errors = {}
         self.pending_indexes = {}
         self.pending_backups = {}
         self.initialized_errors = set()
         self.created_roots = []
         self.dropped_roots = set()
-
-    def register_or_get_suffix(self, column: str) -> str:
-        """
-        Return the suffix for a given column, registering a new unique one on first use.
-        """
-
-        if column in self.suffixes:
-            return self.suffixes[column]
-
-        while True:
-            suffix = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
-            if suffix not in self.suffixes.values():
-                self.suffixes[column] = suffix
-                return suffix
-
-    def backup_col_name(self, column: str) -> str:
-        """
-        Build a backup column name for a given column.
-        """
-
-        bak = self.register_or_get_suffix(column)
-        if '[]' in column:
-            return f'{bak}_bak_array'
-        return f'{bak}_bak'
 
     def resync(self, df: DataFrame) -> None:
         """
@@ -111,7 +96,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
             selection[root] = self.exprs[root]
 
         for path, pending in self.pending_errors.items():
-            name = f'{self.error_column}_{self.register_or_get_suffix(path)}'
+            name = self.errors_col(path)
             if path in self.initialized_errors:
                 arr = fn.array(*pending).cast(self._details_dtype()) if pending else self._empty_errors_details()
             else:
@@ -122,17 +107,19 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
                 selection[name] = arr
 
         for path, indexes in self.pending_indexes.items():
-            name = f'{self.register_or_get_suffix(path)}_indexes'
+            name = self.indexes_col(path)
             if name in existing:
                 selection[name] = fn.zip_with(fn.col(name), indexes, lambda x, y: x | y)
             else:
                 selection[name] = indexes
 
         for path, backup in self.pending_backups.items():
-            selection[self.backup_col_name(path)] = backup
+            selection[self.backup_col(path)] = backup
 
         result = df.select(*(expr.alias(name) for name, expr in selection.items()))
-        self.seed(result)
+        self.seed()
+        self.resync(result)
+
         return result
 
     def expr_of(self, column: str) -> Column:
@@ -144,7 +131,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
     def dtype_of(self, column: str) -> DataType:
         """
-        Return the current data type of a column, mirroring dtype_at on the symbolic state.
+        Return the current data type of column, mirroring dtype_at on the symbolic state.
         """
 
         def data_type(dtype, col):
@@ -175,7 +162,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
     def set_dtype(self, column: str, dtype: DataType) -> None:
         """
-        Update the tracked data type of a (possibly nested) column.
+        Update the tracked data type of (possibly nested) column.
         """
 
         parts = column.split('.')
@@ -229,46 +216,67 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
         if column in self.pending_backups:
             return self.pending_backups[column]
-        return fn.col(self.backup_col_name(column))
+        return fn.col(self.backup_col(column))
 
-    def add_errors(self, boolmask: Column, column: str, details=None, **kwargs) -> None:
+    def track_column(self, column: str) -> None:
         """
-        Record an error detail expression for a column (True values in the boolmask indicate errors).
+        Start tracking a column: ensure it exists in the symbolic state (creating a void
+        column if missing) and force its error-details column to be materialized on flush.
         """
 
-        self.register_or_get_suffix(column)
-        details = dict(details or kwargs.get('details') or {})
-        details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
-
-        if '[]' in column:
-            # pylint: disable=unnecessary-lambda
-            indexes = fn.filter(fn.transform(boolmask, lambda x, i: fn.when(x, i)), lambda x: x.isNotNull())
-            details_lit.append(indexes.alias('loc'))
-            details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*details_lit))
-
-            prev = self.pending_indexes.get(column)
-            self.pending_indexes[column] = \
-                boolmask if prev is None else fn.zip_with(prev, boolmask, lambda x, y: x | y)
-        else:
-            # if DataFrame has at least one array column, we need to add indexes
-            # because we cannot append a struct to an array with different types
-            if self.has_array:
-                details_lit.append(fn.lit(None).cast('array<int>').alias('loc'))
-            details_col = fn.when(boolmask, fn.struct(*details_lit))
-
-        self.pending_errors.setdefault(column, []).append(details_col)
-
-    def initialize_column(self, df, column):
         try:
             self.dtype_of(column)
         except KeyError:
             self.set_expr(column, fn.lit(None).cast('void'))
             self.set_dtype(column, NullType())
 
-        self.register_or_get_suffix(column)
         self.pending_errors.setdefault(column, [])
         self.initialized_errors.add(column)
-        return df
+
+    def errors_col(self, column: str) -> str:
+        """
+        Return the name of the error-details column for a given column.
+        """
+
+        return f'{self.error_column}_{self._name_of(column)}'
+
+    def indexes_col(self, column: str) -> str:
+        """
+        Return the name of the invalid-indexes column for a given array column.
+        """
+
+        return f'{self.error_column}_{self._name_of(column)}_idx'
+
+    def backup_col(self, column: str) -> str:
+        """
+        Return the name of the backup column for a given column.
+        """
+
+        return f'{self.error_column}_{self._name_of(column)}_bak'
+
+    def _name_of(self, column: str) -> str:
+        """
+        Return a deterministic per-column base for service column names, avoiding
+        collisions with input columns and with bases already handed out.
+        """
+
+        if column in self.names:
+            return self.names[column]
+
+        base = column.replace('[]', '_arr').replace('.', '_')
+        name, attempt = base, 1
+        while not self._reserve(name):
+            attempt += 1
+            name = f'{base}_{attempt}'
+        self.names[column] = name
+        return name
+
+    def _reserve(self, name: str) -> bool:
+        derived = {f'{self.error_column}_{name}{kind}' for kind in ('', '_idx', '_bak')}
+        if derived & self.reserved_names or derived & set(self.input_columns or ()):
+            return False
+        self.reserved_names |= derived
+        return True
 
     def _details_dtype(self):
         loc = ''
