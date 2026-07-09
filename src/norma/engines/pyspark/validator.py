@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as fn
 
@@ -5,10 +9,11 @@ import norma.rules
 from norma.engines.pyspark.rules import ErrorState, extra_forbidden
 from norma.engines.pyspark.utils import dtype_at, nested_get_expr, nested_set_expr
 
+if TYPE_CHECKING:
+    from norma.schema import Schema
 
-def validate(
-        schema: 'Schema', df: DataFrame, error_column: str
-) -> DataFrame:
+
+def validate(schema: Schema, df: DataFrame, error_column: str) -> DataFrame:
     """
     Validate the PySpark DataFrame according to the schema
 
@@ -66,19 +71,17 @@ def _validate(df, schema, error_state, original_cols, parent=''):
         if column in schema.columns:
             rules.extend(schema.columns[column].rules)
         if not schema.allow_extra:
-            rules.append(
-                extra_forbidden([f'{parent}{o}' for o in schema.columns.keys()]))
+            rules.append(extra_forbidden([f'{parent}{o}' for o in schema.columns]))
 
         for rule in rules:
             df = _apply_rule(df, rule, full_column, error_state)
 
         # if there is inner schema, validate recursively
-        if column not in schema.columns \
-                or schema.columns[column].inner_schema is None:
+        if column not in schema.columns or schema.columns[column].inner_schema is None:
             continue
         inner_schema = schema.columns[column].inner_schema
 
-        if schema.columns[column].dtype in ('array', 'list'):
+        if schema.columns[column].dtype in {'array', 'list'}:
             full_column = f'{full_column}[]'
 
             for rule in inner_schema.rules:
@@ -110,22 +113,24 @@ def _format_error_details(df, error_state) -> DataFrame:
 
     return df \
         .withColumns({details: fn.filter(fn.col(details), fn.isnotnull) for details in errors.values()}) \
-        .withColumn(error_column, fn.map_filter(
-        fn.map_from_arrays(
-            fn.array(*[fn.lit(name) for name in errors]),
-            fn.array(*[
-                fn.when(
-                    fn.array_size(fn.col(error)) > 0,
-                    fn.struct(
-                        fn.col(error).alias('details'),
-                        _make_origin(df, name, error_state).alias('original'),
-                    )
-                )
-                for name, error in errors.items()
-            ])
-        ),
-        lambda k, v: fn.isnotnull(v)
-    ))
+        .withColumn(
+            error_column, fn.map_filter(
+                fn.map_from_arrays(
+                    fn.array(*[fn.lit(name) for name in errors]),
+                    fn.array(*[
+                        fn.when(
+                            fn.array_size(fn.col(error)) > 0,
+                            fn.struct(
+                                fn.col(error).alias('details'),
+                                _make_origin(df, name, error_state).alias('original'),
+                            ),
+                        )
+                        for name, error in errors.items()
+                    ]),
+                ),
+                lambda _, v: fn.isnotnull(v),
+            ),
+        )
 
 
 def _expr_accumulator(df):
@@ -139,7 +144,7 @@ def _expr_accumulator(df):
 
     def root_of(path):
         root = path.split('.')[0]
-        return root[:-2] if root.endswith('[]') else root
+        return root.removesuffix('[]')
 
     def expr_of(path):
         return nested_get_expr(path, exprs.get(root_of(path)))
@@ -176,9 +181,11 @@ def _nullify_invalid_values(df, schema, error_state):
             root, *nested = name.split('[].')
             root = root.removesuffix('[]')
             nested = nested[0].split('.') if nested else []
-            set_expr(root, fn.zip_with(
-                expr_of(root), fn.col(error_state.indexes_col(name)),
-                lambda x, y: nested_zip(x, y, nested)))  # pylint: disable=cell-var-from-loop
+            set_expr(
+                root, fn.zip_with(
+                    expr_of(root), fn.col(error_state.indexes_col(name)), lambda x, y: nested_zip(x, y, nested)  # noqa: B023
+                ),
+            )
 
     return apply(df)
 
@@ -232,9 +239,9 @@ def _make_origin(df, column, error_state):
 
     def format_value(value, dtype_name):
         null = fn.when(value.isNull(), fn.lit('null'))
-        if dtype_name in ('string',):
+        if dtype_name == 'string':
             return null.otherwise(fn.concat(fn.lit('"'), value, fn.lit('"')))
-        elif dtype_name in ('array', 'map', 'struct'):
+        if dtype_name in {'array', 'map', 'struct'}:
             return null.otherwise(fn.to_json(value))
         return null.otherwise(value.cast('string'))
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import re
-from typing import Any, Iterable, Optional, TypeVar, Union
+from typing import Any, Iterable, Optional, TypeVar
 
 DataFrame = TypeVar('DataFrame')
 
@@ -171,7 +171,7 @@ def less_than_equal(le: Any) -> Rule:
     return RuleProxy('less_than_equal', le=le)
 
 
-def multiple_of(multiple: Union[int, float]) -> Rule:
+def multiple_of(multiple: float) -> Rule:
     """
     Ensure that the values are a multiple of the specified value
 

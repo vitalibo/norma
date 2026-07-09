@@ -12,58 +12,55 @@ def test_schema_from_json_schema():
         'properties': {
             'name': {
                 'type': 'string',
-                'description': 'The person\'s full name.',
+                'description': "The person's full name.",
                 'minLength': 3,
                 'maxLength': 256,
-                'pattern': '^[A-Za-z ]+$'
+                'pattern': '^[A-Za-z ]+$',
             },
             'age': {
                 'description': 'Age in years which must be equal to or greater than zero.',
                 'type': 'integer',
                 'minimum': 0,
                 'maximum': 120,
-                'enum': [0, 1, 2, 3]
+                'enum': [0, 1, 2, 3],
             },
             'height': {
                 'description': 'Height in meters which must be greater than 0.5 and less than 3.0.',
                 'type': 'number',
                 'exclusiveMinimum': 0.5,
-                'exclusiveMaximum': 3.0
+                'exclusiveMaximum': 3.0,
             },
             'disabled': {
                 'description': 'A boolean flag to indicate if the person is disabled.',
                 'type': 'boolean',
-                'default': False
+                'default': False,
             },
-            'releaseDate': {
-                'type': 'string',
-                'format': 'date-time'
-            },
+            'releaseDate': {'type': 'string', 'format': 'date-time'},
             'address': {
                 'description': 'Address of the person',
                 'type': 'object',
                 'properties': {
                     'street': {
                         'description': 'Street address',
-                        'type': 'string'
+                        'type': 'string',
                     },
                     'city': {
                         'description': 'City name',
-                        'type': 'string'
+                        'type': 'string',
                     },
                     'state': {
                         'description': 'State name',
-                        'type': 'string'
+                        'type': 'string',
                     },
                     'zip_code': {
                         'description': 'ZIP code',
-                        'type': 'string'
-                    }
+                        'type': 'string',
+                    },
                 },
-            }
+            },
         },
         'required': ['name', 'age', 'disabled'],
-        'additionalProperties': False
+        'additionalProperties': False,
     }
 
     with mock.patch('norma.schema.Column') as mock_column:
@@ -80,6 +77,6 @@ def test_schema_from_json_schema():
         mock.call('string', nullable=True, inner_schema=None),
         mock.call('string', nullable=True, inner_schema=None),
         mock.call('string', nullable=True, inner_schema=None),
-        mock.call('object', nullable=True, inner_schema=mock.ANY)
+        mock.call('object', nullable=True, inner_schema=mock.ANY),
     ]
     assert actual.allow_extra is False

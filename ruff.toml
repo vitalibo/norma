@@ -37,7 +37,9 @@ ignore = [
     "PLR2004", # magic-value-comparison
     "PLR6301", # no-self-use
     "TRY003", # raise-vanilla-args
+    "TRY004", # type-check-without-type-error
     "TRY201", # verbose-raise
+    "TRY300", # try-consider-else
     "TRY301", # raise-within-try
     "PLR0904", # too-many-public-methods
     "UP006", # non-pep585-annotation
@@ -60,7 +62,7 @@ ignore = [
 ]
 
 [lint.isort]
-combine-as-imports = true
+combine-as-imports = false
 
 [lint.flake8-import-conventions.extend-aliases]
 "pyspark.sql.functions" = "fn"

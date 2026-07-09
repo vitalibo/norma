@@ -41,7 +41,7 @@ class Message(UserString):
     Represents the message of a detailed error
     """
 
-    def format(self, *args: Any, **kwds: Any) -> str:  # pylint: disable=arguments-differ
+    def format(self, *args: Any, **kwds: Any) -> str:
         """
         Formats the message with the given arguments
         """
@@ -59,7 +59,7 @@ class Message(UserString):
 
         return self.data.format(
             *[escape(v) for v in args],
-            **{k: (v if k.startswith('_') else escape(v)) for k, v in kwds.items()}
+            **{k: (v if k.startswith('_') else escape(v)) for k, v in kwds.items()},
         )
 
 

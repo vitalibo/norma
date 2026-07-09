@@ -1,10 +1,9 @@
 import pytest
 
-pytest.register_assert_rewrite('pyxis.pyspark')  # noqa isort:skip
+pytest.register_assert_rewrite('pyxis.pyspark')
 
-# pylint: disable=wrong-import-position
-from pyspark.sql import SparkSession
-from pyxis.pyspark import LocalTestSpark
+from pyspark.sql import SparkSession  # noqa: E402
+from pyxis.pyspark import LocalTestSpark  # noqa: E402
 
 
 @pytest.fixture(scope='module', name='spark')
@@ -21,4 +20,4 @@ def spark_fixture():
 
 @pytest.fixture(scope='module', name='spark_session')
 def spark_session(spark):
-    yield spark.spark_session
+    return spark.spark_session

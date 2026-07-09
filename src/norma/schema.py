@@ -45,7 +45,7 @@ class Column:
     :param default_factory: A factory function to generate the default value
     """
 
-    def __init__(  # pylint: disable=too-many-arguments,too-many-locals
+    def __init__(  # noqa: PLR0913
             self,
             dtype: Union[type, str],
             *,
@@ -57,7 +57,7 @@ class Column:
             lt: Any = None,
             ge: Any = None,
             le: Any = None,
-            multiple_of: Union[int, float, None] = None,
+            multiple_of: Union[float, None] = None,
             min_length: Union[int, None] = None,
             max_length: Union[int, None] = None,
             pattern: Union[str, None] = None,
@@ -71,7 +71,8 @@ class Column:
             default_factory: Union[Callable, None] = None,
     ) -> None:
         dtype_parsing = {
-            alias: parsing for parsing, aliases in {
+            alias: parsing
+            for parsing, aliases in {
                 norma.rules.int_parsing: ['int', 'integer'],
                 norma.rules.float_parsing: ['float', 'double', 'number'],
                 norma.rules.str_parsing: ['string', 'str'],
@@ -86,7 +87,8 @@ class Column:
                 norma.rules.uri_parsing: ['uri'],
                 partial(norma.rules.object_parsing, inner_schema): ['object'],
                 partial(norma.rules.array_parsing, inner_schema): ['array', 'list'],
-            }.items() for alias in aliases
+            }.items()
+            for alias in aliases
         }
 
         dtype = dtype.__name__ if isinstance(dtype, type) else dtype
@@ -94,15 +96,17 @@ class Column:
             raise ValueError(f"unsupported dtype '{dtype}'")
         if dtype == 'object' and inner_schema is None:
             raise ValueError("inner_schema must be provided for 'object' dtype")
-        if dtype in ('array', 'list') and inner_schema is None:
+        if dtype in {'array', 'list'} and inner_schema is None:
             raise ValueError("inner_schema must be provided for 'array' dtype")
 
         if default is not None and default_factory is not None:
             raise ValueError('default and default_factory cannot be used together')
 
         defined_rules = {
-            rule.name: rule for rule in [
-                rule_definition(value) for rule_definition, value in [
+            rule.name: rule
+            for rule in [
+                rule_definition(value)
+                for rule_definition, value in [
                     (lambda _: norma.rules.required(), True if not nullable else None),
                     (lambda _: dtype_parsing[dtype](), True),
                     (norma.rules.equal_to, eq),
@@ -119,7 +123,8 @@ class Column:
                     (norma.rules.pattern, pattern),
                     (norma.rules.isin, isin),
                     (norma.rules.notin, notin),
-                ] if value is not None
+                ]
+                if value is not None
             ]
         }
 
@@ -152,11 +157,7 @@ class Schema:
     :param allow_extra: Whether extra columns are allowed in the DataFrame
     """
 
-    def __init__(
-            self,
-            columns: Dict[str, Column],
-            allow_extra: bool = False
-    ) -> None:
+    def __init__(self, columns: Dict[str, Column], allow_extra: bool = False) -> None:
         self.columns = columns
         self.allow_extra = allow_extra
 
@@ -170,13 +171,14 @@ class Schema:
         :raises NotImplementedError: If the engine is not supported
         """
 
-        # pylint: disable=import-outside-toplevel
         if PandasDataFrame and isinstance(df, PandasDataFrame):
-            from norma.engines.pandas import validator
+            from norma.engines.pandas import validator  # noqa: PLC0415
+
             return validator.validate(self, df, error_col)
 
-        elif PySparkDataFrame and isinstance(df, PySparkDataFrame):
-            from norma.engines.pyspark import validator
+        if PySparkDataFrame and isinstance(df, PySparkDataFrame):
+            from norma.engines.pyspark import validator  # noqa: PLC0415
+
             return validator.validate(self, df, error_col)
 
         raise NotImplementedError('unsupported engine')
@@ -192,7 +194,7 @@ class Schema:
                 yield f'{root}{name}', column
                 if column.inner_schema is not None and column.dtype == 'object':
                     yield from traverse(column.inner_schema, f'{root}{name}.')
-                if column.inner_schema is not None and column.dtype in ('array', 'list'):
+                if column.inner_schema is not None and column.dtype in {'array', 'list'}:
                     yield f'{root}{name}[]', column.inner_schema
                     if column.inner_schema.dtype == 'object':
                         yield from traverse(column.inner_schema.inner_schema, f'{root}{name}[].')
@@ -237,7 +239,7 @@ class Schema:
             ('string', 'uuid'): 'uuid',
             ('string', 'ipv4'): 'ipv4',
             ('string', 'ipv6'): 'ipv6',
-            ('string', 'uri'): 'uri'
+            ('string', 'uri'): 'uri',
         }
 
         def column_from(nullable, properties):
@@ -259,19 +261,10 @@ class Schema:
 
             return Column(
                 complex_types.get((dtype, properties.get('format')), dtype),
-
                 nullable=nullable,
                 inner_schema=inner_schema,
-                **{
-                    known[key]: value
-                    for key, value in properties.items()
-                    if key in known
-                },
-                **{
-                    known_not[key]: value
-                    for key, value in properties.get('not', {}).items()
-                    if key in known_not
-                }
+                **{known[key]: value for key, value in properties.items() if key in known},
+                **{known_not[key]: value for key, value in properties.get('not', {}).items() if key in known_not},
             )
 
         return Schema(
@@ -279,5 +272,5 @@ class Schema:
                 field: column_from(field not in json_schema.get('required', []), properties)
                 for field, properties in json_schema['properties'].items()
             },
-            allow_extra=json_schema.get('additionalProperties', False)
+            allow_extra=json_schema.get('additionalProperties', False),
         )

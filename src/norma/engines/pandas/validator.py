@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -6,9 +9,12 @@ import pandas as pd
 import norma.rules
 from norma.engines.pandas.rules import ErrorState, extra_forbidden
 
+if TYPE_CHECKING:
+    from norma.schema import Schema
 
-def validate(  # pylint: disable=too-many-branches
-        schema: 'Schema', df: pd.DataFrame, error_column: str
+
+def validate(  # noqa: PLR0912
+        schema: Schema, df: pd.DataFrame, error_column: str
 ) -> pd.DataFrame:
     """
     Validate the Pandas DataFrame according to the schema
@@ -31,17 +37,18 @@ def validate(  # pylint: disable=too-many-branches
 
         for rule in rules:
             if isinstance(rule, norma.rules.RuleProxy):
-                rule = getattr(norma.engines.pandas.rules, rule.name)(**rule.kwargs)
+                rule = getattr(norma.engines.pandas.rules, rule.name)(**rule.kwargs)  # noqa: PLW2901
 
             series = rule.verify(df, column=column, error_state=error_state)
             if series is not None:
                 df[column] = series
 
-    for index in error_state.errors:  # pylint: disable=consider-using-dict-items
+    for index in error_state.errors:
         for column in error_state.errors[index]:
             if column in original_df.columns:
-                error_state.errors[index][column]['original'] = \
-                    json.dumps(original_df.loc[index, column], separators=(',', ':'), default=_json_serde)
+                error_state.errors[index][column]['original'] = json.dumps(
+                    original_df.loc[index, column], separators=(',', ':'), default=_json_serde
+                )
             else:
                 error_state.errors[index][column]['original'] = 'null'
 
@@ -60,7 +67,7 @@ def validate(  # pylint: disable=too-many-branches
     df[error_column] = df[error_column].replace(np.nan, None).apply(lambda x: {} if x is None else x)
 
     out_cols = original_df.columns if schema.allow_extra else schema.columns.keys()
-    return df[list(out_cols) + [error_column]]
+    return df[[*out_cols, error_column]]
 
 
 def _json_serde(obj):

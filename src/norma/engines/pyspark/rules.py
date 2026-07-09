@@ -1,5 +1,6 @@
-import inspect
+import inspect  # noqa: I001
 import json
+import operator
 from functools import reduce
 from typing import Any, Iterable
 
@@ -7,7 +8,7 @@ from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
 from pyspark.sql.types import (
     ArrayType, BooleanType, DataType, DateType, FloatType, IntegerType, MapType, NullType, NumericType, StringType,
-    StructField, StructType, TimestampType
+    StructField, StructType, TimestampType,
 )
 
 from norma import errors
@@ -16,7 +17,7 @@ from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
 
-class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
+class ErrorState(IErrorState):
     """
     Error state for PySpark DataFrame validation.
     """
@@ -39,14 +40,12 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
         details_lit = [fn.lit(v).alias(k) for k, v in details.items()]
 
         if '[]' in column:
-            # pylint: disable=unnecessary-lambda
-            indexes = fn.filter(fn.transform(boolmask, lambda x, i: fn.when(x, i)), lambda x: x.isNotNull())
+            indexes = fn.filter(fn.transform(boolmask, fn.when), lambda x: x.isNotNull())
             details_lit.append(indexes.alias('loc'))
             details_col = fn.when(fn.array_size(indexes) > 0, fn.struct(*details_lit))
 
             prev = self.pending_indexes.get(column)
-            self.pending_indexes[column] = \
-                boolmask if prev is None else fn.zip_with(prev, boolmask, lambda x, y: x | y)
+            self.pending_indexes[column] = boolmask if prev is None else fn.zip_with(prev, boolmask, operator.or_)
         else:
             # if DataFrame has at least one array column, we need to add indexes
             # because we cannot append a struct to an array with different types
@@ -77,7 +76,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
         self.dtypes = {field.name: field.dataType for field in df.schema.fields}
         self.input_columns = df.columns
 
-    def flush(self, df: DataFrame) -> DataFrame:  # pylint: disable=too-many-branches
+    def flush(self, df: DataFrame) -> DataFrame:  # noqa: PLR0912
         """
         Materialize all pending symbolic state into the DataFrame using a single projection.
         """
@@ -109,7 +108,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
         for path, indexes in self.pending_indexes.items():
             name = self.indexes_col(path)
             if name in existing:
-                selection[name] = fn.zip_with(fn.col(name), indexes, lambda x, y: x | y)
+                selection[name] = fn.zip_with(fn.col(name), indexes, operator.or_)
             else:
                 selection[name] = indexes
 
@@ -143,7 +142,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
         parts = column.split('.')
         first = parts[0]
-        dtype = self.dtypes[first[:-2] if first.endswith('[]') else first]
+        dtype = self.dtypes[first.removesuffix('[]')]
         if first.endswith('[]'):
             dtype = dtype.elementType
         for part in parts[1:]:
@@ -167,7 +166,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
         parts = column.split('.')
         first = parts[0]
-        root = first[:-2] if first.endswith('[]') else first
+        root = first.removesuffix('[]')
         rest = '.'.join(parts[1:])
 
         if first.endswith('[]'):
@@ -186,7 +185,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
 
         parts = column.split('.')
         first = parts[0]
-        root = first[:-2] if first.endswith('[]') else first
+        root = first.removesuffix('[]')
         rest = '.'.join(parts[1:])
 
         if not rest:
@@ -290,7 +289,7 @@ class ErrorState(IErrorState):  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def _root_of(column):
         root = column.split('.')[0]
-        return root[:-2] if root.endswith('[]') else root
+        return root.removesuffix('[]')
 
     @staticmethod
     def _has_array_column(schema):
@@ -367,54 +366,54 @@ def rule(func, **kwargs) -> BaseRule:
 
 def required() -> Rule:
     return rule(
-        lambda col_expr: fn.isnull(col_expr),  # pylint: disable=unnecessary-lambda
-        details=errors.MISSING
+        lambda col_expr: fn.isnull(col_expr),  # noqa: PLW0108
+        details=errors.MISSING,
     )
 
 
 def equal_to(eq: Any) -> Rule:
     return rule(
         lambda col_expr: col_expr != fn.lit(eq),
-        details=errors.EQUAL_TO.format(eq=eq)
+        details=errors.EQUAL_TO.format(eq=eq),
     )
 
 
 def not_equal_to(ne: Any) -> Rule:
     return rule(
         lambda col_expr: col_expr == fn.lit(ne),
-        details=errors.NOT_EQUAL_TO.format(ne=ne)
+        details=errors.NOT_EQUAL_TO.format(ne=ne),
     )
 
 
 def greater_than(gt: Any) -> Rule:
     return rule(
         lambda col_expr: col_expr <= fn.lit(gt),
-        details=errors.GREATER_THAN.format(gt=gt)
+        details=errors.GREATER_THAN.format(gt=gt),
     )
 
 
 def greater_than_equal(ge: Any) -> Rule:
     return rule(
         lambda col_expr: col_expr < fn.lit(ge),
-        details=errors.GREATER_THAN_EQUAL.format(ge=ge)
+        details=errors.GREATER_THAN_EQUAL.format(ge=ge),
     )
 
 
 def less_than(lt: Any) -> Rule:
     return rule(
         lambda col_expr: col_expr >= fn.lit(lt),
-        details=errors.LESS_THAN.format(lt=lt)
+        details=errors.LESS_THAN.format(lt=lt),
     )
 
 
 def less_than_equal(le: Any) -> Rule:
     return rule(
         lambda col_expr: col_expr > fn.lit(le),
-        details=errors.LESS_THAN_EQUAL.format(le=le)
+        details=errors.LESS_THAN_EQUAL.format(le=le),
     )
 
 
-def multiple_of(multiple: Any) -> Rule:
+def multiple_of(multiple: float) -> Rule:
     def before(col, error_state):
         data_type = error_state.dtype_of(col)
         if not isinstance(data_type, NumericType):
@@ -426,7 +425,7 @@ def multiple_of(multiple: Any) -> Rule:
     return rule(
         lambda col_expr: (col_expr < fn.lit(0)) | ((col_expr % fn.lit(multiple)) != fn.lit(0)),
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -439,7 +438,7 @@ def min_length(value: int) -> Rule:
     return rule(
         lambda col_expr: fn.length(col_expr) < value,
         details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -452,7 +451,7 @@ def max_length(value: int) -> Rule:
     return rule(
         lambda col_expr: fn.length(col_expr) > value,
         details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -465,21 +464,21 @@ def pattern(regex: str) -> Rule:
     return rule(
         lambda col_expr: ~col_expr.rlike(regex),
         details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
 def isin(values: Iterable[Any]) -> Rule:
     return rule(
         lambda col_expr: ~col_expr.isin(values),
-        details=errors.ENUM.format(expected=values)
+        details=errors.ENUM.format(expected=values),
     )
 
 
 def notin(values: Iterable[Any]) -> Rule:
     return rule(
         lambda col_expr: col_expr.isin(values),
-        details=errors.NOT_ENUM.format(unexpected=values)
+        details=errors.NOT_ENUM.format(unexpected=values),
     )
 
 
@@ -492,7 +491,7 @@ def unique_items() -> Rule:
     return rule(
         lambda col_expr: fn.size(col_expr) != fn.size(fn.array_distinct(col_expr)),
         details=errors.UNIQUE_ITEMS,
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -505,7 +504,7 @@ def max_items(value: int) -> Rule:
     return rule(
         lambda col_expr: fn.array_size(col_expr) > value,
         details=errors.TOO_LONG.format(_type_='Array', max_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -518,7 +517,7 @@ def min_items(value: int) -> Rule:
     return rule(
         lambda col_expr: fn.array_size(col_expr) < value,
         details=errors.TOO_SHORT.format(_type_='Array', min_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -540,8 +539,10 @@ class ExtraForbiddenRule(Rule):
         if '[]' in column and not column.endswith('[]'):
             error_state.drop_column(column)
             error_state.add_errors(
-                fn.transform(error_state.expr_of(column.split('[]')[0]), lambda x: fn.lit(True)),
-                column, errors.EXTRA_FORBIDDEN)
+                fn.transform(error_state.expr_of(column.split('[]', maxsplit=1)[0]), lambda _: fn.lit(True)),
+                column,
+                errors.EXTRA_FORBIDDEN,
+            )
             return df
 
         error_state.drop_column(column.removesuffix('[]'))
@@ -556,51 +557,72 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
 def int_parsing() -> Rule:
     return DataTypeRule(
         lambda col: col.cast('integer'),
-        IntegerType, (StringType, NumericType, BooleanType), errors.INT_TYPE, errors.INT_PARSING
+        IntegerType,
+        (StringType, NumericType, BooleanType),
+        errors.INT_TYPE,
+        errors.INT_PARSING,
     )
 
 
 def float_parsing():
     return DataTypeRule(
         lambda col: col.cast('float'),
-        FloatType, (StringType, NumericType, BooleanType), errors.FLOAT_TYPE, errors.FLOAT_PARSING
+        FloatType,
+        (StringType, NumericType, BooleanType),
+        errors.FLOAT_TYPE,
+        errors.FLOAT_PARSING,
     )
 
 
 def str_parsing() -> Rule:
     return DataTypeRule(
         lambda col: col.cast('string'),
-        StringType, (NumericType, BooleanType, DateType, TimestampType), errors.STRING_TYPE
+        StringType,
+        (NumericType, BooleanType, DateType, TimestampType),
+        errors.STRING_TYPE,
     )
 
 
 def bool_parsing() -> Rule:
     return BooleanTypeRule(
         lambda col: col.cast('boolean'),
-        BooleanType, (NumericType, StringType), errors.BOOL_TYPE, errors.BOOL_PARSING
+        BooleanType,
+        (NumericType, StringType),
+        errors.BOOL_TYPE,
+        errors.BOOL_PARSING,
     )
 
 
 def datetime_parsing() -> Rule:
     return DataTypeRule(
-        lambda col: fn.to_timestamp(col),  # pylint: disable=unnecessary-lambda
-        TimestampType, (StringType, DateType), errors.DATETIME_TYPE, errors.DATETIME_PARSING
+        lambda col: fn.to_timestamp(col),  # noqa: PLW0108
+        TimestampType,
+        (StringType, DateType),
+        errors.DATETIME_TYPE,
+        errors.DATETIME_PARSING,
     )
 
 
 def date_parsing() -> Rule:
     return DataTypeRule(
-        lambda col: fn.to_date(col),  # pylint: disable=unnecessary-lambda
-        DateType, (StringType, TimestampType), errors.DATE_TYPE, errors.DATE_PARSING
+        lambda col: fn.to_date(col),  # noqa: PLW0108
+        DateType,
+        (StringType, TimestampType),
+        errors.DATE_TYPE,
+        errors.DATE_PARSING,
     )
 
 
 def time_parsing() -> Rule:
-    time_regex = \
+    time_regex = (
         r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$'
+    )
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(time_regex), col),
-        StringType, (StringType,), errors.TIME_TYPE, errors.TIME_PARSING
+        StringType,
+        (StringType,),
+        errors.TIME_TYPE,
+        errors.TIME_PARSING,
     )
 
 
@@ -608,7 +630,10 @@ def duration_parsing() -> Rule:
     duration_regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(duration_regex), col),
-        StringType, (StringType,), errors.DURATION_TYPE, errors.DURATION_PARSING
+        StringType,
+        (StringType,),
+        errors.DURATION_TYPE,
+        errors.DURATION_PARSING,
     )
 
 
@@ -616,7 +641,10 @@ def uuid_parsing() -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
     return ComplexTypeRule(
         lambda col: fn.when(fn.lower(col).rlike(uuid_regex), fn.lower(col)),
-        StringType, (StringType,), errors.UUID_TYPE, errors.UUID_PARSING
+        StringType,
+        (StringType,),
+        errors.UUID_TYPE,
+        errors.UUID_PARSING,
     )
 
 
@@ -624,7 +652,10 @@ def ipv4_address() -> Rule:
     ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(ipv4_regex), col),
-        StringType, (StringType,), errors.IPV4, errors.IPV4
+        StringType,
+        (StringType,),
+        errors.IPV4,
+        errors.IPV4,
     )
 
 
@@ -642,7 +673,10 @@ def ipv6_address() -> Rule:
     )
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(ipv6_regex), col),
-        StringType, (StringType,), errors.IPV6, errors.IPV6
+        StringType,
+        (StringType,),
+        errors.IPV6,
+        errors.IPV6,
     )
 
 
@@ -656,7 +690,10 @@ def uri_parsing() -> Rule:
 
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(uri_regex), col),
-        StringType, (StringType,), errors.URI_TYPE, errors.URI_PARSING
+        StringType,
+        (StringType,),
+        errors.URI_TYPE,
+        errors.URI_PARSING,
     )
 
 
@@ -675,9 +712,7 @@ class DataTypeRule(Rule):
 
     accumulates = True
 
-    def __init__(  # pylint: disable=too-many-arguments
-            self, caster, dtype, supported_cast_dtypes, type_error_details=None, parsing_error_details=None
-    ):
+    def __init__(self, caster, dtype, supported_cast_dtypes, type_error_details=None, parsing_error_details=None):
         self.caster = caster
         self.dtype = dtype
         self.supported_cast_dtypes = supported_cast_dtypes
@@ -713,13 +748,15 @@ class DataTypeRule(Rule):
 
         error_state.add_errors(
             fn.isnull(error_state.expr_of(column)) & fn.isnotnull(error_state.backup_expr(column)),
-            column, self.parsing_error_details)
+            column,
+            self.parsing_error_details,
+        )
         return df
 
     def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
         error_state.set_backup(column)
         if not isinstance(element_type, self.supported_cast_dtypes):
-            indexes = fn.transform(error_state.expr_of(column.split('[]')[0]), lambda x: fn.lit(True))
+            indexes = fn.transform(error_state.expr_of(column.split('[]', maxsplit=1)[0]), lambda _: fn.lit(True))
             error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()))
             error_state.set_dtype(column, self._target_dtype())
             error_state.add_errors(indexes, column, self.type_error_details)
@@ -732,7 +769,8 @@ class DataTypeRule(Rule):
 
         actual_values = error_state.expr_of(column)
         indexes = fn.zip_with(
-            actual_values, error_state.backup_expr(column), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+            actual_values, error_state.backup_expr(column), lambda x, y: fn.isnull(x) & fn.isnotnull(y)
+        )
         error_state.add_errors(indexes, column, self.parsing_error_details)
         return df
 
@@ -742,14 +780,13 @@ class DataTypeRule(Rule):
     def _target_dtype(self):
         return self.dtype()
 
-    def _cast_result_dtype(self, data_type):  # pylint: disable=unused-argument
+    def _cast_result_dtype(self, data_type):  # noqa: ARG002
         return self._target_dtype()
 
-    # pylint: disable=unused-argument
-    def _cast_scalar(self, column, data_type, error_state):
+    def _cast_scalar(self, column, data_type, error_state):  # noqa: ARG002
         error_state.set_expr(column, self.caster(error_state.expr_of(column)))
 
-    def _cast_array(self, column, element_type, error_state):
+    def _cast_array(self, column, element_type, error_state):  # noqa: ARG002
         error_state.set_expr(column, self.caster)
 
 
@@ -758,7 +795,7 @@ class ComplexTypeRule(DataTypeRule):
     Class for casting to complex string types
     """
 
-    def _is_valid_dtype(self, data_type) -> bool:
+    def _is_valid_dtype(self, data_type) -> bool:  # noqa: ARG002
         return False
 
 
@@ -775,8 +812,9 @@ class BooleanTypeRule(DataTypeRule):
             return expr.cast('boolean')
 
         data_type = error_state.dtype_of(column)
-        if (isinstance(data_type, StringType)
-                or (isinstance(data_type, ArrayType) and isinstance(data_type.elementType, StringType))):
+        if isinstance(data_type, StringType) or (
+            isinstance(data_type, ArrayType) and isinstance(data_type.elementType, StringType)
+        ):
             self.caster = cast_str_as_bool
 
         return super().verify(df, column, error_state)
@@ -800,10 +838,12 @@ class ObjectTypeRule(DataTypeRule):
     def _cast_result_dtype(self, data_type):
         # a map cast keeps the map's value type in every struct field
         if isinstance(data_type, MapType):
-            return StructType([
-                StructField(name, data_type.valueType, nullable=True, metadata={})
-                for name in self.struct_type.fieldNames()
-            ])
+            return StructType(
+                [
+                    StructField(name, data_type.valueType, nullable=True, metadata={})
+                    for name in self.struct_type.fieldNames()
+                ]
+            )
         return self._target_dtype()
 
     def _cast_scalar(self, column, data_type, error_state):
@@ -825,32 +865,34 @@ class ObjectTypeRule(DataTypeRule):
             try:
                 json.loads(val)
                 return False
-            except:  # pylint: disable=bare-except
+            except:  # noqa: E722
                 return True
 
         error_state.set_expr(column, fn.from_json(error_state.expr_of(column), self.struct_type))
         parsed = error_state.expr_of(column)
         backup = error_state.backup_expr(column)
         is_malformed = malformed_json_udf(
-            reduce(
-                lambda a, b: a & b,
-                (fn.isnull(parsed.getField(field)) for field in self.struct_type.fieldNames())) &
-            fn.isnotnull(backup), backup)
+            reduce(operator.and_, (fn.isnull(parsed.getField(field)) for field in self.struct_type.fieldNames()))
+            & fn.isnotnull(backup),
+            backup,
+        )
 
         error_state.set_expr(column, fn.when(~is_malformed, error_state.expr_of(column)))
 
     def _cast_array(self, column, element_type, error_state):
         if isinstance(element_type, MapType):
+
             def new_struct(x):
                 return fn.struct(*(x[field].alias(field) for field in self.struct_type.fieldNames()))
 
             error_state.set_expr(column, new_struct)
             return
 
+        # TODO: malformed JSON detection for nested array elements
         # for some reason to use same workaround as in _cast_scalar does not work in nested arrays
         # so currently we do not support malformed JSON detection in nested arrays
         # this should be revisited in future
-        error_state.set_expr(column, lambda x: fn.from_json(x, self.struct_type))  # FIXME
+        error_state.set_expr(column, lambda x: fn.from_json(x, self.struct_type))
 
     @staticmethod
     def parse_struct_type(schema) -> StructType:
@@ -872,9 +914,10 @@ class ArrayTypeRule(DataTypeRule):
     def _target_dtype(self):
         return self.struct_type
 
-    def _cast_scalar(self, column, data_type, error_state):
+    def _cast_scalar(self, column, data_type, error_state):  # noqa: ARG002
+        # TODO: malformed JSON detection for nested array elements
         # same issue as in ObjectTypeRule._cast_scalar with from_json not returning null for malformed JSON
-        error_state.set_expr(column, fn.from_json(error_state.expr_of(column), self.struct_type))  # FIXME
+        error_state.set_expr(column, fn.from_json(error_state.expr_of(column), self.struct_type))
 
     @staticmethod
     def parse_array_type(schema) -> ArrayType:

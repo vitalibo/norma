@@ -1,26 +1,29 @@
 import json
 import os
-import uuid  # noqa pylint: disable=unused-import
+import uuid  # noqa: F401
 from functools import partial
 from unittest import mock
 
-import numpy as np  # noqa pylint: disable=unused-import
+import numpy as np  # noqa: F401
 import pandas as pd
-import pyspark.sql.functions as fn  # noqa pylint: disable=unused-import
+import pyspark.sql.functions as fn  # noqa: F401
 import pytest
 from pyxis.pyspark import StructType
 
-from norma import rules  # noqa pylint: disable=unused-import
+from norma import rules  # noqa: F401
 from norma.engines.pandas import rules as pandas_rules
 from norma.schema import Column, Schema
 
 
 def make_test(test_name, value):
-    @pytest.mark.parametrize('engine, case', [
-        pytest.param(engine, prop, id=f'case #{i} | {engine}: {prop.get("description", "")}')
-        for i, prop in enumerate(value)
-        for engine in prop['engines']
-    ])
+    @pytest.mark.parametrize(
+        ('engine', 'case'),
+        [
+            pytest.param(engine, prop, id=f'case #{i} | {engine}: {prop.get("description", "")}')
+            for i, prop in enumerate(value)
+            for engine in prop['engines']
+        ],
+    )
     def func(spark_session, engine, case):
         {
             'pandas': make_test_pandas,
@@ -31,13 +34,13 @@ def make_test(test_name, value):
     return func
 
 
-for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__), 'data')):
+for root, _, files in os.walk(os.path.join(os.path.dirname(__file__), 'data')):
     for file in files:
         if not file.endswith('.json'):
             continue
 
         test = file.split('.')[0]
-        with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+        with open(os.path.join(root, file), encoding='utf-8') as f:
             cases = json.loads(f.read())
             globals()[f'test_{test}'] = make_test(test, cases)
 
@@ -49,22 +52,25 @@ def make_test_pandas(case):
         return str(x)
 
     if 'schema' in case['given'] and 'pandas' in case['given']['schema']:
-        df = pd.DataFrame({
-            k: pd.Series([v[k] for v in case['given']['data']], dtype=t)
-            for k, t in case['given']['schema']['pandas'].items()
-        })
+        df = pd.DataFrame(
+            {
+                k: pd.Series([v[k] for v in case['given']['data']], dtype=t)
+                for k, t in case['given']['schema']['pandas'].items()
+            }
+        )
     else:
         df = pd.DataFrame(case['given']['data'])
         df = df.convert_dtypes()
 
     with (
-            pytest.raises(Exception, match=case['then']['raises']['match'])
-            if 'raises' in case['then'] else mock.MagicMock()
+        pytest.raises(Exception, match=case['then']['raises']['match'])
+        if 'raises' in case['then']
+        else mock.MagicMock()
     ) as e:
         schema = (
             Schema.from_json_schema(case['when']['json_schema'])
-            if 'json_schema' in case['when'] else
-            crete_schema(case['when']['schema'])
+            if 'json_schema' in case['when']
+            else crete_schema(case['when']['schema'])
         )
         actual = schema.validate(df)
 
@@ -80,13 +86,14 @@ def make_test_pyspark(spark_session, case):
     )
 
     with (
-            pytest.raises(Exception, match=case['then']['raises']['match'])
-            if 'raises' in case['then'] else mock.MagicMock()
+        pytest.raises(Exception, match=case['then']['raises']['match'])
+        if 'raises' in case['then']
+        else mock.MagicMock()
     ) as e:
         schema = (
             Schema.from_json_schema(case['when']['json_schema'])
-            if 'json_schema' in case['when'] else
-            crete_schema(case['when']['schema'])
+            if 'json_schema' in case['when']
+            else crete_schema(case['when']['schema'])
         )
         actual = schema.validate(df)
 
@@ -103,8 +110,8 @@ def make_test_pandas_api(test_name, case):
             return {k: as_data(v) for k, v in o.items()}
         if isinstance(o, list):
             return [as_data(v) for v in o]
-        if isinstance(o, str) and (o.startswith('pd.') or o.startswith('np.') or o.startswith('uuid.UUID(')):
-            return eval(o)  # pylint: disable=eval-used
+        if isinstance(o, str) and (o.startswith(('pd.', 'np.', 'uuid.UUID('))):
+            return eval(o)  # noqa: S307
         return o
 
     def as_dtype(o):
@@ -117,8 +124,9 @@ def make_test_pandas_api(test_name, case):
     error_state = pandas_rules.ErrorState(df.index)
 
     with (
-            pytest.raises(Exception, match=case['then']['raises']['match'])
-            if 'raises' in case['then'] else mock.MagicMock()
+        pytest.raises(Exception, match=case['then']['raises']['match'])
+        if 'raises' in case['then']
+        else mock.MagicMock()
     ) as e:
         # when
         rule = getattr(pandas_rules, test_name)(**case['when']['args'])
@@ -134,7 +142,7 @@ def make_test_pandas_api(test_name, case):
         for key in set(error_state.masks.keys()).union(set(case['then']['masks'].keys())):
             try:
                 assert error_state.masks[key].equals(pd.Series(case['then']['masks'][key], dtype=bool))
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 raise AssertionError(f'Error in key: {key}') from e
         return
 
@@ -145,11 +153,12 @@ def crete_schema(o):
     return Schema(**{
         sk: {
             ck: Column(**{
-                # pylint: disable=eval-used
-                k: eval(v['expr'], globals()) if isinstance(v, dict) and 'expr' in v else v
+                k: eval(v['expr'], globals()) if isinstance(v, dict) and 'expr' in v else v  # noqa: S307
                 for k, v in cv.items()
             })
             for ck, cv in sv.items()
-        } if sk == 'columns' else sv
+        }
+        if sk == 'columns'
+        else sv
         for sk, sv in o.items()
     })

@@ -20,10 +20,9 @@ def dtype_at(dtype: DataType, path: str) -> DataType:
     for part in path.split('.'):
         if not isinstance(dtype, StructType):
             raise ValueError(f'Path "{path}" is not a nested column in the data type.')
+        dtype = dtype[part.removesuffix('[]')].dataType
         if '[]' in part:
-            dtype = dtype[part[:-2]].dataType.elementType
-        else:
-            dtype = dtype[part].dataType
+            dtype = dtype.elementType
 
     return dtype
 
@@ -128,9 +127,11 @@ def nested_get_expr(column: str, root_expr: Optional[Column] = None) -> Column:
     return fn.transform(field_expr(root), get_nested)
 
 
-def nested_set_expr(
-        col_name: str, val: Union[Column, Callable[[Column], Column]],
-        root_expr: Optional[Column], root_dtype: Optional[DataType]
+def nested_set_expr(  # noqa: C901, PLR0915
+    col_name: str,
+    val: Union[Column, Callable[[Column], Column]],
+    root_expr: Optional[Column],
+    root_dtype: Optional[DataType],
 ) -> Column:
     """
     Return the new value expression for the root column with the nested column set, creating a
@@ -156,7 +157,7 @@ def nested_set_expr(
                 return fn.array()
             fn_val = val
             if isinstance(val, Column):
-                fn_val = lambda x: val  # pylint: disable=unnecessary-lambda-assignment
+                fn_val = lambda _: val  # noqa: E731
             return fn.transform(base, fn_val)
         return val
 
@@ -164,7 +165,7 @@ def nested_set_expr(
         is_array = nested[0].endswith('[]')
 
         struct_cols = []
-        for field in fields:
+        for field in fields:  # noqa: PLR1702
             if field != nested[0].rstrip('[]'):
                 struct_cols.append(col.getField(field).alias(field))
                 continue
@@ -174,9 +175,9 @@ def nested_set_expr(
                 nested_fields = field_dtype.names
 
                 if is_array:
+
                     def build_array(x):
-                        # pylint: disable=cell-var-from-loop
-                        return build_struct(nested_fields, nested[1:], field_dtype, x)
+                        return build_struct(nested_fields, nested[1:], field_dtype, x)  # noqa: B023
 
                     expr = fn.transform(col.getField(field), build_array)
                 else:
@@ -187,11 +188,10 @@ def nested_set_expr(
                 if is_array:
                     fn_val = val
                     if isinstance(val, Column):
-                        fn_val = lambda x: val  # pylint: disable=unnecessary-lambda-assignment
+                        fn_val = lambda _: val  # noqa: E731
                     expr = fn.transform(col.getField(field), fn_val).alias(field)
-                else:
-                    if not isinstance(val, Column):
-                        expr = val(col.getField(field))
+                elif not isinstance(val, Column):
+                    expr = val(col.getField(field))
 
                 struct_cols.append(expr.alias(field))
 
@@ -255,7 +255,8 @@ def nested_drop_expr(column: str, root_expr: Column, root_dtype: DataType) -> Co
             if len(nested) > 1:
                 field_dtype = dtype_at(dtype, field)
                 struct_cols.append(
-                    build_struct(field_dtype.names, nested[1:], field_dtype, col.getField(field)).alias(field))
+                    build_struct(field_dtype.names, nested[1:], field_dtype, col.getField(field)).alias(field)
+                )
 
         return fn.struct(*struct_cols)
 

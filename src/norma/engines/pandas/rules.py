@@ -1,7 +1,7 @@
 import abc
 import inspect
 from collections import defaultdict
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Iterable, Optional
 from uuid import UUID
 
 import pandas as pd
@@ -97,46 +97,46 @@ def required() -> Rule:
 def equal_to(eq: Any) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()] != eq,
-        details=errors.EQUAL_TO.format(eq=eq)
+        details=errors.EQUAL_TO.format(eq=eq),
     )
 
 
 def not_equal_to(ne: Any) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()] == ne,
-        details=errors.NOT_EQUAL_TO.format(ne=ne)
+        details=errors.NOT_EQUAL_TO.format(ne=ne),
     )
 
 
 def greater_than(gt: Any) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()] <= gt,
-        details=errors.GREATER_THAN.format(gt=gt)
+        details=errors.GREATER_THAN.format(gt=gt),
     )
 
 
 def greater_than_equal(ge: Any) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()] < ge,
-        details=errors.GREATER_THAN_EQUAL.format(ge=ge)
+        details=errors.GREATER_THAN_EQUAL.format(ge=ge),
     )
 
 
 def less_than(lt: Any) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()] >= lt,
-        details=errors.LESS_THAN.format(lt=lt)
+        details=errors.LESS_THAN.format(lt=lt),
     )
 
 
 def less_than_equal(le: Any) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()] > le,
-        details=errors.LESS_THAN_EQUAL.format(le=le)
+        details=errors.LESS_THAN_EQUAL.format(le=le),
     )
 
 
-def multiple_of(multiple: Union[int, float]) -> Rule:
+def multiple_of(multiple: float) -> Rule:
     def before(df, col):
         if not pd.api.types.is_numeric_dtype(df[col]):
             raise ValueError('multiple_of rule can only be applied to numeric columns')
@@ -146,10 +146,9 @@ def multiple_of(multiple: Union[int, float]) -> Rule:
         raise ValueError('multiple_of must be greater than zero')
 
     return rule(
-        # pylint: disable=use-implicit-booleaness-not-comparison-to-zero
-        lambda df, col: (df[col][df[col].notna()] < 0) | (df[col][df[col].notna()] % multiple != 0.0),
+        lambda df, col: (df[col][df[col].notna()] < 0) | (df[col][df[col].notna()] % multiple != 0.0),  # noqa: RUF069
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -162,7 +161,7 @@ def min_length(value: int) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()].str.len() < value,
         details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -175,7 +174,7 @@ def max_length(value: int) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()].str.len() > value,
         details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
@@ -188,21 +187,21 @@ def pattern(regex: str) -> Rule:
     return rule(
         lambda df, col: ~df[col][df[col].notna()].str.match(regex, na=False),
         details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
-        __pre_func__=before
+        __pre_func__=before,
     )
 
 
 def isin(values: Iterable[Any]) -> Rule:
     return rule(
         lambda df, col: ~df[col][df[col].notna()].isin(values),
-        details=errors.ENUM.format(expected=values)
+        details=errors.ENUM.format(expected=values),
     )
 
 
 def notin(values: Iterable[Any]) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()].isin(values),
-        details=errors.NOT_ENUM.format(unexpected=values)
+        details=errors.NOT_ENUM.format(unexpected=values),
     )
 
 
@@ -245,14 +244,16 @@ def date_parsing() -> Rule:
 def time_parsing() -> Rule:
     return RegexStringDerivedTypeRule(
         r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$',
-        errors.TIME_TYPE, errors.TIME_PARSING
+        errors.TIME_TYPE,
+        errors.TIME_PARSING,
     )
 
 
 def duration_parsing() -> Rule:
     return RegexStringDerivedTypeRule(
         r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$',
-        errors.DURATION_TYPE, errors.DURATION_PARSING
+        errors.DURATION_TYPE,
+        errors.DURATION_PARSING,
     )
 
 
@@ -265,7 +266,7 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
         error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.EXTRA_FORBIDDEN)
 
         del error_state.masks[column]
-        df.drop(column, axis=1, inplace=True)
+        df.drop(column, axis=1, inplace=True)  # noqa: PD002
         return None
 
     return verify
@@ -278,7 +279,8 @@ def uuid_parsing() -> Rule:
 def ipv4_address() -> Rule:
     return RegexStringDerivedTypeRule(
         r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$',
-        errors.IPV4, errors.IPV4
+        errors.IPV4,
+        errors.IPV4,
     )
 
 
@@ -291,7 +293,8 @@ def ipv6_address() -> Rule:
         r'}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4'
         r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
         r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$',
-        errors.IPV6, errors.IPV6
+        errors.IPV6,
+        errors.IPV6,
     )
 
 
@@ -301,7 +304,8 @@ def uri_parsing() -> Rule:
         r"()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9"
         r"]|[!$&'()*+,;=:@])+)*)?(\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(\#(?:[a-z0-9-._"
         r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$",
-        errors.URI_TYPE, errors.URI_PARSING
+        errors.URI_TYPE,
+        errors.URI_PARSING,
     )
 
 
@@ -425,7 +429,7 @@ class DatetimeTypeRule(Rule):
 
         datetime_series = pd.to_datetime(df[column], errors='coerce', utc=True)
         if self.dtype is not None:
-            datetime_series = pd.Series(datetime_series.values.astype(self.dtype), name=column)
+            datetime_series = pd.Series(datetime_series.values.astype(self.dtype), name=column)  # noqa: PD011
 
         boolmask = datetime_series.isna() & df[column].notna() & ~non_parsing_type_series
         error_state.add_errors(boolmask, column, details=self.dt_parsing)
