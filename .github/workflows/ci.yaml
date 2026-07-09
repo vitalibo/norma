@@ -6,27 +6,37 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: 'Test'
+  code-quality:
+    name: Check code quality
+
     runs-on: ubuntu-latest
 
     steps:
       - name: 'Checkout code'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
+
+      - name: 'Set up Just'
+        uses: extractions/setup-just@v3
+
+      - name: 'Install uv'
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: 'Set up Python'
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: 3.9
 
       - name: 'Install dependencies'
         run: |
-          make install
+          just sync
 
       - name: 'Run code style checks'
         run: |
-          make codestyle
+          just format
+          just check
 
-      - name: 'Run tests'
+      - name: 'Run tests with coverage'
         run: |
-          make test
+          just coverage
