@@ -6,7 +6,7 @@
       "type": {
         "type": "array",
         "elementType": "string",
-        "containsNull": true
+        "containsNull": false
       }
     }
   ]

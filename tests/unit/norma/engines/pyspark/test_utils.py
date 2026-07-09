@@ -34,7 +34,7 @@ def test_nested_set_expr(case, column, spark):
         f'data/nested_set_expr/{case}/exp_schema.json'
     )
     schema = StructType.from_json(  # pylint:disable=no-member
-        resources.resource_as_json(
+        resources.load_json(
             __file__,
             f'data/nested_set_expr/{case}/exp_schema.json'
         )
@@ -96,7 +96,7 @@ def test_nested_drop_expr(case, column, spark):
         f'data/nested_drop_expr/{case}/exp_schema.json'
     )
     schema = StructType.from_json(  # pylint:disable=no-member
-        resources.resource_as_json(
+        resources.load_json(
             __file__,
             f'data/nested_drop_expr/{case}/exp_schema.json'
         )

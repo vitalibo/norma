@@ -9,9 +9,10 @@
       "name": "f1",
       "type": {
         "type": "array",
-        "elementType": "string",
-        "containsNull": true
-      }
+        "elementType": "void",
+        "containsNull": false
+      },
+      "nullable": false
     }
   ]
 }

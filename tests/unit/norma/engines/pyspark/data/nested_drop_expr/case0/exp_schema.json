@@ -11,7 +11,8 @@
             "type": "string"
           }
         ]
-      }
+      },
+      "nullable": false
     }
   ]
 }

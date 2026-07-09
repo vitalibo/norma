@@ -9,17 +9,10 @@
       "name": "f1",
       "type": {
         "type": "array",
-        "elementType": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "f3",
-              "type": "string"
-            }
-          ]
-        },
-        "containsNull": true
-      }
+        "elementType": "void",
+        "containsNull": false
+      },
+      "nullable": false
     }
   ]
 }

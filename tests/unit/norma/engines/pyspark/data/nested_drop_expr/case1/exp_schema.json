@@ -16,10 +16,12 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "nullable": false
           }
         ]
-      }
+      },
+      "nullable": false
     }
   ]
 }

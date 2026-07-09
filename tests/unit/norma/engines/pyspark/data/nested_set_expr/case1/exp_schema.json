@@ -7,7 +7,8 @@
     },
     {
       "name": "f2",
-      "type": "string"
+      "type": "string",
+      "nullable": false
     }
   ]
 }

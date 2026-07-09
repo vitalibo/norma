@@ -3,7 +3,8 @@
   "fields": [
     {
       "name": "f1",
-      "type": "string"
+      "type": "string",
+      "nullable": false
     }
   ]
 }

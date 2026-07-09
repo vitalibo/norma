@@ -24,18 +24,21 @@
                         },
                         {
                           "name": "f4",
-                          "type": "string"
+                          "type": "string",
+                          "nullable": false
                         }
                       ]
-                    }
+                    },
+                    "nullable": false
                   }
                 ]
               },
-              "containsNull": true
+              "containsNull": false
             }
           }
         ]
-      }
+      },
+      "nullable": false
     }
   ]
 }
