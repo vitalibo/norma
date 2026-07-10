@@ -408,6 +408,16 @@ def _is_null(value):
     return value is None or (pd.api.types.is_scalar(value) and pd.isna(value))
 
 
+def _flag_nulls_on_type_error(boolmask, series):
+    """
+    Spark reports element type errors for the whole array, so null elements join the type-error mask
+    """
+
+    if isinstance(series.index, pd.MultiIndex) and boolmask.any():
+        return boolmask | series.isna()
+    return boolmask
+
+
 class ObjectTypeRule(Rule):
     """
     Class for object type casting rules
@@ -525,6 +535,7 @@ class NumberTypeRule(Rule):
 
             non_parsing_type_series = \
                 df[column].apply(lambda x: not isinstance(x, (str, bool, int, float))) & df[column].notna()
+            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
             error_state.add_errors(non_parsing_type_series, column, details=self.numeric_type)
 
         numeric_series = pd.to_numeric(df[column].convert_dtypes(), errors='coerce').astype(self.dtype)
@@ -549,6 +560,7 @@ class StringTypeRule(Rule):
         if pd.api.types.is_object_dtype(df[column]):
             non_parsing_type_series = \
                 df[column].apply(lambda x: not isinstance(x, (str, bool, int, float))) & df[column].notna()
+            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
             error_state.add_errors(non_parsing_type_series, column, details=errors.STRING_TYPE)
             bool_series = df[column].apply(lambda x: isinstance(x, bool))
 
@@ -580,6 +592,7 @@ class BooleanTypeRule(Rule):
 
             non_parsing_type_series = \
                 df[column].apply(lambda x: not isinstance(x, (str, bool, int, float))) & df[column].notna()
+            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
             error_state.add_errors(non_parsing_type_series, column, details=errors.BOOL_TYPE)
 
         def replace_str(regex, value):
@@ -588,7 +601,11 @@ class BooleanTypeRule(Rule):
         series = df[column].astype('string')
         true_series = replace_str(r'^\s*(true|t|yes|y|on)\s*$', '1')
         false_series = replace_str(r'^\s*(false|f|no|n|off)\s*$', '0')
-        bool_series = true_series.combine_first(false_series).astype('boolean')
+        bool_series = true_series.combine_first(false_series)
+        if not pd.api.types.is_numeric_dtype(df[column]):
+            # strings only cast to boolean from the word list or exact 0/1 (Spark cast semantics)
+            bool_series = bool_series.where(bool_series.isin([0, 1]))
+        bool_series = bool_series.astype('boolean')
 
         boolmask = bool_series.isna() & df[column].notna() & ~non_parsing_type_series
         error_state.add_errors(boolmask, column, details=errors.BOOL_PARSING)
@@ -616,12 +633,16 @@ class DatetimeTypeRule(Rule):
                 error_state.add_errors(pd.Series(True, index=df.index), column, details=self.dt_type)
                 return pd.Series(dtype=self.dtype or 'datetime64[ns]', name=column, index=df.index)
 
-            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, str))
-            error_state.add_errors(non_parsing_type_series & df[column].notna(), column, details=self.dt_type)
+            non_parsing_type_series = \
+                df[column].apply(lambda x: not isinstance(x, str)) & df[column].notna()
+            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
+            error_state.add_errors(non_parsing_type_series, column, details=self.dt_type)
 
-        datetime_series = pd.to_datetime(df[column], errors='coerce', utc=True)
+        datetime_series = pd.to_datetime(df[column], errors='coerce', utc=True, format='mixed')
         if self.dtype is not None:
-            datetime_series = pd.Series(datetime_series.values.astype(self.dtype), name=column)  # noqa: PD011
+            datetime_series = pd.Series(
+                datetime_series.values.astype(self.dtype), name=column, index=df.index  # noqa: PD011
+            )
 
         boolmask = datetime_series.isna() & df[column].notna() & ~non_parsing_type_series
         error_state.add_errors(boolmask, column, details=self.dt_parsing)
@@ -643,8 +664,10 @@ class StringDerivedTypeRule(Rule, abc.ABC):
             error_state.add_errors(pd.Series(True, index=df.index), column, details=error_details)
             return pd.Series(dtype='string', name=column, index=df.index)
 
-        non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, supported))
-        error_state.add_errors(non_parsing_type_series & df[column].notna(), column, details=error_details)
+        non_parsing_type_series = \
+            df[column].apply(lambda x: not isinstance(x, supported)) & df[column].notna()
+        non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
+        error_state.add_errors(non_parsing_type_series, column, details=error_details)
 
         str_series = df[column].astype('string')
         str_series[non_parsing_type_series] = None

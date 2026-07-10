@@ -2,6 +2,7 @@
   {
     "description": "cast(null <void> as struct) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -117,6 +118,7 @@
   {
     "description": "cast(null <struct> as struct) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -498,6 +500,7 @@
   {
     "description": "cast({col1='foo', col2='123'} <map> as struct) => {col1='foo', col2=123}",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -863,6 +866,7 @@
   {
     "description": "cast({col1='foo'} <map> as struct) => {col1='foo', col2=null}",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2481,6 +2485,7 @@
   {
     "description": "cast({col={col1={col2={'col3':'foo'}}}} <map> as struct) => {col={col1={col2={col3='foo'}}}}",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2645,6 +2650,7 @@
   {
     "description": "cast({col={col1={col2={col3='{\"col4\":\"123\"}'}}}} <map> as struct) => {col={col1={col2={col3={col4=123}}}}}",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2824,6 +2830,7 @@
   {
     "description": "cast({col={col1={col2={col3={col4='123'}}}}} <map<struct>> as struct) => {col={col1={col2={col3={col4=123}}}}}",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3013,6 +3020,7 @@
   {
     "description": "cast({col={col1={col2={col3={col4='foo'}}}}} <map> as object) => {col={col1={col2={col3={col4=null}}}}}, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3528,6 +3536,7 @@
   {
     "description": "each(cast([{col1='123', col2='456'}] map as array<struct>)) => {col=[{col1=123, col2='455'}]}",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -5229,6 +5238,7 @@
   {
     "description": "each(cast($.col1.col2.col3[.col4.col5={col1='123', col2='456'}] map as array<struct>)) => {col1={col2={col3=[{col4={col5={col1='123', col2=456}}}]}}}",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

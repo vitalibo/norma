@@ -1203,6 +1203,7 @@
   {
     "description": "$.col1.col2=null != 'abc'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1322,6 +1323,7 @@
   {
     "description": "$.col1.col2='123' != 'abc'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1442,6 +1444,7 @@
   {
     "description": "$.col1.col2='abc' != 'abc', error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1572,6 +1575,7 @@
   {
     "description": "each($.col1.col2.col3[1, 2]) != 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1742,6 +1746,7 @@
   {
     "description": "each($.col1.col2.col3[1, 2, 3]) != 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1927,6 +1932,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6=1, =2]) != 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2184,6 +2190,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6=1, =2, =3]) != 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

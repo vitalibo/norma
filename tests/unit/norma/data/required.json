@@ -873,6 +873,7 @@
   {
     "description": "$.col1.col2 is not required",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1001,6 +1002,7 @@
   {
     "description": "$.col1.col2 is required, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1142,6 +1144,7 @@
   {
     "description": "$.col1.col2 is missing, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1280,6 +1283,7 @@
   {
     "description": "$.col1.col2.col3.col4 is not required",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1466,6 +1470,7 @@
   {
     "description": "$.col1.col2.col3.col4 is required, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1664,6 +1669,7 @@
   {
     "description": "$.col1.col2.col3.col4 is missing, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1852,6 +1858,7 @@
   {
     "description": "each($.col1.col2.col3['ab', null]) is not required",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2022,6 +2029,7 @@
   {
     "description": "each($.col1.col2.col3['ab', null]) is required, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2202,6 +2210,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6='ab', =null]) is not required",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2456,6 +2465,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6='ab', =null]) is required, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2726,6 +2736,7 @@
   {
     "description": "each($.col1.col2.col3[].col4.col5.col7) is missing, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

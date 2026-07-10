@@ -601,6 +601,7 @@
   {
     "description": "$.col1.col2=null matches '^[a-z]*$'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -718,6 +719,7 @@
   {
     "description": "$.col1.col2='abc' matches '^[a-z]*$'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -836,6 +838,7 @@
   {
     "description": "$.col1.col2='abc1' matches '^[a-z]*$', error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -964,6 +967,7 @@
   {
     "description": "each($.col1.col2.col3['ab', 'a']) matches '^[a-z]*$'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1132,6 +1136,7 @@
   {
     "description": "each($.col1.col2.col3['ab', '123', 'a', 'Ab']) matches '^[a-z]*$', error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1318,6 +1323,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6='ab', ='a']) matches '^[a-z]*$'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1573,6 +1579,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6='ab', ='123', ='a', ='Ab']) matches '^[a-z]*$', error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1870,6 +1877,7 @@
   {
     "description": "each($.col1.col2.col3[123, 456]) matches '^[a-z]*$', exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

@@ -1927,6 +1927,7 @@
   {
     "description": "cast($.col1.col2=[{col3='foo'}, {col3='123'}] <map> as array<struct>) => [{col3=null}, {col3=123}], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

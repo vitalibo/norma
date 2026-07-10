@@ -114,8 +114,9 @@ def _process_object(df, column, inner_schema, error_state):
     Validate an object column by recursively validating a child frame built from its fields
     """
 
-    parsed = df[column]
-    child = pd.DataFrame([value if isinstance(value, dict) else {} for value in parsed], index=df.index)
+    child = pd.DataFrame(
+        [value if isinstance(value, dict) else {} for value in df[column]], index=df.index, dtype='object'
+    )
     child.columns = [f'{column}.{name}' for name in child.columns]
     child = _validate(child, inner_schema, error_state, parent=f'{column}.')
 
@@ -127,16 +128,15 @@ def _process_object(df, column, inner_schema, error_state):
             if name.removeprefix(f'{column}.') not in inner_schema.columns
         ]
 
-    is_element = isinstance(df.index, pd.MultiIndex)
-    values = []
-    for index in df.index:
-        value = parsed.loc[index]
-        if isinstance(value, dict) or is_element:
-            values.append({name: _to_native(child.loc[index, f'{column}.{name}']) for name in names})
-        else:
-            values.append(None)
-
-    df[column] = pd.Series(values, index=df.index, dtype='object')
+    # null objects materialize as a dict of null fields, mirroring how pyspark rebuilds structs;
+    # rows with errors are nullified afterwards by the mask
+    df[column] = pd.Series(
+        [
+            {name: _to_native(child.loc[index, f'{column}.{name}']) for name in names}
+            for index in df.index
+        ],
+        index=df.index, dtype='object',
+    )
     return df
 
 
