@@ -392,6 +392,7 @@
   {
     "description": "semi-structured data",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

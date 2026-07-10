@@ -30,45 +30,22 @@
       }
     },
     "then": {
-      "raises": {
-        "type": "NotImplementedError",
-        "match": "array_parsing is not implemented yet"
-      }
-    }
-  },
-  {
-    "description": "len(123) >= 3, exception is raised",
-    "engines": [
-      "pandas"
-    ],
-    "given": {
       "data": [
         {
-          "col": 123
+          "col": [
+            "ab",
+            "cd",
+            "efg"
+          ],
+          "errors": {}
         }
       ]
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col": {
-            "type": "integer",
-            "minItems": 3
-          }
-        }
-      }
-    },
-    "then": {
-      "raises": {
-        "type": "NotImplementedError",
-        "match": "min_items is not implemented yet"
-      }
     }
   },
   {
     "description": "len(123) >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -110,6 +87,7 @@
   {
     "description": "len('abc') >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -151,6 +129,7 @@
   {
     "description": "len(['ab', 'cd', 'ef', 'gh']) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -273,6 +252,7 @@
   {
     "description": "len(['ab', 'cd']) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -399,6 +379,7 @@
   {
     "description": "len($.col1.col2.col3['ab', 'cd', 'efg']) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -569,6 +550,7 @@
   {
     "description": "len($.col1.col2.col3['ab', 'cd']) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -745,6 +727,7 @@
   {
     "description": "len($.col1.col2.col3[.col4.col5.col6=1, =2, =3]) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1014,6 +997,7 @@
   {
     "description": "len($.col1.col2.col3[.col4.col5.col6=1, =2]) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1265,6 +1249,7 @@
   {
     "description": "each(len($.col1.col2.col2['ab', 'a'])) >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

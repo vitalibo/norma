@@ -215,6 +215,7 @@
   {
     "description": "allowed in $.col1",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -343,6 +344,7 @@
   {
     "description": "forbidden in $.col1, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -476,6 +478,7 @@
   {
     "description": "allowed in $.col1.col2",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -629,6 +632,7 @@
   {
     "description": "forbidden in $.col1.col2, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -787,6 +791,7 @@
   {
     "description": "allowed in $.col1.col2.col3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -995,6 +1000,7 @@
   {
     "description": "forbidden in $.col1.col2.col3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1202,6 +1208,7 @@
   {
     "description": "allowed in $.col1[]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1361,6 +1368,7 @@
   {
     "description": "forbidden in $.col1[], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1528,6 +1536,7 @@
   {
     "description": "allowed in $.col1[].col2",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1716,6 +1725,7 @@
   {
     "description": "forbidden in $.col1[].col2, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1912,6 +1922,7 @@
   {
     "description": "allowed in $.col1.col2[]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2096,6 +2107,7 @@
   {
     "description": "forbidden in $.col1.col2[], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2288,6 +2300,7 @@
   {
     "description": "allowed in $.col1.col2[].col3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2501,6 +2514,7 @@
   {
     "description": "forbidden in $.col1.col2[].col3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2722,6 +2736,7 @@
   {
     "description": "allowed in $.col1.col2[].col3.col4",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3000,6 +3015,7 @@
   {
     "description": "forbidden in $.col1.col2[].col3.col4, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
