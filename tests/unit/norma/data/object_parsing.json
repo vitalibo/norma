@@ -1249,7 +1249,7 @@
     }
   },
   {
-    "description": "cast({col1='foo', col2='123', col3='456'} <map> as struct) => {col1='foo', col2=123}, false negative",
+    "description": "cast({col1='foo', col2='123', col3='456'} <map> as struct) => {col1='foo', col2=123}, false positive",
     "engines": [
       "pyspark"
     ],
@@ -1373,9 +1373,60 @@
     }
   },
   {
-    "description": "cast('{\"co1\":\"foo\",\"col2\":123,\"col3\":\"456\"}' <string> as struct) => {col1='foo', col2=123}, false negative",
+    "description": "cast('{\"co1\":\"foo\",\"col2\":123,\"col3\":\"456\"}' <string> as struct) => {col1='foo', col2=123}, error is raised",
     "engines": [
-      "pandas",
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "{\"col1\":\"foo\",\"col2\":123,\"col3\":\"456\"}"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo",
+            "col2": 123
+          },
+          "errors": {
+            "col.col3": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "\"456\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('{\"co1\":\"foo\",\"col2\":123,\"col3\":\"456\"}' <string> as struct) => {col1='foo', col2=123}, false positive",
+    "engines": [
       "pyspark"
     ],
     "given": {
@@ -4430,7 +4481,7 @@
     }
   },
   {
-    "description": "each(cast([{col1='123', col2='456', col3='789'}] map as array<struct>)) => {col=[{col1=123, col2='455'}]}, false negative",
+    "description": "each(cast([{col1='123', col2='456', col3='789'}] map as array<struct>)) => {col=[{col1=123, col2='455'}]}, false positive",
     "engines": [
       "pyspark"
     ],
@@ -4577,9 +4628,70 @@
     }
   },
   {
-    "description": "each(cast(['{\"col1\": \"123\", \"col2\": 456, \"col3\": \"789\"}'] as array<struct>)) => {col=[{col1=123, col2='455'}]}, false negative",
+    "description": "each(cast(['{\"col1\": \"123\", \"col2\": 456, \"col3\": \"789\"}'] as array<struct>)) => {col=[{col1=123, col2='455'}]}, error is raised",
     "engines": [
-      "pandas",
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "{\"col1\": \"123\", \"col2\": 456, \"col3\": \"789\"}"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "col1": {
+                  "type": "integer"
+                },
+                "col2": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            {
+              "col1": 123,
+              "col2": "456"
+            }
+          ],
+          "errors": {
+            "col[].col3": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "[\"789\"]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each(cast(['{\"col1\": \"123\", \"col2\": 456, \"col3\": \"789\"}'] as array<struct>)) => {col=[{col1=123, col2='455'}]}, false positive",
+    "engines": [
       "pyspark"
     ],
     "given": {
@@ -6692,7 +6804,7 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3[.col4.col5={col6='123', col7='456', col8='789'}] map as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, false negative",
+    "description": "each(cast($.col1.col2.col3[.col4.col5={col6='123', col7='456', col8='789'}] map as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, false positive",
     "engines": [
       "pyspark"
     ],
@@ -6939,9 +7051,102 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\",\"col7\":456,\"col8\":\"789\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, false negative",
+    "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\",\"col7\":456,\"col8\":\"789\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, error is raised",
     "engines": [
-      "pandas",
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                "{\"col4\":{\"col5\":{\"col6\":\"123\",\"col7\":456,\"col8\":\"789\"}}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": "integer"
+                                },
+                                "col7": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": 123,
+                      "col7": "456"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {
+            "col1.col2.col3[].col4.col5.col8": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "[\"789\"]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\",\"col7\":456,\"col8\":\"789\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, false positive",
+    "engines": [
       "pyspark"
     ],
     "given": {

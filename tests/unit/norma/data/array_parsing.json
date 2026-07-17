@@ -1393,9 +1393,79 @@
     }
   },
   {
+    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              "foo",
+              "{\"col3\":\"123\"}"
+            ]
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col3": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": null
+              },
+              {
+                "col3": 123
+              }
+            ]
+          },
+          "errors": {
+            "col1.col2[]": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "[\"foo\",\"{\\\"col3\\\":\\\"123\\\"}\"]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], false negative",
     "engines": [
-      "pandas",
       "pyspark"
     ],
     "given": {

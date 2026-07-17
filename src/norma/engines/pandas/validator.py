@@ -61,6 +61,7 @@ def _validate(df, schema, error_state, parent=''):
         if not schema.allow_extra:
             rules.append(extra_forbidden([f'{parent}{allowed}' for allowed in schema.columns]))
 
+        error_state.set_backup(full_column, df[full_column])
         for rule in rules:
             if isinstance(rule, norma.rules.RuleProxy):
                 rule = getattr(norma.engines.pandas.rules, rule.name)(**rule.kwargs)  # noqa: PLW2901
@@ -75,41 +76,14 @@ def _validate(df, schema, error_state, parent=''):
 
         if full_column in df.columns:
             if schema.columns[column].dtype in {'array', 'list'}:
-                df = _process_array(df, full_column, inner_schema, error_state)
+                df = _validate_array(df, full_column, inner_schema, error_state)
             else:
-                df = _process_object(df, full_column, inner_schema, error_state)
+                df = _validate_object(df, full_column, inner_schema, error_state)
 
     return _finalize(df, schema, error_state, parent)
 
 
-def _finalize(df, schema, error_state, parent=''):
-    """
-    Finalize the frame: capture backups, nullify invalid values and fill defaults
-    """
-
-    for full_column in df.columns:
-        if full_column not in error_state.masks:
-            continue
-        mask = error_state.masks[full_column].reindex(df.index, fill_value=False)
-        if not mask.any():
-            continue
-        error_state.set_backup(full_column, df[full_column])
-        df.loc[mask, full_column] = None
-
-    for column in schema.columns:
-        full_column = f'{parent}{column}'
-        if full_column in df.columns and schema.columns[column].default is not None:
-            df[full_column] = df[full_column].fillna(schema.columns[column].default)
-
-    for column in schema.columns:
-        full_column = f'{parent}{column}'
-        if full_column in df.columns and schema.columns[column].default_factory is not None:
-            df[full_column] = df[full_column].fillna(schema.columns[column].default_factory(df))
-
-    return df
-
-
-def _process_object(df, column, inner_schema, error_state):
+def _validate_object(df, column, inner_schema, error_state):
     """
     Validate an object column by recursively validating a child frame built from its fields
     """
@@ -129,59 +103,59 @@ def _process_object(df, column, inner_schema, error_state):
         ]
 
     # null objects materialize as a dict of null fields, mirroring how pyspark rebuilds structs;
-    # rows with errors are nullified afterwards by the mask
+    # rows with errors are nullified afterward by the mask
     df[column] = pd.Series(
         [
-            {name: _to_native(child.loc[index, f'{column}.{name}']) for name in names}
-            for index in df.index
+            {name: _to_native(value) for name, value in zip(names, row)}
+            for row in zip(*[child[f'{column}.{name}'].tolist() for name in names])
         ],
         index=df.index, dtype='object',
     )
     return df
 
 
-def _process_array(df, column, inner_column, error_state):
+def _validate_array(df, column, inner_column, error_state):
     """
     Validate an array column by exploding its elements into a child frame indexed by (row, position)
     """
 
     full_column = f'{column}[]'
 
-    index, values = [], []
-    for row in df.index:
-        value = df.loc[row, column]
+    originals = df[column].tolist()
+    rows, positions, values = [], [], []
+    for row, value in zip(df.index, originals):
         if not isinstance(value, list):
             continue
         for position, element in enumerate(value):
-            index.append((row, position))
+            rows.append(row)
+            positions.append(position)
             values.append(element)
 
     regrouped = {}
-    if index:
+    if rows:
         child = pd.DataFrame({
-            full_column: pd.Series(values, index=pd.MultiIndex.from_tuples(index), dtype='object')
+            full_column: pd.Series(values, index=pd.MultiIndex.from_arrays([rows, positions]), dtype='object')
         })
-        child = _validate_elements(child, full_column, inner_column, error_state)
-        regrouped = {
-            row: [_to_native(element) for element in elements]
-            for row, elements in child[full_column].groupby(level=0).agg(list).items()
-        }
+        child = _validate_array_elements(child, full_column, inner_column, error_state)
+        for row, element in zip(child.index.get_level_values(0), child[full_column].tolist()):
+            regrouped.setdefault(row, []).append(_to_native(element))
 
     df[column] = pd.Series(
         [
-            regrouped.get(row, df.loc[row, column] if isinstance(df.loc[row, column], list) else None)
-            for row in df.index
+            regrouped.get(row, value if isinstance(value, list) else None)
+            for row, value in zip(df.index, originals)
         ],
         index=df.index, dtype='object',
     )
     return df
 
 
-def _validate_elements(child, full_column, inner_column, error_state):
+def _validate_array_elements(child, full_column, inner_column, error_state):
     """
     Run element-level rules over the exploded array elements and nullify the failing ones
     """
 
+    error_state.set_backup(full_column, child[full_column])
     for rule in inner_column.rules:
         if isinstance(rule, norma.rules.RuleProxy):
             rule = getattr(norma.engines.pandas.rules, rule.name)(**rule.kwargs)  # noqa: PLW2901
@@ -193,48 +167,66 @@ def _validate_elements(child, full_column, inner_column, error_state):
     if full_column in error_state.masks:
         mask = error_state.masks[full_column].reindex(child.index, fill_value=False)
         if mask.any():
-            error_state.set_backup(full_column, child[full_column])
             child.loc[mask, full_column] = None
 
     if inner_column.default is not None:
         child[full_column] = child[full_column].fillna(inner_column.default)
 
     if inner_column.inner_schema is not None and inner_column.dtype == 'object':
-        child = _process_object(child, full_column, inner_column.inner_schema, error_state)
+        child = _validate_object(child, full_column, inner_column.inner_schema, error_state)
 
     return child
 
 
+def _finalize(df, schema, error_state, parent=''):
+    """
+    Nullify invalid values and fill defaults
+    """
+
+    for full_column in df.columns:
+        if full_column not in error_state.masks:
+            continue
+        mask = error_state.masks[full_column].reindex(df.index, fill_value=False)
+        if not mask.any():
+            continue
+        df.loc[mask, full_column] = None
+
+    for column in schema.columns:
+        full_column = f'{parent}{column}'
+        if full_column in df.columns and schema.columns[column].default is not None:
+            df[full_column] = df[full_column].fillna(schema.columns[column].default)
+
+    for column in schema.columns:
+        full_column = f'{parent}{column}'
+        if full_column in df.columns and schema.columns[column].default_factory is not None:
+            df[full_column] = df[full_column].fillna(schema.columns[column].default_factory(df))
+
+    return df
+
+
 def _backfill_originals(error_state, original_df):
     """
-    Render the original (pre-cast) value for every recorded error
+    Render the original value for every recorded error
     """
+
+    def render(index, column):
+        if column in original_df.columns:
+            return json.dumps(original_df.loc[index, column], separators=(',', ':'), default=_json_serde)
+
+        if column not in error_state.backups:
+            return 'null'
+
+        backup = error_state.backups[column]
+        if isinstance(backup.index, pd.MultiIndex):
+            value = [_to_native(element) for element in backup.loc[index]] \
+                if index in backup.index.get_level_values(0) else None
+        else:
+            value = _to_native(backup.loc[index]) if index in backup.index else None
+        return json.dumps(value, separators=(',', ':'), default=_json_serde)
 
     for index in error_state.errors:
         for column in error_state.errors[index]:
-            error_state.errors[index][column]['original'] = \
-                _format_original(error_state, original_df, index, column)
-
-
-def _format_original(error_state, original_df, index, column):
-    """
-    Render a single original value: root columns come from the input frame,
-    nested paths from the pre-cast backups ([] paths regroup into a per-row list)
-    """
-
-    if column in original_df.columns:
-        return json.dumps(original_df.loc[index, column], separators=(',', ':'), default=_json_serde)
-
-    if column not in error_state.backups:
-        return 'null'
-
-    backup = error_state.backups[column]
-    if isinstance(backup.index, pd.MultiIndex):
-        value = [_to_native(element) for element in backup.loc[index]] \
-            if index in backup.index.get_level_values(0) else None
-    else:
-        value = _to_native(backup.loc[index]) if index in backup.index else None
-    return json.dumps(value, separators=(',', ':'), default=_json_serde)
+            error_state.errors[index][column]['original'] = render(index, column)
 
 
 def _to_native(value):

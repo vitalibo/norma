@@ -55,8 +55,11 @@ class ErrorState(IErrorState):
         """
 
         flagged = boolmask[boolmask.astype(bool)]
-        for index in flagged.index.get_level_values(0).unique():
-            positions = sorted(int(position) for position in flagged.loc[index].index)
+        grouped = {}
+        for index, position in flagged.index:
+            grouped.setdefault(index, []).append(int(position))
+        for index, positions in grouped.items():
+            positions.sort()
             if index not in self.errors:
                 self.errors[index] = {column: {'details': []}}
             elif column not in self.errors[index]:
@@ -249,6 +252,18 @@ def notin(values: Iterable[Any]) -> Rule:
     )
 
 
+def _ensure_array_column(rule_name):
+    def before(df, column):
+        series = df[column]
+        is_array = pd.api.types.is_object_dtype(series) \
+                   and series.dropna().apply(lambda x: isinstance(x, list)).all()
+        if not (is_array or series.isna().all()):
+            raise ValueError(f'{rule_name} rule can only be applied to array columns')
+        return df
+
+    return before
+
+
 def unique_items() -> Rule:
     def has_duplicates(items):
         keys = [json.dumps(item, sort_keys=True, default=str) for item in items]
@@ -275,18 +290,6 @@ def min_items(value: int) -> Rule:
         details=errors.TOO_SHORT.format(_type_='Array', min_length=value, _plural_='s' if value > 1 else ''),
         __pre_func__=_ensure_array_column('min_items'),
     )
-
-
-def _ensure_array_column(rule_name):
-    def before(df, column):
-        series = df[column]
-        is_array = pd.api.types.is_object_dtype(series) \
-            and series.dropna().apply(lambda x: isinstance(x, list)).all()
-        if not (is_array or series.isna().all()):
-            raise ValueError(f'{rule_name} rule can only be applied to array columns')
-        return df
-
-    return before
 
 
 def int_parsing() -> Rule:
@@ -335,7 +338,6 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
         if column in allowed:
             return df[column]
 
-        error_state.set_backup(column, df[column])
         error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.EXTRA_FORBIDDEN)
 
         error_state.masks.pop(column, None)
@@ -408,9 +410,9 @@ def _is_null(value):
     return value is None or (pd.api.types.is_scalar(value) and pd.isna(value))
 
 
-def _flag_nulls_on_type_error(boolmask, series):
+def _flag_nulls_on_array(boolmask, series):
     """
-    Spark reports element type errors for the whole array, so null elements join the type-error mask
+    Extend an error mask to also cover null elements of an array column when any element is flagged
     """
 
     if isinstance(series.index, pd.MultiIndex) and boolmask.any():
@@ -429,10 +431,6 @@ class ObjectTypeRule(Rule):
         self.schema = schema
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        error_state.set_backup(column, df[column])
-        # array elements mirror Spark's from_json semantics where malformed JSON silently becomes null
-        is_element = isinstance(df.index, pd.MultiIndex)
-
         type_mask = pd.Series(False, index=df.index)
         parsing_mask = pd.Series(False, index=df.index)
 
@@ -445,11 +443,11 @@ class ObjectTypeRule(Rule):
                 try:
                     parsed = json.loads(value)
                 except ValueError:
-                    parsing_mask[index] = not is_element
+                    parsing_mask[index] = True
                     return None
                 if not isinstance(parsed, dict):
                     return None
-                return {key: _stringify(parsed[key]) for key in self.schema.columns if key in parsed}
+                return {key: _stringify(item) for key, item in parsed.items()}
             type_mask[index] = True
             return None
 
@@ -473,18 +471,8 @@ class ArrayTypeRule(Rule):
         if '[]' in column:
             raise NotImplementedError('nested arrays are not supported yet')
 
-        error_state.set_backup(column, df[column])
-        inner_schema = self.inner_column.inner_schema if self.inner_column is not None else None
-
         type_mask = pd.Series(False, index=df.index)
         parsing_mask = pd.Series(False, index=df.index)
-
-        def parse_element(element):
-            if inner_schema is not None:
-                if isinstance(element, dict):
-                    return {key: _stringify(element[key]) for key in inner_schema.columns if key in element}
-                return None
-            return _stringify(element)
 
         def parse(index, value):
             if _is_null(value):
@@ -502,7 +490,7 @@ class ArrayTypeRule(Rule):
                 if not isinstance(parsed, list):
                     parsing_mask[index] = True
                     return None
-                return [parse_element(element) for element in parsed]
+                return [_stringify(item) for item in parsed]
             type_mask[index] = True
             return None
 
@@ -523,7 +511,6 @@ class NumberTypeRule(Rule):
         self.numeric_parsing = numeric_parsing
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        error_state.set_backup(column, df[column])
         if df[column].dtype == self.dtype:
             return df[column]
 
@@ -533,9 +520,8 @@ class NumberTypeRule(Rule):
                 error_state.add_errors(pd.Series(True, index=df.index), column, details=self.numeric_type)
                 return pd.Series(dtype=self.dtype, name=column, index=df.index)
 
-            non_parsing_type_series = \
-                df[column].apply(lambda x: not isinstance(x, (str, bool, int, float))) & df[column].notna()
-            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=self.numeric_type)
 
         numeric_series = pd.to_numeric(df[column].convert_dtypes(), errors='coerce').astype(self.dtype)
@@ -551,16 +537,14 @@ class StringTypeRule(Rule):
     """
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        error_state.set_backup(column, df[column])
         if df[column].dtype == 'string[python]':
             return df[column]
 
         non_parsing_type_series = pd.Series(False, index=df.index)
         bool_series = pd.Series(False, index=df.index)
         if pd.api.types.is_object_dtype(df[column]):
-            non_parsing_type_series = \
-                df[column].apply(lambda x: not isinstance(x, (str, bool, int, float))) & df[column].notna()
-            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=errors.STRING_TYPE)
             bool_series = df[column].apply(lambda x: isinstance(x, bool))
 
@@ -580,7 +564,6 @@ class BooleanTypeRule(Rule):
     """
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        error_state.set_backup(column, df[column])
         if pd.api.types.is_bool_dtype(df[column]):
             return df[column].astype('boolean')
 
@@ -590,9 +573,8 @@ class BooleanTypeRule(Rule):
                 error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.BOOL_TYPE)
                 return pd.Series(dtype='boolean', name=column, index=df.index)
 
-            non_parsing_type_series = \
-                df[column].apply(lambda x: not isinstance(x, (str, bool, int, float))) & df[column].notna()
-            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=errors.BOOL_TYPE)
 
         def replace_str(regex, value):
@@ -623,7 +605,6 @@ class DatetimeTypeRule(Rule):
         self.dt_parsing = dt_parsing
 
     def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        error_state.set_backup(column, df[column])
         if df[column].dtype == self.dtype:
             return df[column]
 
@@ -633,9 +614,8 @@ class DatetimeTypeRule(Rule):
                 error_state.add_errors(pd.Series(True, index=df.index), column, details=self.dt_type)
                 return pd.Series(dtype=self.dtype or 'datetime64[ns]', name=column, index=df.index)
 
-            non_parsing_type_series = \
-                df[column].apply(lambda x: not isinstance(x, str)) & df[column].notna()
-            non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, str))
+            non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=self.dt_type)
 
         datetime_series = pd.to_datetime(df[column], errors='coerce', utc=True, format='mixed')
@@ -656,7 +636,6 @@ class StringDerivedTypeRule(Rule, abc.ABC):
 
     @staticmethod
     def cast_as_str(df: pd.DataFrame, column: str, error_state: ErrorState, supported, error_details) -> pd.Series:
-        error_state.set_backup(column, df[column])
         if df[column].dtype == 'string[python]':
             return df[column]
 
@@ -664,9 +643,8 @@ class StringDerivedTypeRule(Rule, abc.ABC):
             error_state.add_errors(pd.Series(True, index=df.index), column, details=error_details)
             return pd.Series(dtype='string', name=column, index=df.index)
 
-        non_parsing_type_series = \
-            df[column].apply(lambda x: not isinstance(x, supported)) & df[column].notna()
-        non_parsing_type_series = _flag_nulls_on_type_error(non_parsing_type_series, df[column])
+        non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, supported))
+        non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
         error_state.add_errors(non_parsing_type_series, column, details=error_details)
 
         str_series = df[column].astype('string')
