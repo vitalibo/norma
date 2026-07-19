@@ -605,7 +605,7 @@ def datetime_parsing() -> Rule:
 
 def date_parsing() -> Rule:
     return DataTypeRule(
-        lambda col: fn.to_date(col),  # noqa: PLW0108
+        lambda col: fn.to_date(fn.to_timestamp(col)),
         DateType,
         (StringType, TimestampType),
         errors.DATE_TYPE,
@@ -923,4 +923,6 @@ class ArrayTypeRule(DataTypeRule):
     def parse_array_type(schema) -> ArrayType:
         if schema.inner_schema is None:
             return ArrayType(StringType())
+        if schema.dtype in {'array', 'list'}:
+            raise NotImplementedError('nested arrays are not supported yet')
         return ArrayType(ObjectTypeRule.parse_struct_type(schema.inner_schema))

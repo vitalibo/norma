@@ -581,17 +581,17 @@ class BooleanTypeRule(Rule):
             non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=errors.BOOL_TYPE)
 
-        def replace_str(regex, value):
-            return pd.to_numeric(series.str.replace(regex, value, case=False, regex=True), errors='coerce')
-
-        series = df[column].astype('string')
-        true_series = replace_str(r'^\s*(true|t|yes|y|on)\s*$', '1')
-        false_series = replace_str(r'^\s*(false|f|no|n|off)\s*$', '0')
-        bool_series = true_series.combine_first(false_series)
-        if not pd.api.types.is_numeric_dtype(df[column]):
-            # strings only cast to boolean from the word list or exact 0/1 (Spark cast semantics)
-            bool_series = bool_series.where(bool_series.isin([0, 1]))
-        bool_series = bool_series.astype('boolean')
+        if pd.api.types.is_numeric_dtype(df[column]):
+            # real numbers: any non-zero is True, zero is False
+            numeric = pd.to_numeric(df[column], errors='coerce')
+            bool_series = numeric.where(numeric.isna(), numeric != 0).astype('boolean')
+        else:
+            # strings only cast to boolean from the word list or exact '0'/'1' (Spark cast semantics);
+            # coercing the raw string to a number would wrongly accept '01', '1.0', etc.
+            normalized = df[column].astype('string').str.strip().str.lower()
+            bool_series = pd.Series(pd.NA, index=df.index, dtype='boolean')
+            bool_series[normalized.isin(['true', 't', 'yes', 'y', 'on', '1'])] = True
+            bool_series[normalized.isin(['false', 'f', 'no', 'n', 'off', '0'])] = False
 
         boolmask = bool_series.isna() & df[column].notna() & ~non_parsing_type_series
         error_state.add_errors(boolmask, column, details=errors.BOOL_PARSING)
