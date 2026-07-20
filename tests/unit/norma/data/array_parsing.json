@@ -1464,7 +1464,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], false negative",
+    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], false positive",
     "engines": [
       "pyspark"
     ],
@@ -2978,7 +2978,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2='{}' as array<struct>) => $.col1.col2[null], false negative",
+    "description": "cast($.col1.col2='{}' as array<struct>) => $.col1.col2[null], false positive",
     "engines": [
       "pandas",
       "pyspark"

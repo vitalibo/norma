@@ -1,48 +1,5 @@
 [
   {
-    "description": "len(['ab', 'cd', 'efg']) <= 3, exception is raised",
-    "engines": [
-      "pandas"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": [
-            "ab",
-            "cd",
-            "efg"
-          ]
-        }
-      ]
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 3
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col": [
-            "ab",
-            "cd",
-            "efg"
-          ],
-          "errors": {}
-        }
-      ]
-    }
-  },
-  {
     "description": "len(123) <= 3, exception is raised",
     "engines": [
       "pandas",
@@ -177,6 +134,126 @@
           "col": [
             "ab",
             "cd"
+          ],
+          "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "len(['ab', 'cd', 'efg']) <= 3",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "ab",
+            "cd",
+            "efg"
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "ab",
+            "cd",
+            "efg"
           ],
           "errors": {}
         }
