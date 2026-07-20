@@ -164,39 +164,39 @@ root
 
 Norma supports a variety of validation rules, including:
 
-| rule                 | pandas | pyspark | pyspark[object] | pyspark[array] |
-|----------------------|--------|---------|-----------------|----------------|
-| `required`           | ✅      | ✅       | ✅               | ✅              |
-| `equal_to`           | ✅      | ✅       | ✅               | ✅              |
-| `not_equal_to`       | ✅      | ✅       | ✅               | ✅              |
-| `greater_than`       | ✅      | ✅       | ✅               | ✅              |
-| `greater_than_equal` | ✅      | ✅       | ✅               | ✅              |
-| `less_than`          | ✅      | ✅       | ✅               | ✅              |
-| `less_than_equal`    | ✅      | ✅       | ✅               | ✅              |
-| `multiple_of`        | ✅      | ✅       | ✅               | ✅              |
-| `min_length`         | ✅      | ✅       | ✅               | ✅              |
-| `max_length`         | ✅      | ✅       | ✅               | ✅              |
-| `pattern`            | ✅      | ✅       | ✅               | ✅              |
-| `isin`               | ✅      | ✅       | ✅               | ✅              |
-| `notin`              | ✅      | ✅       | ✅               | ✅              |
-| `extra_forbidden`    | ✅      | ✅       | ✅               | ➖              |
-| `unique_items`       | ❌      | ✅       | ➖               | ✅              |
-| `max_items`          | ❌      | ✅       | ➖               | ✅              |
-| `min_items`          | ❌      | ✅       | ➖               | ✅              |
-| `int_parsing`        | ✅      | ✅       | ✅               | ✅              |
-| `float_parsing`      | ✅      | ✅       | ✅               | ✅              |
-| `str_parsing`        | ✅      | ✅       | ✅               | ✅              |
-| `bool_parsing`       | ✅      | ✅       | ✅               | ✅              |
-| `date_parsing`       | ✅      | ✅       | ✅               | ✅              |
-| `time_parsing`       | ✅      | ✅       | ✅               | ✅              |
-| `datetime_parsing`   | ✅      | ✅       | ✅               | ✅              |
-| `duration_parsing`   | ✅      | ✅       | ✅               | ✅              |
-| `uuid_parsing`       | ✅      | ✅       | ✅               | ✅              |
-| `ipv4_address`       | ✅      | ✅       | ✅               | ✅              |
-| `ipv6_address`       | ✅      | ✅       | ✅               | ✅              |
-| `uri_parsing`        | ✅      | ✅       | ✅               | ✅              |
-| `object_parsing`     | ❌      | ✅       | ✅               | ✅              |
-| `array_parsing`      | ❌      | ✅       | ✅               | ❌              |
+| rule                 | pandas | pandas[object] | pandas[array] | pyspark | pyspark[object] | pyspark[array] |
+|----------------------|--------|----------------|---------------|---------|-----------------|----------------|
+| `required`           | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `equal_to`           | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `not_equal_to`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `greater_than`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `greater_than_equal` | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `less_than`          | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `less_than_equal`    | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `multiple_of`        | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `min_length`         | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `max_length`         | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `pattern`            | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `isin`               | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `notin`              | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `extra_forbidden`    | ✅      | ✅              | ➖             | ✅       | ✅               | ➖              |
+| `unique_items`       | ✅      | ➖              | ✅             | ✅       | ➖               | ✅              |
+| `max_items`          | ✅      | ➖              | ✅             | ✅       | ➖               | ✅              |
+| `min_items`          | ✅      | ➖              | ✅             | ✅       | ➖               | ✅              |
+| `int_parsing`        | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `float_parsing`      | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `str_parsing`        | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `bool_parsing`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `date_parsing`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `time_parsing`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `datetime_parsing`   | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `duration_parsing`   | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `uuid_parsing`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `ipv4_address`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `ipv6_address`       | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `uri_parsing`        | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `object_parsing`     | ✅      | ✅              | ✅             | ✅       | ✅               | ✅              |
+| `array_parsing`      | ✅      | ✅              | ❌             | ✅       | ✅               | ❌              |
 
 ✅ - supported
 ❌ - not supported
@@ -237,7 +237,7 @@ that caused the error.
 }
 ```
 
-Special case for PySpark, when DataFrame has array validation rules, the error format is slightly different.
+Special case, when DataFrame has array validation rules, the error format is slightly different.
 In this case, the `details` array has an additional `loc` field that indicates the indexes of the array elements that
 failed validation and incorrect values are replaced with `null` in an array.
 
@@ -252,7 +252,10 @@ failed validation and incorrect values are replaced with `null` in an array.
     "tags[]": {
       "details": [
         {
-          "loc": [ 0, 2 ],
+          "loc": [
+            0,
+            2
+          ],
           "type": "enum",
           "msg": "Input should be \"tag1\", \"tag2\" or \"tag3\""
         }

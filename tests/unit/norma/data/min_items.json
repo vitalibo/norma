@@ -1,74 +1,8 @@
 [
   {
-    "description": "len(['ab', 'cd', 'efg']) >= 3, exception is raised",
-    "engines": [
-      "pandas"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": [
-            "ab",
-            "cd",
-            "efg"
-          ]
-        }
-      ]
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "minItems": 3
-          }
-        }
-      }
-    },
-    "then": {
-      "raises": {
-        "type": "NotImplementedError",
-        "match": "array_parsing is not implemented yet"
-      }
-    }
-  },
-  {
     "description": "len(123) >= 3, exception is raised",
     "engines": [
-      "pandas"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123
-        }
-      ]
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col": {
-            "type": "integer",
-            "minItems": 3
-          }
-        }
-      }
-    },
-    "then": {
-      "raises": {
-        "type": "NotImplementedError",
-        "match": "min_items is not implemented yet"
-      }
-    }
-  },
-  {
-    "description": "len(123) >= 3, exception is raised",
-    "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -110,6 +44,7 @@
   {
     "description": "len('abc') >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -151,6 +86,7 @@
   {
     "description": "len(['ab', 'cd', 'ef', 'gh']) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -271,8 +207,130 @@
     }
   },
   {
+    "description": "len(['ab', 'cd', 'efg']) >= 3",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "ab",
+            "cd",
+            "efg"
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 3
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "ab",
+            "cd",
+            "efg"
+          ],
+          "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
     "description": "len(['ab', 'cd']) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -399,6 +457,7 @@
   {
     "description": "len($.col1.col2.col3['ab', 'cd', 'efg']) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -569,6 +628,7 @@
   {
     "description": "len($.col1.col2.col3['ab', 'cd']) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -745,6 +805,7 @@
   {
     "description": "len($.col1.col2.col3[.col4.col5.col6=1, =2, =3]) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1014,6 +1075,7 @@
   {
     "description": "len($.col1.col2.col3[.col4.col5.col6=1, =2]) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1265,6 +1327,7 @@
   {
     "description": "each(len($.col1.col2.col2['ab', 'a'])) >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

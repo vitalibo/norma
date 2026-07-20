@@ -557,6 +557,38 @@
   {
     "description": "cast('2025-01-23T12:34:56.000Z' as date) => date('2025-01-23')",
     "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "2025-01-23T12:34:56.000Z"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-01-23 00:00:00",
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast('2025-01-23T12:34:56.000Z' as date) => date('2025-01-23')",
+    "engines": [
       "pyspark"
     ],
     "given": {
@@ -650,6 +682,7 @@
   {
     "description": "cast('foo' as date) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -753,6 +786,7 @@
   {
     "description": "cast(123 as date) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1210,6 +1244,7 @@
   {
     "description": "cast($.col1.col2.col3.col4=null as struct<date>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1372,6 +1407,65 @@
           ]
         }
       }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3.col4='2025-01-23T12:34:56' as struct<date>) => date('2025-01-23')",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": {
+                "col4": "2025-01-23T12:34:56"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "object",
+                    "properties": {
+                      "col4": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": {
+                "col4": "2025-01-23 00:00:00"
+              }
+            }
+          },
+          "errors": {}
+        }
+      ]
     }
   },
   {
@@ -1545,6 +1639,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='abc' as struct<date>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1723,6 +1818,52 @@
   {
     "description": "cast(['2025-05-23', '2025-05-23T12:34:56', null] as array<date>) => [date('2025-05-23'), date('2025-05-23'), null]",
     "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23",
+            "2025-05-23T12:34:56",
+            null
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23 00:00:00",
+            "2025-05-23 00:00:00",
+            null
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['2025-05-23', '2025-05-23T12:34:56', null] as array<date>) => [date('2025-05-23'), date('2025-05-23'), null]",
+    "engines": [
       "pyspark"
     ],
     "given": {
@@ -1846,6 +1987,7 @@
   {
     "description": "cast([{'foo':'bar'}] as array<date>) => [null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1985,6 +2127,67 @@
   {
     "description": "cast(['2025-05-23', '2025-05-23T12:34:56', null, 'foo'] as array<date>) => [date('2025-05-23'), date('2025-05-23'), null, null], error is raised",
     "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23",
+            "2025-05-23T12:34:56",
+            null,
+            "foo"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "2025-05-23 00:00:00",
+            "2025-05-23 00:00:00",
+            null,
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "type": "date_parsing",
+                  "msg": "Input should be a valid date, unable to parse string as a date",
+                  "loc": [
+                    3
+                  ]
+                }
+              ],
+              "original": "[\"2025-05-23\",\"2025-05-23T12:34:56\",null,\"foo\"]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast(['2025-05-23', '2025-05-23T12:34:56', null, 'foo'] as array<date>) => [date('2025-05-23'), date('2025-05-23'), null, null], error is raised",
+    "engines": [
       "pyspark"
     ],
     "given": {
@@ -2118,6 +2321,104 @@
           ]
         }
       }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3[.col4.col5.col6='2025-05-23', ='2025-05-23T12:34:56'] as array<struct<date>>) => [date('2025-05-23'), date('2025-05-23')]",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23T12:34:56"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": "string",
+                                  "format": "date"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23 00:00:00"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23 00:00:00"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {}
+        }
+      ]
     }
   },
   {
@@ -2373,6 +2674,131 @@
           ]
         }
       }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3[.col4.col5.col6='2025-05-23', ='foo', =null] as array<struct<date>>) => [date('2025-05-23'), null, null], error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "foo"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": "string",
+                                  "format": "date"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23 00:00:00"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {
+            "col1.col2.col3[].col4.col5.col6": {
+              "details": [
+                {
+                  "type": "date_parsing",
+                  "msg": "Input should be a valid date, unable to parse string as a date",
+                  "loc": [
+                    1
+                  ]
+                }
+              ],
+              "original": "[\"2025-05-23\",\"foo\",null]"
+            }
+          }
+        }
+      ]
     }
   },
   {

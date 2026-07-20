@@ -1651,6 +1651,7 @@
   {
     "description": "$.col1.col2=null > = 2",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1768,6 +1769,7 @@
   {
     "description": "$.col1.col2=3 >= 2",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1886,6 +1888,7 @@
   {
     "description": "$.col1.col2=2 >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2014,6 +2017,7 @@
   {
     "description": "each($.col1.col2.col3[3, 4]) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2182,6 +2186,7 @@
   {
     "description": "each($.col1.col2.col3[1, 4, 2, 3]) >= 2, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2367,6 +2372,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6=3, =4]) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2622,6 +2628,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6=1, =4, =2, =3]) >= 2, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

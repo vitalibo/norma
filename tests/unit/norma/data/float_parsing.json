@@ -1690,6 +1690,7 @@
   {
     "description": "cast($.col1.col2=null as struct<float>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1806,6 +1807,7 @@
   {
     "description": "cast($.col1.col2='123.4'} as struct<float>) => 123.4",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1923,6 +1925,7 @@
   {
     "description": "cast($.col1.col2='abc' as struct<float>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2050,6 +2053,7 @@
   {
     "description": "cast($.col1.col2.col3.col4=null as struct<float>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2216,6 +2220,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='123.4' as struct<float>) => 123.4",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2382,6 +2387,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='abc' as struct<float>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2558,6 +2564,7 @@
   {
     "description": "cast(['1', '2.1', '1.24e-5', null] as array<float>) => [1.0, 2.1, 1.24e-5, null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2682,6 +2689,7 @@
   {
     "description": "cast([{'foo':'bar'}] as array<float>) => [null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2817,6 +2825,7 @@
   {
     "description": "cast(['1', '2.1', 'true', '1.24e-5', null, 'foo'] as array<float>) => [1.0, 2.1, 1.0, 1.24e-5, null, null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2959,6 +2968,7 @@
   {
     "description": "cast($.col1.col2.col3[.col4.col5.col6='1', ='2.1', ='true', ='1.24e-5', =null, ='foo'] as array<struct<float>>) => [1.0, 2.1, 1.0, 1.24e-5, null, null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

@@ -787,6 +787,7 @@
   {
     "description": "$.col1.col2=null in ['foo', 'bar', 'baz']",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -908,6 +909,7 @@
   {
     "description": "$.col1.col2='bar' in ['foo', 'bar', 'baz']",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1030,6 +1032,7 @@
   {
     "description": "$.col1.col2='qux' in ['foo', 'bar', 'baz'], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1162,6 +1165,7 @@
   {
     "description": "each($.col1.col2.col3[3, 4]) in [3, 4]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1333,6 +1337,7 @@
   {
     "description": "each($.col1.col2.col3[1, 4, 2, 3]) in [4, 2], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1522,6 +1527,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6=3, =4]) in [3, 4]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1780,6 +1786,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6=1, =4, =2, =3]) in [4, 2]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

@@ -2875,6 +2875,7 @@
   {
     "description": "cast($.col1.col2=null as struct<bool>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2991,6 +2992,7 @@
   {
     "description": "cast($.col1.col2='true' as struct<bool>) => true",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3108,6 +3110,7 @@
   {
     "description": "cast($.col1.col2='abc' as struct<bool>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3235,6 +3238,7 @@
   {
     "description": "cast($.col1.col2.col3=null as struct<bool>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3376,6 +3380,7 @@
   {
     "description": "cast($.col1.col2.col3='on' as struct<bool>) => true",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3518,6 +3523,7 @@
   {
     "description": "cast($.col1.col2.col3='abc' as struct<bool>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3670,6 +3676,7 @@
   {
     "description": "cast($.col1.col2.col3.col4=null as struct<bool>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3836,6 +3843,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='off' as struct<bool>) => false",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4003,6 +4011,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='abc' as struct<bool>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4180,6 +4189,7 @@
   {
     "description": "cast(['true', 'false', 'yes', 'no', 'on', 'off', null] as array<bool>) => [true, false, true, false, true, false, null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4310,6 +4320,7 @@
   {
     "description": "cast([{'foo':'bar'}] as array<bool>) => [null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4445,6 +4456,7 @@
   {
     "description": "cast(['true', 'false', null, 'foo', '1'] as array<bool>) => [true, false, null, null, true], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4584,6 +4596,7 @@
   {
     "description": "cast($.col1.col2[col3.col4='true', .='false', .='on', .=null] as array<struct<bool>>) => [true, false, true, null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4810,6 +4823,7 @@
   {
     "description": "cast($.col1.col2[col3.col4='123', .='false', .='yes', .='bar', .=null] as array<struct<bool>>) => [null, false, true, null, null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

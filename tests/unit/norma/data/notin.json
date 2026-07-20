@@ -681,6 +681,7 @@
   {
     "description": "$.col1.col2=null not in ['foo', 'bar', 'baz']",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -805,6 +806,7 @@
   {
     "description": "$.col1.col2='qux' not in ['foo', 'bar', 'baz']",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -929,6 +931,7 @@
   {
     "description": "$.col1.col2='bar' not in ['foo', 'bar', 'baz'], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1063,6 +1066,7 @@
   {
     "description": "each($.col1.col2.col3[3, 4]) not in [1, 2]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1236,6 +1240,7 @@
   {
     "description": "each($.col1.col2.col3[1, 4, 2, 3]) not in [4, 2], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1427,6 +1432,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6=3, =4]) not in [1, 2]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1687,6 +1693,7 @@
   {
     "description": "each($.col1.col2.col3[.col4.col5.col6='1', ='4', ='2', ='3']) not in [4, 2]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

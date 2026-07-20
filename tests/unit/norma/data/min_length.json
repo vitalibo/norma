@@ -633,6 +633,7 @@
   {
     "description": "len($.col1.col2=null) >= 2",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -750,6 +751,7 @@
   {
     "description": "len($.col1.col2='ab') >= 2",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -868,6 +870,7 @@
   {
     "description": "len($.col1.col2='ab') >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -996,6 +999,7 @@
   {
     "description": "len($.col1.col2.col3['ab', 'cd', 'efg']) >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1078,6 +1082,7 @@
   {
     "description": "each(len($.col1.col2.col3[null, 'abc', 'abcd'])) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1251,6 +1256,7 @@
   {
     "description": "each(len($.col1.col2.col3['ab', 'abcd', 'a', 'abc'])) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1437,6 +1443,7 @@
   {
     "description": "len($.col1.col2.col3[.col4.col5.col6=1, =2, =3]) >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1576,6 +1583,7 @@
   {
     "description": "each(len($.col1.col2.col3[.col4.col5.col6='abc', ='abcd'])) >= 3",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1831,6 +1839,7 @@
   {
     "description": "each(len($.col1.col2.col3[.col4.col5.col6='ab', ='abcd', ='a', ='abc])) >= 3, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2128,6 +2137,7 @@
   {
     "description": "each(len($.col1.col2.col2[1, 2])) >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2209,6 +2219,7 @@
   {
     "description": "each(len($.col1.col2.col3[.col4.col5.col6=1, =2, =3])) >= 3, exception is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

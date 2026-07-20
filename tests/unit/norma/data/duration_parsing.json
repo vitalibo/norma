@@ -3567,6 +3567,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='P1D' as struct<duration>) => 'P1D'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3735,6 +3736,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='foo' as struct<duration>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3913,6 +3915,7 @@
   {
     "description": "each(cast(['P1D', 'PT12H', null] as array<duration>)) => ['P1D', 'PT12H', null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4036,6 +4039,7 @@
   {
     "description": "each(cast(['foo', 'PT12H', null] as array<duration>)) => [null, 'PT12H', null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4172,6 +4176,7 @@
   {
     "description": "each(cast($.col1.col2.col3[.col4.col5.col6='P1D', ='PT12H', =null] as array<struct<duration>>)) => ['P1D', 'PT12H', null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4441,6 +4446,7 @@
   {
     "description": "each(cast($.col1.col2.col3[.col4.col5.col6='foo', ='PT12H', =null] as array<struct<duration>>)) => [null, 'PT12H', null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

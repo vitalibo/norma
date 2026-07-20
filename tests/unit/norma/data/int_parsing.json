@@ -1678,6 +1678,7 @@
   {
     "description": "cast($.col1.col2=null as struct<int>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1794,6 +1795,7 @@
   {
     "description": "cast($.col1.col2='123' as struct<int>) => 123",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1911,6 +1913,7 @@
   {
     "description": "cast($.col1.col2='abc' as struct<int>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2038,6 +2041,7 @@
   {
     "description": "cast($.col1.col2.col3.col4=null as struct<int>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2204,6 +2208,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='123' as struct<int>) => 123",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2371,6 +2376,7 @@
   {
     "description": "cast($.col1.col2.col3.col4='abc' as struct<int>) => null, error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2548,6 +2554,7 @@
   {
     "description": "cast(['1', '2.1', null] as array<int>) => [1, 2, null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2670,6 +2677,7 @@
   {
     "description": "cast([{'foo':'bar'}] as array<int>) => [null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2805,6 +2813,7 @@
   {
     "description": "cast(['1', null, 'foo', '2.1'] as array<int>) => [1, null, null, 2], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2942,6 +2951,7 @@
   {
     "description": "cast($.col1.col2.col3['1', null, 'foo', '2.1'] as array<int>) => [1, null, null, 2], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3129,6 +3139,7 @@
   {
     "description": "cast($.col1.col2.col3[.col4.col5.col6='123', ='456'] as array<struct<int>>) => [123, 456]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -3383,6 +3394,7 @@
   {
     "description": "cast($.col1.col2.col3[.col4.col5.col6='123', ='foo', =null] as array<struct<int>>) => [123, null, null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

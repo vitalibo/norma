@@ -775,6 +775,7 @@
   {
     "description": "cast($.col1.col2=null as struct<str>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -891,6 +892,7 @@
   {
     "description": "cast($.col1.col2=123 as struct<str>) => '123'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1008,6 +1010,7 @@
   {
     "description": "cast($.col1.col2.col3.col4=null as struct<str>) => null",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1174,6 +1177,7 @@
   {
     "description": "cast($.col1.col2.col3.col4=true as struct<str>) => 'true'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1340,6 +1344,7 @@
   {
     "description": "cast([123, null] as array<str>) => [123, null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1460,6 +1465,7 @@
   {
     "description": "cast([{'foo':'bar'}] as array<str>) => [null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1598,6 +1604,7 @@
   {
     "description": "cast($.col1.col2.col3=[123, null]} as array<str>) => ['123', null]",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1768,6 +1775,7 @@
   {
     "description": "cast($.col1.col2.col3=[.col4.col5.col6=123, =null, =456]} as array<struct<str>>) => ['123', null, '456']",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -2034,6 +2042,7 @@
   {
     "description": "cast($.col1.col2.col3=[.col4.col5={'foo':'bar'}, =null]} as array<struct<str>>) => [null, null], error is raised",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {

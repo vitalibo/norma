@@ -244,6 +244,7 @@
   {
     "description": "null in $.col3.col4.col5 set to 'unknown'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -445,6 +446,7 @@
   {
     "description": "missing in $.col3.col4.col5 set to 'unknown'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -743,6 +745,7 @@
   {
     "description": "null in cast($.col1.col2.col3 as int) set to -1",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -929,6 +932,7 @@
   {
     "description": "null in each(cast($.col1.col2.col3[] as int)) set to -1",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1121,6 +1125,7 @@
   {
     "description": "null in each(cast($.col1.col2[].col3.col4 as int)) set to -1",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1378,6 +1383,7 @@
   {
     "description": "missing in each($.col1.col2[].col3.col5) set to 'n/a'",
     "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
