@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 from norma.schema import Schema
 
-__version__ = '0.2.0'
+__version__ = version('vitalibo-norma')

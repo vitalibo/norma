@@ -1,5 +1,5 @@
 [project]
-name = "norma"
+name = "vitalibo.norma"
 version = "0.2.0"
 description = "Pandas & PySpark data validation via JSON Schema"
 authors = [
@@ -7,6 +7,15 @@ authors = [
 ]
 readme = "readme.md"
 requires-python = ">=3.9"
+keywords = ["pandas", "pyspark", "json-schema", "data-validation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://github.com/vitalibo/norma"
+Repository = "https://github.com/vitalibo/norma"
 
 dependencies = [
 ]
