@@ -12,7 +12,7 @@ approach** that captures validation details in a dedicated errors column while r
 Install with `pip`:
 
 ```bash
-pip install 'git+https://github.com/vitalibo/norma.git'
+pip install vitalibo.norma
 ```
 
 ### Quick Start

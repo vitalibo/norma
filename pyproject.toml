@@ -1,6 +1,6 @@
 [project]
 name = "vitalibo.norma"
-version = "0.2.0"
+dynamic = ["version"]
 description = "Pandas & PySpark data validation via JSON Schema"
 authors = [
     { name = "Vitaliy Boyarsky", email = "boyarsky.vitaliy@live.com" },
@@ -13,12 +13,12 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 
+dependencies = [
+]
+
 [project.urls]
 Homepage = "https://github.com/vitalibo/norma"
 Repository = "https://github.com/vitalibo/norma"
-
-dependencies = [
-]
 
 [dependency-groups]
 dev = [
@@ -38,8 +38,11 @@ multi_line_output = 5
 include_trailing_comma = true
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/norma"]

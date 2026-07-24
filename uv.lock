@@ -837,7 +837,6 @@ wheels = [
 
 [[package]]
 name = "vitalibo-norma"
-version = "0.2.0"
 source = { editable = "." }
 
 [package.dev-dependencies]
