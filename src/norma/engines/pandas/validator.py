@@ -38,8 +38,9 @@ def validate(
     df = _validate(df, schema, error_state)
     _backfill_originals(error_state, original_df)
 
-    df[error_column] = df.index.map(error_state.errors)
-    df[error_column] = df[error_column].replace(np.nan, None).apply(lambda x: {} if x is None else x)
+    df[error_column] = pd.Series(
+        [error_state.errors.get(key, {}) for key in df.index], index=df.index, dtype='object'
+    )
     df.index = index
 
     out_cols = original_df.columns if schema.allow_extra else schema.columns.keys()
@@ -137,8 +138,11 @@ def _validate_array(df, column, inner_column, error_state):
             full_column: pd.Series(values, index=pd.MultiIndex.from_arrays([rows, positions]), dtype='object')
         })
         child = _validate_array_elements(child, full_column, inner_column, error_state)
-        for row, element in zip(child.index.get_level_values(0), child[full_column].tolist()):
-            regrouped.setdefault(row, []).append(_to_native(element))
+        elements = child[full_column].tolist()
+        if inner_column.dtype != 'object':
+            elements = [_to_native(element) for element in elements]
+        for row, element in zip(child.index.get_level_values(0), elements):
+            regrouped.setdefault(row, []).append(element)
 
     df[column] = pd.Series(
         [
@@ -209,15 +213,28 @@ def _backfill_originals(error_state, original_df):
     Render the original value for every recorded error
     """
 
-    exploded = {}
-    for column, backup in error_state.backups.items():
-        if isinstance(backup.index, pd.MultiIndex):
-            by_row = {}
-            for row, element in zip(backup.index.get_level_values(0), backup.tolist()):
-                by_row.setdefault(row, []).append(_to_native(element))
-            exploded[column] = by_row
+    if not error_state.errors:
+        return
 
     original_columns = set(original_df.columns)
+
+    needed = {}
+    for index, columns in error_state.errors.items():
+        for column in columns:
+            if column not in original_columns:
+                needed.setdefault(column, set()).add(index)
+
+    exploded = {}
+    for column, rows in needed.items():
+        backup = error_state.backups.get(column)
+        if backup is None or not isinstance(backup.index, pd.MultiIndex):
+            continue
+
+        by_row = {}
+        for row, element in zip(backup.index.get_level_values(0), backup.tolist()):
+            if row in rows:
+                by_row.setdefault(row, []).append(_to_native(element))
+        exploded[column] = by_row
 
     def render(index, column):
         if column in original_columns:
@@ -238,19 +255,27 @@ def _backfill_originals(error_state, original_df):
             error_state.errors[index][column]['original'] = render(index, column)
 
 
-def _to_native(value):
+def _to_native(value):  # noqa: PLR0911
     """
     Convert pandas/numpy scalars to native Python values for JSON-compatible output
     """
 
+    kind = type(value)
+    if kind is str or kind is int or kind is bool:
+        return value
+    if kind is float:
+        return None if value != value else value  # noqa: PLR0124 - the fastest NaN test
+    if value is None or value is pd.NA or value is pd.NaT:
+        return None
     if isinstance(value, dict):
         return {k: _to_native(v) for k, v in value.items()}
     if isinstance(value, list):
         return [_to_native(v) for v in value]
-    if value is None or (pd.api.types.is_scalar(value) and pd.isna(value)):
-        return None
     if isinstance(value, (np.integer, np.floating, np.bool_)):
-        return value.item()
+        item = value.item()
+        return None if item != item else item  # noqa: PLR0124 - the fastest NaN test
+    if pd.api.types.is_scalar(value) and pd.isna(value):
+        return None
     return value
 
 
