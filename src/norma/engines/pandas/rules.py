@@ -6,6 +6,7 @@ from itertools import starmap
 from typing import Any, Iterable, Optional
 from uuid import UUID
 
+import numpy as np
 import pandas as pd
 
 from norma import errors
@@ -520,7 +521,8 @@ class NumberTypeRule(Rule):
                 error_state.add_errors(pd.Series(True, index=df.index), column, details=self.numeric_type)
                 return pd.Series(dtype=self.dtype, name=column, index=df.index)
 
-            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (
+                str, bool, int, float, np.integer, np.floating, np.bool_)))
             non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=self.numeric_type)
 
@@ -543,10 +545,11 @@ class StringTypeRule(Rule):
         non_parsing_type_series = pd.Series(False, index=df.index)
         bool_series = pd.Series(False, index=df.index)
         if pd.api.types.is_object_dtype(df[column]):
-            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (
+                str, bool, int, float, np.integer, np.floating, np.bool_)))
             non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=errors.STRING_TYPE)
-            bool_series = df[column].apply(lambda x: isinstance(x, bool))
+            bool_series = df[column].apply(lambda x: isinstance(x, (bool, np.bool_)))
 
         if pd.api.types.is_bool_dtype(df[column]):
             str_series = df[column].astype('string').str.lower()
@@ -573,7 +576,8 @@ class BooleanTypeRule(Rule):
                 error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.BOOL_TYPE)
                 return pd.Series(dtype='boolean', name=column, index=df.index)
 
-            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (str, bool, int, float)))
+            non_parsing_type_series = df[column].apply(lambda x: not isinstance(x, (
+                str, bool, int, float, np.integer, np.floating, np.bool_)))
             non_parsing_type_series = _flag_nulls_on_array(non_parsing_type_series & df[column].notna(), df[column])
             error_state.add_errors(non_parsing_type_series, column, details=errors.BOOL_TYPE)
 

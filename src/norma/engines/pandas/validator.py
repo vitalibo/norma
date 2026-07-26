@@ -209,18 +209,27 @@ def _backfill_originals(error_state, original_df):
     Render the original value for every recorded error
     """
 
+    exploded = {}
+    for column, backup in error_state.backups.items():
+        if isinstance(backup.index, pd.MultiIndex):
+            by_row = {}
+            for row, element in zip(backup.index.get_level_values(0), backup.tolist()):
+                by_row.setdefault(row, []).append(_to_native(element))
+            exploded[column] = by_row
+
+    original_columns = set(original_df.columns)
+
     def render(index, column):
-        if column in original_df.columns:
+        if column in original_columns:
             return json.dumps(original_df.loc[index, column], separators=(',', ':'), default=_json_serde)
 
         if column not in error_state.backups:
             return 'null'
 
-        backup = error_state.backups[column]
-        if isinstance(backup.index, pd.MultiIndex):
-            value = [_to_native(element) for element in backup.loc[index]] \
-                if index in backup.index.get_level_values(0) else None
+        if column in exploded:
+            value = exploded[column].get(index)
         else:
+            backup = error_state.backups[column]
             value = _to_native(backup.loc[index]) if index in backup.index else None
         return json.dumps(value, separators=(',', ':'), default=_json_serde)
 
