@@ -27,7 +27,8 @@ def test_schema_from_json_schema():
             'height': {
                 'description': 'Height in meters which must be greater than 0.5 and less than 3.0.',
                 'type': 'number',
-                'exclusiveMinimum': 0.5,
+                'minimum': 0.5,
+                'exclusiveMinimum': True,
                 'exclusiveMaximum': 3.0,
             },
             'disabled': {

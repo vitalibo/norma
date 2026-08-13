@@ -211,10 +211,6 @@ class Schema:
         """
 
         known = {
-            'minimum': 'ge',
-            'maximum': 'le',
-            'exclusiveMinimum': 'gt',
-            'exclusiveMaximum': 'lt',
             'multipleOf': 'multiple_of',
             'minLength': 'min_length',
             'maxLength': 'max_length',
@@ -230,6 +226,10 @@ class Schema:
             'const': 'ne',
             'enum': 'notin',
         }
+        bounds = {
+            'minimum': ('exclusiveMinimum', 'ge', 'gt'),
+            'maximum': ('exclusiveMaximum', 'le', 'lt'),
+        }
 
         complex_types = {
             ('string', 'date'): 'date',
@@ -241,6 +241,20 @@ class Schema:
             ('string', 'ipv6'): 'ipv6',
             ('string', 'uri'): 'uri',
         }
+
+        def bounds_from(properties):
+            for inclusive, (exclusive, closed, opened) in bounds.items():
+                if inclusive in properties and exclusive in properties:
+                    # draft-4 form: the boolean modifies the sibling bound instead of standing on its own
+                    if not isinstance(properties[exclusive], bool):
+                        raise ValueError(f"'{exclusive}' must be a boolean when '{inclusive}' is present")
+                    yield opened if properties[exclusive] else closed, properties[inclusive]
+                    continue
+
+                if inclusive in properties:
+                    yield closed, properties[inclusive]
+                if exclusive in properties:
+                    yield opened, properties[exclusive]
 
         def column_from(nullable, properties):
             dtype = properties.get('type')
@@ -263,6 +277,7 @@ class Schema:
                 complex_types.get((dtype, properties.get('format')), dtype),
                 nullable=nullable,
                 inner_schema=inner_schema,
+                **dict(bounds_from(properties)),
                 **{known[key]: value for key, value in properties.items() if key in known},
                 **{known_not[key]: value for key, value in properties.get('not', {}).items() if key in known_not},
             )
