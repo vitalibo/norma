@@ -3322,11 +3322,7 @@
         2
       ],
       "dtype": "int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
+      "masks": {},
       "errors": {}
     }
   },

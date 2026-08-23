@@ -1,6 +1,6 @@
 [
   {
-    "description": "cast(null as UUID) => null",
+    "description": "cast(null as UUID) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -32,6 +32,116 @@
         "properties": {
           "col": {
             "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "uuid_type",
+                  "msg": "UUID input should be a string"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(null as optional[UUID]) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "object"
+        },
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           }
         }
@@ -945,7 +1055,7 @@
     }
   },
   {
-    "description": "cast(['b9e...', 'C6F...', null] as array<UUID>) => ['b9e...', 'c6f...', null]",
+    "description": "cast(['b9e...', 'C6F...', null] as array<optional[UUID]>) => ['b9e...', 'c6f...', null]",
     "engines": [
       "pandas",
       "pyspark"
@@ -1002,6 +1112,149 @@
             null
           ],
           "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(['b9e...', 'C6F...', 'foo', null] as array<UUID>) => ['b9e...', 'c6f...', null, null], error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "b9e95281-2f6b-4f75-8010-5afabaca81e7",
+            "C6F75244-8D0E-479C-B557-5585F485350C",
+            "foo",
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            "b9e95281-2f6b-4f75-8010-5afabaca81e7",
+            "c6f75244-8d0e-479c-b557-5585f485350c",
+            null,
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    3
+                  ],
+                  "msg": "UUID input should be a string",
+                  "type": "uuid_type"
+                },
+                {
+                  "loc": [
+                    2
+                  ],
+                  "msg": "Input should be a valid UUID, unable to parse string as a UUID",
+                  "type": "uuid_parsing"
+                }
+              ],
+              "original": "[\"b9e95281-2f6b-4f75-8010-5afabaca81e7\",\"C6F75244-8D0E-479C-B557-5585F485350C\",\"foo\",null]"
+            }
+          }
         }
       ],
       "schema": {
@@ -1727,6 +1980,313 @@
                               "properties": {
                                 "col6": {
                                   "type": "string",
+                                  "format": "uuid"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "b9e95281-2f6b-4f75-8010-5afabaca81e7"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "c6f75244-8d0e-479c-b557-5585f485350c"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {
+            "col1.col2.col3[].col4.col5.col6": {
+              "details": [
+                {
+                  "loc": [
+                    3
+                  ],
+                  "msg": "UUID input should be a string",
+                  "type": "uuid_type"
+                },
+                {
+                  "loc": [
+                    2
+                  ],
+                  "msg": "Input should be a valid UUID, unable to parse string as a UUID",
+                  "type": "uuid_parsing"
+                }
+              ],
+              "original": "[\"b9e95281-2f6b-4f75-8010-5afabaca81e7\",\"C6F75244-8D0E-479C-B557-5585F485350C\",\"foo\",null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "string"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3[.col4.col5.col6='b9e...', ='C6F...', ='foo', =null] as array<struct<optional[UUID]>>) => ['b9e...', 'c6f...', null, null], error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "b9e95281-2f6b-4f75-8010-5afabaca81e7"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "C6F75244-8D0E-479C-B557-5585F485350C"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "foo"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "string"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
                                   "format": "uuid"
                                 }
                               }

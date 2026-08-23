@@ -1,6 +1,6 @@
 [
   {
-    "description": "cast(null as array) => null",
+    "description": "cast(null as array) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -29,6 +29,128 @@
         "properties": {
           "col": {
             "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "array_type",
+                  "msg": "Input should be a valid array",
+                  "loc": null
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(null as optional[array]) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "string"
             }
@@ -1437,9 +1559,7 @@
         {
           "col1": {
             "col2": [
-              {
-                "col3": null
-              },
+              null,
               {
                 "col3": 123
               }
@@ -1464,7 +1584,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], false positive",
+    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], false positive, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1517,6 +1637,181 @@
                   "properties": {
                     "col3": {
                       "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": null
+              },
+              {
+                "col3": 123
+              }
+            ]
+          },
+          "errors": {
+            "col1.col2[].col3": {
+              "details": [
+                {
+                  "type": "int_type",
+                  "msg": "Input should be a valid integer",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[null,\"123\"]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "array",
+                      "containsNull": true,
+                      "elementType": {
+                        "type": "struct",
+                        "fields": [
+                          {
+                            "name": "col3",
+                            "type": "integer"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {optional[col3]=123}], false positive",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              "foo",
+              "{\"col3\":\"123\"}"
+            ]
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "array",
+                      "containsNull": true,
+                      "elementType": "string"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col3": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
                     }
                   }
                 }
@@ -2508,7 +2803,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2=[null, null] as array<struct>) => [{col3=null}, {col3=null}]",
+    "description": "cast($.col1.col2=[null, null] as array<optional[struct]>) => [null, null]",
     "engines": [
       "pandas",
       "pyspark"
@@ -2579,15 +2874,181 @@
         {
           "col1": {
             "col2": [
-              {
-                "col3": null
-              },
-              {
-                "col3": null
-              }
+              null,
+              null
             ]
           },
           "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "array",
+                      "containsNull": true,
+                      "elementType": {
+                        "type": "struct",
+                        "fields": [
+                          {
+                            "name": "col3",
+                            "type": "integer"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2=[null, null] as array<struct>) => [null, null], error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              null,
+              null
+            ]
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "array",
+                      "containsNull": true,
+                      "elementType": "void"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col3": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              null,
+              null
+            ]
+          },
+          "errors": {
+            "col1.col2[]": {
+              "details": [
+                {
+                  "loc": [
+                    0,
+                    1
+                  ],
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "[null,null]"
+            }
+          }
         }
       ],
       "schema": {
@@ -2978,7 +3439,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2='{}' as array<struct>) => $.col1.col2[null], false positive",
+    "description": "cast($.col1.col2='{}' as array<struct>) => $.col1.col2=null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -3038,13 +3499,20 @@
       "data": [
         {
           "col1": {
-            "col2": [
-              {
-                "col3": null
-              }
-            ]
+            "col2": null
           },
-          "errors": {}
+          "errors": {
+            "col1.col2": {
+              "details": [
+                {
+                  "loc": null,
+                  "msg": "Input should be a valid array, unable to parse string as an array",
+                  "type": "array_parsing"
+                }
+              ],
+              "original": "\"{}\""
+            }
+          }
         }
       ],
       "schema": {

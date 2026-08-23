@@ -1,6 +1,6 @@
 [
   {
-    "description": "cast(null as URI) => null",
+    "description": "cast(null as URI) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -32,6 +32,116 @@
         "properties": {
           "col": {
             "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "uri_type",
+                  "msg": "Input should be a valid URI"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(null as optional[URI]) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "object"
+        },
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uri"
           }
         }
@@ -1688,6 +1798,217 @@
               "details": [
                 {
                   "loc": [
+                    2
+                  ],
+                  "msg": "Input should be a valid URI",
+                  "type": "uri_type"
+                },
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid URI, unable to parse string as a URI",
+                  "type": "uri_parsing"
+                }
+              ],
+              "original": "[\"foo\",\"http://example.com\",null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col2",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1[.col2='192.168.0.1', ='tel:+1-212-555-1212', ='foo', =null] as array<struct<optional[URI]>>) => [null, 'tel:+1-212-555-1212', null, null], error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": "192.168.0.1"
+            },
+            {
+              "col2": "tel:+1-212-555-1212"
+            }
+          ]
+        },
+        {
+          "col1": [
+            {
+              "col2": "foo"
+            },
+            {
+              "col2": "http://example.com"
+            },
+            {
+              "col2": null
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col2",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "col2": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uri"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": null
+            },
+            {
+              "col2": "tel:+1-212-555-1212"
+            }
+          ],
+          "errors": {
+            "col1[].col2": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid URI, unable to parse string as a URI",
+                  "type": "uri_parsing"
+                }
+              ],
+              "original": "[\"192.168.0.1\",\"tel:+1-212-555-1212\"]"
+            }
+          }
+        },
+        {
+          "col1": [
+            {
+              "col2": null
+            },
+            {
+              "col2": "http://example.com"
+            },
+            {
+              "col2": null
+            }
+          ],
+          "errors": {
+            "col1[].col2": {
+              "details": [
+                {
+                  "loc": [
                     0
                   ],
                   "msg": "Input should be a valid URI, unable to parse string as a URI",
@@ -1898,6 +2219,317 @@
                               "properties": {
                                 "col6": {
                                   "type": "string",
+                                  "format": "uri"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "tel:+1-212-555-1212"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {
+            "col1.col2.col3[].col4.col5.col6": {
+              "details": [
+                {
+                  "loc": [
+                    3
+                  ],
+                  "msg": "Input should be a valid URI",
+                  "type": "uri_type"
+                },
+                {
+                  "loc": [
+                    0,
+                    2
+                  ],
+                  "msg": "Input should be a valid URI, unable to parse string as a URI",
+                  "type": "uri_parsing"
+                }
+              ],
+              "original": "[\"192.168.0.1\",\"tel:+1-212-555-1212\",\"foo\",null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "string"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3[.col4.col5.col6='192.168.0.1', ='tel:+1-212-555-1212', ='foo', =null] as array<struct<optional[URI]>>) => [null, 'tel:+1-212-555-1212', null, null], error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "192.168.0.1"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "tel:+1-212-555-1212"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "foo"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "string"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
                                   "format": "uri"
                                 }
                               }

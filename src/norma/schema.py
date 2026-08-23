@@ -25,7 +25,8 @@ class Column:
 
     :param dtype: The data type of the column
     :param rules: The validation rules to apply to the column
-    :param nullable: Whether the column can be null (default: True)
+    :param required: Whether the column must be present in the DataFrame (default: False)
+    :param nullable: Whether the values can be null (default: False)
     :param eq: The values must be equal to this value
     :param ne: The values must not be equal to this value
     :param gt: The values must be greater than this value
@@ -50,7 +51,8 @@ class Column:
             dtype: Union[type, str],
             *,
             rules: Union[norma.rules.Rule, List[norma.rules.Rule], None] = None,
-            nullable: bool = True,
+            required: bool = False,
+            nullable: bool = False,
             eq: Any = None,
             ne: Any = None,
             gt: Any = None,
@@ -107,8 +109,8 @@ class Column:
             for rule in [
                 rule_definition(value)
                 for rule_definition, value in [
-                    (lambda _: norma.rules.required(), True if not nullable else None),
-                    (lambda _: dtype_parsing[dtype](), True),
+                    (lambda _: norma.rules.required(), True if required else None),
+                    (lambda _: dtype_parsing[dtype](nullable=nullable), True),
                     (norma.rules.equal_to, eq),
                     (norma.rules.not_equal_to, ne),
                     (norma.rules.greater_than, gt),
@@ -145,6 +147,7 @@ class Column:
         self.default = default
         self.default_factory = default_factory
         self.inner_schema = inner_schema
+        self.required = required
         self.nullable = nullable
         self.dtype = dtype
 
@@ -256,8 +259,8 @@ class Schema:
                 if exclusive in properties:
                     yield opened, properties[exclusive]
 
-        def column_from(nullable, properties):
-            dtype = properties.get('type')
+        def column_from(required, properties):
+            dtype, nullable = properties.get('type'), False
             if isinstance(dtype, list):
                 if len(dtype) == 1:
                     dtype = dtype[0]
@@ -275,6 +278,7 @@ class Schema:
 
             return Column(
                 complex_types.get((dtype, properties.get('format')), dtype),
+                required=required,
                 nullable=nullable,
                 inner_schema=inner_schema,
                 **dict(bounds_from(properties)),
@@ -284,7 +288,7 @@ class Schema:
 
         return Schema(
             {
-                field: column_from(field not in json_schema.get('required', []), properties)
+                field: column_from(field in json_schema.get('required', []), properties)
                 for field, properties in json_schema['properties'].items()
             },
             allow_extra=json_schema.get('additionalProperties', False),

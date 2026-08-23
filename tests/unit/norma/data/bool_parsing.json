@@ -1,6 +1,6 @@
 [
   {
-    "description": "cast(null as bool) => null",
+    "description": "cast(null as bool) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -32,6 +32,115 @@
         "properties": {
           "col": {
             "type": "boolean"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "bool_type",
+                  "msg": "Input should be a valid boolean"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "boolean"
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(null as optional[bool]) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        },
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         }
       }
@@ -3425,7 +3534,7 @@
     }
   },
   {
-    "description": "cast(null <boolean> as bool) => null",
+    "description": "cast(null <boolean> as bool) => null, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -3447,10 +3556,21 @@
       "dtype": "boolean",
       "masks": {
         "col": [
-          false
+          true
         ]
       },
-      "errors": {}
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "bool_type",
+                "msg": "Input should be a valid boolean"
+              }
+            ]
+          }
+        }
+      }
     }
   },
   {
@@ -3750,7 +3870,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2=null as struct<bool>) => null",
+    "description": "cast($.col1.col2=null as struct<bool>) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -3791,6 +3911,136 @@
             "properties": {
               "col2": {
                 "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": null
+          },
+          "errors": {
+            "col1.col2": {
+              "details": [
+                {
+                  "type": "bool_type",
+                  "msg": "Input should be a valid boolean"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "boolean"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2=null as struct<optional[bool]>) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": null
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "void"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
               }
             }
           }
@@ -4113,7 +4363,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2.col3=null as struct<bool>) => null",
+    "description": "cast($.col1.col2.col3=null as struct<bool>) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -4167,6 +4417,161 @@
                 "properties": {
                   "col3": {
                     "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": null
+            }
+          },
+          "errors": {
+            "col1.col2.col3": {
+              "details": [
+                {
+                  "type": "bool_type",
+                  "msg": "Input should be a valid boolean"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3=null as struct<optional[bool]>) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": null
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -4551,7 +4956,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2.col3.col4=null as struct<bool>) => null",
+    "description": "cast($.col1.col2.col3.col4=null as struct<bool>) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -4618,6 +5023,186 @@
                     "properties": {
                       "col4": {
                         "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": {
+                "col4": null
+              }
+            }
+          },
+          "errors": {
+            "col1.col2.col3.col4": {
+              "details": [
+                {
+                  "type": "bool_type",
+                  "msg": "Input should be a valid boolean"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "struct",
+                            "fields": [
+                              {
+                                "name": "col4",
+                                "type": "boolean"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3.col4=null as struct<optional[bool]>) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": {
+                "col4": null
+              }
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "struct",
+                            "fields": [
+                              {
+                                "name": "col4",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "object",
+                    "properties": {
+                      "col4": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
                       }
                     }
                   }

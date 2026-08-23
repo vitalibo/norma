@@ -26,6 +26,8 @@ class ErrorState(IErrorState):
         self.masks = defaultdict(lambda: pd.Series(False, index=index))
         self.errors = {}
         self.backups = {}
+        self.absent = {}
+        self.containers = {}
         self.has_array = has_array
 
     def add_errors(self, boolmask, column, **kwargs):
@@ -74,6 +76,28 @@ class ErrorState(IErrorState):
                 mask.reindex(index, fill_value=False) | boolmask.reindex(index, fill_value=False).astype(bool)
         else:
             self.masks[column] = boolmask.astype(bool)
+
+    def absent_of(self, column, index: pd.Index) -> pd.Series:
+        """
+        Return a boolean mask of rows where the column was entirely missing from the input.
+        """
+
+        mask = self.absent.get(column)
+        if mask is None:
+            return pd.Series(False, index=index)
+
+        return mask.reindex(index, fill_value=False)
+
+    def container_of(self, column, index: pd.Index) -> pd.Series:
+        """
+        Return a boolean Series indicating whether the column's parent container exists per row.
+        """
+
+        parent = column.rpartition('.')[0]
+        if column.endswith('[]') or parent not in self.containers:
+            return pd.Series(True, index=index)
+
+        return self.containers[parent].reindex(index, fill_value=False)
 
     def set_backup(self, column, series):
         """
@@ -132,11 +156,10 @@ def rule(func, **kwargs) -> BaseRule:
 def required() -> Rule:
     @Rule.new
     def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        if column not in df.columns:
-            error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.MISSING)
-            return pd.Series(dtype='object', index=df.index)
+        boolmask = error_state.absent_of(column, df.index) & error_state.container_of(column, df.index)
+        if boolmask.any():
+            error_state.add_errors(boolmask, column, details=errors.MISSING)
 
-        error_state.add_errors(df[column].isna(), column, details=errors.MISSING)
         return df[column]
 
     return verify
@@ -293,43 +316,45 @@ def min_items(value: int) -> Rule:
     )
 
 
-def int_parsing() -> Rule:
-    return NumberTypeRule('Int64', errors.INT_TYPE, errors.INT_PARSING)
+def int_parsing(nullable: bool = False) -> Rule:
+    return NumberTypeRule('Int64', errors.INT_TYPE, errors.INT_PARSING, nullable)
 
 
-def float_parsing() -> Rule:
-    return NumberTypeRule('Float64', errors.FLOAT_TYPE, errors.FLOAT_PARSING)
+def float_parsing(nullable: bool = False) -> Rule:
+    return NumberTypeRule('Float64', errors.FLOAT_TYPE, errors.FLOAT_PARSING, nullable)
 
 
-def str_parsing() -> Rule:
-    return StringTypeRule()
+def str_parsing(nullable: bool = False) -> Rule:
+    return StringTypeRule(nullable)
 
 
-def bool_parsing() -> Rule:
-    return BooleanTypeRule()
+def bool_parsing(nullable: bool = False) -> Rule:
+    return BooleanTypeRule(nullable)
 
 
-def datetime_parsing() -> Rule:
-    return DatetimeTypeRule(None, errors.DATETIME_TYPE, errors.DATETIME_PARSING)
+def datetime_parsing(nullable: bool = False) -> Rule:
+    return DatetimeTypeRule(None, errors.DATETIME_TYPE, errors.DATETIME_PARSING, nullable)
 
 
-def date_parsing() -> Rule:
-    return DatetimeTypeRule('datetime64[D]', errors.DATE_TYPE, errors.DATE_PARSING)
+def date_parsing(nullable: bool = False) -> Rule:
+    return DatetimeTypeRule('datetime64[D]', errors.DATE_TYPE, errors.DATE_PARSING, nullable)
 
 
-def time_parsing() -> Rule:
+def time_parsing(nullable: bool = False) -> Rule:
     return RegexStringDerivedTypeRule(
         r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$',
         errors.TIME_TYPE,
         errors.TIME_PARSING,
+        nullable,
     )
 
 
-def duration_parsing() -> Rule:
+def duration_parsing(nullable: bool = False) -> Rule:
     return RegexStringDerivedTypeRule(
         r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$',
         errors.DURATION_TYPE,
         errors.DURATION_PARSING,
+        nullable,
     )
 
 
@@ -348,19 +373,20 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
     return verify
 
 
-def uuid_parsing() -> Rule:
-    return UUIDTypeRule()
+def uuid_parsing(nullable: bool = False) -> Rule:
+    return UUIDTypeRule(nullable)
 
 
-def ipv4_address() -> Rule:
+def ipv4_address(nullable: bool = False) -> Rule:
     return RegexStringDerivedTypeRule(
         r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$',
         errors.IPV4,
         errors.IPV4,
+        nullable,
     )
 
 
-def ipv6_address() -> Rule:
+def ipv6_address(nullable: bool = False) -> Rule:
     return RegexStringDerivedTypeRule(
         r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:'
         r'[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0'
@@ -371,10 +397,11 @@ def ipv6_address() -> Rule:
         r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$',
         errors.IPV6,
         errors.IPV6,
+        nullable,
     )
 
 
-def uri_parsing() -> Rule:
+def uri_parsing(nullable: bool = False) -> Rule:
     return RegexStringDerivedTypeRule(
         r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
         r"()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9"
@@ -382,15 +409,16 @@ def uri_parsing() -> Rule:
         r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$",
         errors.URI_TYPE,
         errors.URI_PARSING,
+        nullable,
     )
 
 
-def object_parsing(schema) -> Rule:
-    return ObjectTypeRule(schema)
+def object_parsing(schema, nullable: bool = False) -> Rule:
+    return ObjectTypeRule(schema, nullable)
 
 
-def array_parsing(schema) -> Rule:
-    return ArrayTypeRule(schema)
+def array_parsing(schema, nullable: bool = False) -> Rule:
+    return ArrayTypeRule(schema, nullable)
 
 
 def _stringify(value):
@@ -421,17 +449,48 @@ def _flag_nulls_on_array(boolmask, series):
     return boolmask
 
 
-class ObjectTypeRule(Rule):
+class TypeRule(Rule, abc.ABC):
+    """
+    Base class for type casting rules
+
+    :param type_error: The error details for a value the type cannot hold
+    :param nullable: Whether a null value is allowed
+    """
+
+    def __init__(self, type_error, nullable: bool = True):
+        self.type_error = type_error
+        self.nullable = nullable
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        if not self.nullable:
+            # a key the row never carried is reported as missing by the required rule, if at all
+            boolmask = df[column].isna() \
+                       & ~error_state.absent_of(column, df.index) \
+                       & error_state.container_of(column, df.index)
+            error_state.add_errors(boolmask, column, details=self.type_error)
+
+        return self.cast(df, column, error_state)
+
+    @abc.abstractmethod
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        """
+        Cast the column to the target type, reporting the values that do not fit it
+        """
+
+
+class ObjectTypeRule(TypeRule):
     """
     Class for object type casting rules
 
     :param schema: The inner schema describing the object fields
+    :param nullable: Whether a null value is allowed
     """
 
-    def __init__(self, schema):
+    def __init__(self, schema, nullable: bool = False):
+        super().__init__(errors.OBJECT_TYPE, nullable)
         self.schema = schema
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         type_mask = pd.Series(False, index=df.index)
         parsing_mask = pd.Series(False, index=df.index)
 
@@ -458,17 +517,19 @@ class ObjectTypeRule(Rule):
         return series
 
 
-class ArrayTypeRule(Rule):
+class ArrayTypeRule(TypeRule):
     """
     Class for array type casting rules
 
     :param schema: The column describing the array elements
+    :param nullable: Whether a null value is allowed
     """
 
-    def __init__(self, schema):
+    def __init__(self, schema, nullable: bool = False):
+        super().__init__(errors.ARRAY_TYPE, nullable)
         self.inner_column = schema
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         if '[]' in column:
             raise NotImplementedError('nested arrays are not supported yet')
 
@@ -486,8 +547,6 @@ class ArrayTypeRule(Rule):
                 except ValueError:
                     parsing_mask[index] = True
                     return None
-                if isinstance(parsed, dict):
-                    parsed = [parsed]
                 if not isinstance(parsed, list):
                     parsing_mask[index] = True
                     return None
@@ -501,17 +560,18 @@ class ArrayTypeRule(Rule):
         return series
 
 
-class NumberTypeRule(Rule):
+class NumberTypeRule(TypeRule):
     """
     Class for numeric type casting rules
     """
 
-    def __init__(self, dtype, numeric_type, numeric_parsing):
+    def __init__(self, dtype, numeric_type, numeric_parsing, nullable: bool = False):
+        super().__init__(numeric_type, nullable)
         self.dtype = dtype
         self.numeric_type = numeric_type
         self.numeric_parsing = numeric_parsing
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         if df[column].dtype == self.dtype:
             return df[column]
 
@@ -533,12 +593,15 @@ class NumberTypeRule(Rule):
         return numeric_series
 
 
-class StringTypeRule(Rule):
+class StringTypeRule(TypeRule):
     """
     Class for string type casting rules
     """
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def __init__(self, nullable: bool = False):
+        super().__init__(errors.STRING_TYPE, nullable)
+
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         if df[column].dtype == 'string[python]':
             return df[column]
 
@@ -561,12 +624,15 @@ class StringTypeRule(Rule):
         return str_series
 
 
-class BooleanTypeRule(Rule):
+class BooleanTypeRule(TypeRule):
     """
     Class for boolean type casting rules
     """
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def __init__(self, nullable: bool = False):
+        super().__init__(errors.BOOL_TYPE, nullable)
+
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         if pd.api.types.is_bool_dtype(df[column]):
             return df[column].astype('boolean')
 
@@ -598,17 +664,18 @@ class BooleanTypeRule(Rule):
         return bool_series
 
 
-class DatetimeTypeRule(Rule):
+class DatetimeTypeRule(TypeRule):
     """
     Class for datetime type casting rules
     """
 
-    def __init__(self, dtype, dt_type, dt_parsing):
+    def __init__(self, dtype, dt_type, dt_parsing, nullable: bool = False):
+        super().__init__(dt_type, nullable)
         self.dtype = dtype
         self.dt_type = dt_type
         self.dt_parsing = dt_parsing
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         if df[column].dtype == self.dtype:
             return df[column]
 
@@ -633,7 +700,7 @@ class DatetimeTypeRule(Rule):
         return datetime_series
 
 
-class StringDerivedTypeRule(Rule, abc.ABC):
+class StringDerivedTypeRule(TypeRule, abc.ABC):
     """
     Base class for rules that derive from string types
     """
@@ -661,12 +728,13 @@ class RegexStringDerivedTypeRule(StringDerivedTypeRule):
     Base class for rules that derive from string types using regex matching
     """
 
-    def __init__(self, regex: str, type_error, parsing_error):
+    def __init__(self, regex: str, type_error, parsing_error, nullable: bool = False):
+        super().__init__(type_error, nullable)
         self.regex = regex
         self.type_error = type_error
         self.parsing_error = parsing_error
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         series = self.cast_as_str(df, column, error_state, str, self.type_error)
         boolmask = ~series.str.match(self.regex, na=False)
         error_state.add_errors(boolmask & series.notna(), column, details=self.parsing_error)
@@ -679,7 +747,10 @@ class UUIDTypeRule(StringDerivedTypeRule):
     Class for UUID type casting rules
     """
 
-    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+    def __init__(self, nullable: bool = False):
+        super().__init__(errors.UUID_TYPE, nullable)
+
+    def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
         series = self.cast_as_str(df, column, error_state, (str, UUID), errors.UUID_TYPE)
         series = series.str.lower()

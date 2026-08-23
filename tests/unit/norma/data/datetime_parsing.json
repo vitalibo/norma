@@ -1,6 +1,6 @@
 [
   {
-    "description": "cast(null as datetime) => null",
+    "description": "cast(null as datetime) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -32,6 +32,116 @@
         "properties": {
           "col": {
             "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "datetime_type",
+                  "msg": "Input should be a valid datetime"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "timestamp"
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(null as optional[datetime]) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col": "object"
+        },
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         }
@@ -1034,7 +1144,7 @@
     }
   },
   {
-    "description": "cast(null <object> as datetime) => null",
+    "description": "cast(null <object> as datetime) => null, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -1056,10 +1166,21 @@
       "dtype": "datetime64[ns, UTC]",
       "masks": {
         "col": [
-          false
+          true
         ]
       },
-      "errors": {}
+      "errors": {
+        "0": {
+          "col": {
+            "details": [
+              {
+                "type": "datetime_type",
+                "msg": "Input should be a valid datetime"
+              }
+            ]
+          }
+        }
+      }
     }
   },
   {
@@ -1261,7 +1382,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2.col3.col4=null as struct<datetime>) => null",
+    "description": "cast($.col1.col2.col3.col4=null as struct<datetime>) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -1328,6 +1449,187 @@
                     "properties": {
                       "col4": {
                         "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": {
+                "col4": null
+              }
+            }
+          },
+          "errors": {
+            "col1.col2.col3.col4": {
+              "details": [
+                {
+                  "type": "datetime_type",
+                  "msg": "Input should be a valid datetime"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "struct",
+                            "fields": [
+                              {
+                                "name": "col4",
+                                "type": "timestamp"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3.col4=null as struct<optional[datetime]>) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": {
+                "col4": null
+              }
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "struct",
+                            "fields": [
+                              {
+                                "name": "col4",
+                                "type": "void"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "object",
+                    "properties": {
+                      "col4": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
                         "format": "date-time"
                       }
                     }
@@ -2803,6 +3105,141 @@
             "col1.col2.col3[].col4.col5.col6": {
               "details": [
                 {
+                  "type": "datetime_type",
+                  "msg": "Input should be a valid datetime",
+                  "loc": [
+                    2
+                  ]
+                },
+                {
+                  "type": "datetime_parsing",
+                  "msg": "Input should be a valid datetime, unable to parse string as a datetime",
+                  "loc": [
+                    1
+                  ]
+                }
+              ],
+              "original": "[\"2025-05-23 12:34:56\",\"foo\",null]"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3[.col4.col5.col6='2025-05-23T12:34:56', ='foo', =null] as array<struct<optional[datetime]>>) => [datetime('2025-05-23T12:34:56Z'), null, null], error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23 12:34:56"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "foo"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23 12:34:56+00:00"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {
+            "col1.col2.col3[].col4.col5.col6": {
+              "details": [
+                {
                   "type": "datetime_parsing",
                   "msg": "Input should be a valid datetime, unable to parse string as a datetime",
                   "loc": [
@@ -2933,6 +3370,298 @@
                               "properties": {
                                 "col6": {
                                   "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23T12:34:56.000Z"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {
+            "col1.col2.col3[].col4.col5.col6": {
+              "details": [
+                {
+                  "type": "datetime_type",
+                  "msg": "Input should be a valid datetime",
+                  "loc": [
+                    2
+                  ]
+                },
+                {
+                  "type": "datetime_parsing",
+                  "msg": "Input should be a valid datetime, unable to parse string as a datetime",
+                  "loc": [
+                    1
+                  ]
+                }
+              ],
+              "original": "[\"2025-05-23 12:34:56\",\"foo\",null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "timestamp"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast($.col1.col2.col3[.col4.col5.col6='2025-05-23T12:34:56', ='foo', =null] as array<struct<optional[datetime]>>) => [datetime('2025-05-23T12:34:56Z'), null, null], error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "2025-05-23 12:34:56"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": "foo"
+                    }
+                  }
+                },
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "string"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
                                   "format": "date-time"
                                 }
                               }

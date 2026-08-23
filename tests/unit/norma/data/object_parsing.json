@@ -1,6 +1,6 @@
 [
   {
-    "description": "cast(null <void> as struct) => null",
+    "description": "cast(null <void> as struct) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -44,10 +44,133 @@
     "then": {
       "data": [
         {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "object_type",
+                  "msg": "Input should be a valid object"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  },
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(null <void> as optional[struct]) => null",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "void"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "col1": null,
-            "col2": null
-          },
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
           "errors": {}
         }
       ],
@@ -172,10 +295,145 @@
     "then": {
       "data": [
         {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "object_type",
+                  "msg": "Input should be a valid object"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  },
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast(null <struct> as optional[struct]) => null, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  },
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "col1": null,
-            "col2": null
-          },
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
           "errors": {}
         }
       ],
@@ -738,7 +996,7 @@
     }
   },
   {
-    "description": "cast({col1='foo'} as struct) => {col1='foo', col2=null}",
+    "description": "cast({col1='foo'} as struct) => {col1='foo'}",
     "engines": [
       "pandas",
       "pyspark"
@@ -793,8 +1051,7 @@
       "data": [
         {
           "col": {
-            "col1": "foo",
-            "col2": null
+            "col1": "foo"
           },
           "errors": {}
         }
@@ -811,10 +1068,6 @@
                   {
                     "name": "col1",
                     "type": "string"
-                  },
-                  {
-                    "name": "col2",
-                    "type": "integer"
                   }
                 ]
               }
@@ -864,9 +1117,8 @@
     }
   },
   {
-    "description": "cast({col1='foo'} <map> as struct) => {col1='foo', col2=null}",
+    "description": "cast({col1='foo'} <map> as struct) => {col1='foo', col2=null}, known issue",
     "engines": [
-      "pandas",
       "pyspark"
     ],
     "given": {
@@ -987,9 +1239,8 @@
     }
   },
   {
-    "description": "cast('{\"co1\":\"foo\"}' <string> as struct) => {col1='foo', col2=null}",
+    "description": "cast('{\"co1\":\"foo\"}' <string> as struct) => {col1='foo', col2=null}, known issue",
     "engines": [
-      "pandas",
       "pyspark"
     ],
     "given": {
@@ -1100,6 +1351,47 @@
           ]
         }
       }
+    }
+  },
+  {
+    "description": "cast('{\"co1\":\"foo\"}' <string> as struct) => {col1='foo'}",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "{\"col1\":\"foo\"}"
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": "foo"
+          },
+          "errors": {}
+        }
+      ]
     }
   },
   {
@@ -2210,7 +2502,7 @@
     }
   },
   {
-    "description": "cast({col={col1={col2=null}}} as struct) => {col={col1={col2=null, col3=null}}}",
+    "description": "cast({col={col1={col2=null}}} as struct) => {col={col1={col2=null}}}, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -2281,8 +2573,166 @@
         {
           "col": {
             "col1": {
-              "col2": null,
-              "col3": null
+              "col2": null
+            }
+          },
+          "errors": {
+            "col.col1.col2": {
+              "details": [
+                {
+                  "type": "string_type",
+                  "msg": "Input should be a valid string"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col2",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast({col={col1={col2=null}}} as struct) => {col={col1={optional[col2=null]}}}",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": null
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col2",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "object",
+                "properties": {
+                  "col2": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "col3": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": {
+            "col1": {
+              "col2": null
             }
           },
           "errors": {}
@@ -2305,10 +2755,6 @@
                         {
                           "name": "col2",
                           "type": "string"
-                        },
-                        {
-                          "name": "col3",
-                          "type": "integer"
                         }
                       ]
                     }
@@ -3269,7 +3715,200 @@
     }
   },
   {
-    "description": "each(cast([{col1=null, col2=null}] as array<struct>)) => {col=[{col1=null, col2=null}]}",
+    "description": "each(cast([{col1=null, col2=null}] as array<struct>)) => {col=[{col1=null, col2=null}]}, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "col1": null,
+              "col2": null
+            },
+            null
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col1",
+                      "type": "string"
+                    },
+                    {
+                      "name": "col2",
+                      "type": "void"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "col1": {
+                  "type": "string"
+                },
+                "col2": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            {
+              "col1": null,
+              "col2": null
+            },
+            null
+          ],
+          "errors": {
+            "col[]": {
+              "details": [
+                {
+                  "loc": [
+                    1
+                  ],
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "[{\"col1\":null,\"col2\":null},null]"
+            },
+            "col[].col1": {
+              "details": [
+                {
+                  "type": "string_type",
+                  "msg": "Input should be a valid string",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[null,null]"
+            },
+            "col[].col2": {
+              "details": [
+                {
+                  "type": "int_type",
+                  "msg": "Input should be a valid integer",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[null,null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col1",
+                      "type": "string"
+                    },
+                    {
+                      "name": "col2",
+                      "type": "integer"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "each(cast([{col1=null, col2=null}] as array<struct>)) => {col=[{optional[col1]=null, optional[col2]=null}]}",
     "engines": [
       "pandas",
       "pyspark"
@@ -3327,10 +3966,16 @@
               ],
               "properties": {
                 "col1": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "col2": {
-                  "type": "integer"
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
                 }
               }
             }
@@ -3346,10 +3991,7 @@
               "col1": null,
               "col2": null
             },
-            {
-              "col1": null,
-              "col2": null
-            }
+            null
           ],
           "errors": {}
         }
@@ -3362,7 +4004,7 @@
               "name": "col",
               "type": {
                 "type": "array",
-                "containsNull": false,
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [
@@ -3871,7 +4513,7 @@
     }
   },
   {
-    "description": "each(cast([{col1='123'}] as array<struct>)) => {col=[{col1=123, col2=null}]}",
+    "description": "each(cast([{col1='123'}] as array<struct>)) => {col=[{col1=123}]}",
     "engines": [
       "pandas",
       "pyspark"
@@ -3901,10 +4543,6 @@
                     {
                       "name": "col1",
                       "type": "string"
-                    },
-                    {
-                      "name": "col2",
-                      "type": "integer"
                     }
                   ]
                 }
@@ -3940,8 +4578,7 @@
         {
           "col": [
             {
-              "col1": 123,
-              "col2": null
+              "col1": 123
             }
           ],
           "errors": {}
@@ -3962,10 +4599,6 @@
                     {
                       "name": "col1",
                       "type": "integer"
-                    },
-                    {
-                      "name": "col2",
-                      "type": "string"
                     }
                   ]
                 }
@@ -4024,9 +4657,8 @@
     }
   },
   {
-    "description": "each(cast([{col1='123'}] as array<struct>)) => {col=[{col1=123, col2=null}]}",
+    "description": "each(cast([{col1='123'}] as array<struct>)) => {col=[{col1=123, col2=null}]}, known issue",
     "engines": [
-      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4170,9 +4802,8 @@
     }
   },
   {
-    "description": "each(cast(['{\"col1\": \"123\"}'] as array<struct>)) => {col=[{col1=123, col2=null}]}",
+    "description": "each(cast(['{\"col1\": \"123\"}'] as array<struct>)) => {col=[{col1=123, col2=null}]}, known issue",
     "engines": [
-      "pandas",
       "pyspark"
     ],
     "given": {
@@ -4306,6 +4937,54 @@
           ]
         }
       }
+    }
+  },
+  {
+    "description": "each(cast(['{\"col1\": \"123\"}'] as array<struct>)) => {col=[{col1=123}]}",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            "{\"col1\": \"123\"}"
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "col1": {
+                  "type": "integer"
+                },
+                "col2": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": [
+            {
+              "col1": 123
+            }
+          ],
+          "errors": {}
+        }
+      ]
     }
   },
   {
@@ -4828,7 +5507,7 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3[.col4.col5={col6=null, col7=null}] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=null, col7=null}}}, null]}}}",
+    "description": "each(cast($.col1.col2.col3[.col4.col5={col6=null, col7=null}] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=null, col7=null}}}, null]}}}, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -4971,6 +5650,158 @@
                     }
                   }
                 },
+                null
+              ]
+            }
+          },
+          "errors": {
+            "col1.col2.col3[].col4.col5.col6": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid string",
+                  "type": "string_type"
+                }
+              ],
+              "original": "[null,null]"
+            },
+            "col1.col2.col3[].col4.col5.col7": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid integer",
+                  "type": "int_type"
+                }
+              ],
+              "original": "[null,null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "string"
+                                            },
+                                            {
+                                              "name": "col7",
+                                              "type": "integer"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "each(cast($.col1.col2.col3[.col4.col5={col6=null, col7=null}] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=null, col7=null}}}, null]}}}, null is allowed",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
                 {
                   "col4": {
                     "col5": {
@@ -4978,7 +5809,144 @@
                       "col7": null
                     }
                   }
+                },
+                null
+              ]
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col3",
+                          "type": {
+                            "type": "array",
+                            "containsNull": true,
+                            "elementType": {
+                              "type": "struct",
+                              "fields": [
+                                {
+                                  "name": "col4",
+                                  "type": {
+                                    "type": "struct",
+                                    "fields": [
+                                      {
+                                        "name": "col5",
+                                        "type": {
+                                          "type": "struct",
+                                          "fields": [
+                                            {
+                                              "name": "col6",
+                                              "type": "integer"
+                                            },
+                                            {
+                                              "name": "col7",
+                                              "type": "string"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "col4": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "col5": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "col6": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "col7": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": null,
+                      "col7": null
+                    }
+                  }
+                },
+                null
               ]
             }
           },
@@ -5814,7 +6782,7 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='123'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7=null}}}]}}}",
+    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='123'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123}}}]}}}",
     "engines": [
       "pandas",
       "pyspark"
@@ -5871,10 +6839,6 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "string"
-                                            },
-                                            {
-                                              "name": "col7",
                                               "type": "string"
                                             }
                                           ]
@@ -5947,8 +6911,7 @@
                 {
                   "col4": {
                     "col5": {
-                      "col6": 123,
-                      "col7": null
+                      "col6": 123
                     }
                   }
                 }
@@ -5993,10 +6956,6 @@
                                             {
                                               "name": "col6",
                                               "type": "integer"
-                                            },
-                                            {
-                                              "name": "col7",
-                                              "type": "string"
                                             }
                                           ]
                                         }
@@ -6067,9 +7026,8 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='123'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7=null}}}]}}}",
+    "description": "each(cast($.col1.col2.col3[.col4.col5.col6='123'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7=null}}}]}}}, known issue",
     "engines": [
-      "pandas",
       "pyspark"
     ],
     "given": {
@@ -6313,9 +7271,8 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7=null}}}]}}}",
+    "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7=null}}}]}}}, known issue",
     "engines": [
-      "pandas",
       "pyspark"
     ],
     "given": {
@@ -6529,6 +7486,86 @@
           ]
         }
       }
+    }
+  },
+  {
+    "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123}}}]}}}",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                "{\"col4\":{\"col5\":{\"col6\":\"123\"}}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "object",
+                "properties": {
+                  "col3": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "col4": {
+                          "type": "object",
+                          "properties": {
+                            "col5": {
+                              "type": "object",
+                              "properties": {
+                                "col6": {
+                                  "type": "integer"
+                                },
+                                "col7": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": {
+              "col3": [
+                {
+                  "col4": {
+                    "col5": {
+                      "col6": 123
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "errors": {}
+        }
+      ]
     }
   },
   {
@@ -7310,6 +8347,258 @@
                 ]
               }
             },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast({c9='x'} as struct) => column is dropped, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": {
+            "c9": "x"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "c9",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "object",
+            "properties": {
+              "col1": {
+                "type": "string"
+              },
+              "col2": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "errors": {
+            "col.c9": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"x\""
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "each(cast([{c9='x'}] as array<struct>)) => column is dropped, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": [
+            {
+              "c9": "x"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "c9",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "col1": {
+                  "type": "string"
+                },
+                "col2": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "errors": {
+            "col[].c9": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"x\"]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
             {
               "name": "errors",
               "type": {

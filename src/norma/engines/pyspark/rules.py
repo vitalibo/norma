@@ -2,7 +2,7 @@ import inspect  # noqa: I001
 import json
 import operator
 from functools import reduce
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
@@ -27,6 +27,8 @@ class ErrorState(IErrorState):
         self.has_array = self._has_array_column(schema)
         self.names = {}
         self.reserved_names = set()
+        self.absent = set()
+        self.key_sets = {}
 
         self.exprs = self.dtypes = self.input_columns = self.pending_errors = self.pending_indexes = \
             self.pending_backups = self.initialized_errors = self.created_roots = self.dropped_roots = None
@@ -217,6 +219,35 @@ class ErrorState(IErrorState):
             return self.pending_backups[column]
         return fn.col(self.backup_col(column))
 
+    def presence_of(self, column: str) -> Optional[Column]:
+        """
+        Return a column presence expression, or None if statically defined by the schema.
+        """
+
+        parent, _, name = column.rpartition('.')
+        keys_of = self.key_sets.get(parent)
+        if keys_of is None:
+            return None
+
+        def has_key(container):
+            return fn.coalesce(fn.array_contains(keys_of(container), fn.lit(name)), fn.lit(True))
+
+        backup = self.backup_expr(parent)
+        return fn.transform(backup, has_key) if '[]' in parent else has_key(backup)
+
+    def container_of(self, column: str) -> Column:
+        """
+        Return a boolean expression (or array of booleans) indicating whether the parent container of the given column
+        exists (is not null).
+        """
+
+        parent, _, _ = column.rpartition('.')
+        if not parent:
+            return fn.lit(True)
+
+        expr = self.expr_of(parent)
+        return fn.transform(expr, lambda x: x.isNotNull()) if '[]' in parent else expr.isNotNull()
+
     def track_column(self, column: str) -> None:
         """
         Start tracking a column: ensure it exists in the symbolic state (creating a void
@@ -226,6 +257,7 @@ class ErrorState(IErrorState):
         try:
             self.dtype_of(column)
         except KeyError:
+            self.absent.add(column)
             self.set_expr(column, fn.lit(None).cast('void'))
             self.set_dtype(column, NullType())
 
@@ -364,11 +396,28 @@ def rule(func, **kwargs) -> BaseRule:
     return BaseRule(func, **kwargs)
 
 
+class RequiredRule(Rule):
+    """
+    Rule reporting a column that the schema declares and the DataFrame schema does not carry
+    """
+
+    accumulates = True
+
+    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        presence = error_state.presence_of(column)
+        if presence is not None:
+            boolmask = fn.transform(presence, operator.inv) if '[]' in column else ~presence
+        elif column in error_state.absent:
+            boolmask = error_state.container_of(column)
+        else:
+            return df
+
+        error_state.add_errors(boolmask, column, errors.MISSING)
+        return df
+
+
 def required() -> Rule:
-    return rule(
-        lambda col_expr: fn.isnull(col_expr),  # noqa: PLW0108
-        details=errors.MISSING,
-    )
+    return RequiredRule()
 
 
 def equal_to(eq: Any) -> Rule:
@@ -537,12 +586,9 @@ class ExtraForbiddenRule(Rule):
 
         error_state.set_backup(column)
         if '[]' in column and not column.endswith('[]'):
+            boolmask = fn.transform(error_state.expr_of(column.split('[]', maxsplit=1)[0]), lambda _: fn.lit(True))
             error_state.drop_column(column)
-            error_state.add_errors(
-                fn.transform(error_state.expr_of(column.split('[]', maxsplit=1)[0]), lambda _: fn.lit(True)),
-                column,
-                errors.EXTRA_FORBIDDEN,
-            )
+            error_state.add_errors(boolmask, column, errors.EXTRA_FORBIDDEN)
             return df
 
         error_state.drop_column(column.removesuffix('[]'))
@@ -554,66 +600,72 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
     return ExtraForbiddenRule(allowed)
 
 
-def int_parsing() -> Rule:
+def int_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: col.cast('integer'),
         IntegerType,
         (StringType, NumericType, BooleanType),
         errors.INT_TYPE,
         errors.INT_PARSING,
+        nullable=nullable,
     )
 
 
-def float_parsing():
+def float_parsing(nullable: bool = False):
     return DataTypeRule(
         lambda col: col.cast('float'),
         FloatType,
         (StringType, NumericType, BooleanType),
         errors.FLOAT_TYPE,
         errors.FLOAT_PARSING,
+        nullable=nullable,
     )
 
 
-def str_parsing() -> Rule:
+def str_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: col.cast('string'),
         StringType,
         (NumericType, BooleanType, DateType, TimestampType),
         errors.STRING_TYPE,
+        nullable=nullable,
     )
 
 
-def bool_parsing() -> Rule:
+def bool_parsing(nullable: bool = False) -> Rule:
     return BooleanTypeRule(
         lambda col: col.cast('boolean'),
         BooleanType,
         (NumericType, StringType),
         errors.BOOL_TYPE,
         errors.BOOL_PARSING,
+        nullable=nullable,
     )
 
 
-def datetime_parsing() -> Rule:
+def datetime_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: fn.to_timestamp(col),  # noqa: PLW0108
         TimestampType,
         (StringType, DateType),
         errors.DATETIME_TYPE,
         errors.DATETIME_PARSING,
+        nullable=nullable,
     )
 
 
-def date_parsing() -> Rule:
+def date_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: fn.to_date(fn.to_timestamp(col)),
         DateType,
         (StringType, TimestampType),
         errors.DATE_TYPE,
         errors.DATE_PARSING,
+        nullable=nullable,
     )
 
 
-def time_parsing() -> Rule:
+def time_parsing(nullable: bool = False) -> Rule:
     time_regex = (
         r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$'
     )
@@ -623,10 +675,11 @@ def time_parsing() -> Rule:
         (StringType,),
         errors.TIME_TYPE,
         errors.TIME_PARSING,
+        nullable=nullable,
     )
 
 
-def duration_parsing() -> Rule:
+def duration_parsing(nullable: bool = False) -> Rule:
     duration_regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(duration_regex), col),
@@ -634,10 +687,11 @@ def duration_parsing() -> Rule:
         (StringType,),
         errors.DURATION_TYPE,
         errors.DURATION_PARSING,
+        nullable=nullable,
     )
 
 
-def uuid_parsing() -> Rule:
+def uuid_parsing(nullable: bool = False) -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
     return ComplexTypeRule(
         lambda col: fn.when(fn.lower(col).rlike(uuid_regex), fn.lower(col)),
@@ -645,10 +699,11 @@ def uuid_parsing() -> Rule:
         (StringType,),
         errors.UUID_TYPE,
         errors.UUID_PARSING,
+        nullable=nullable,
     )
 
 
-def ipv4_address() -> Rule:
+def ipv4_address(nullable: bool = False) -> Rule:
     ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(ipv4_regex), col),
@@ -656,10 +711,11 @@ def ipv4_address() -> Rule:
         (StringType,),
         errors.IPV4,
         errors.IPV4,
+        nullable=nullable,
     )
 
 
-def ipv6_address() -> Rule:
+def ipv6_address(nullable: bool = False) -> Rule:
     # Regular expression to match valid IPv6 addresses
     # link: https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
     ipv6_regex = (
@@ -677,10 +733,11 @@ def ipv6_address() -> Rule:
         (StringType,),
         errors.IPV6,
         errors.IPV6,
+        nullable=nullable,
     )
 
 
-def uri_parsing() -> Rule:
+def uri_parsing(nullable: bool = False) -> Rule:
     uri_regex = (
         r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
         r"()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9"
@@ -694,15 +751,16 @@ def uri_parsing() -> Rule:
         (StringType,),
         errors.URI_TYPE,
         errors.URI_PARSING,
+        nullable=nullable,
     )
 
 
-def object_parsing(schema) -> Rule:
-    return ObjectTypeRule(schema)
+def object_parsing(schema, nullable: bool = False) -> Rule:
+    return ObjectTypeRule(schema, nullable)
 
 
-def array_parsing(schema) -> Rule:
-    return ArrayTypeRule(schema)
+def array_parsing(schema, nullable: bool = False) -> Rule:
+    return ArrayTypeRule(schema, nullable)
 
 
 class DataTypeRule(Rule):
@@ -712,19 +770,27 @@ class DataTypeRule(Rule):
 
     accumulates = True
 
-    def __init__(self, caster, dtype, supported_cast_dtypes, type_error_details=None, parsing_error_details=None):
+    def __init__(  # noqa: PLR0913
+        self, caster, dtype, supported_cast_dtypes,
+        type_error_details=None, parsing_error_details=None, *, nullable=True,
+    ):
         self.caster = caster
         self.dtype = dtype
         self.supported_cast_dtypes = supported_cast_dtypes
         self.type_error_details = type_error_details
         self.parsing_error_details = parsing_error_details
+        self.nullable = nullable
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        if not self.nullable and column not in error_state.absent:
+            self._flag_nulls(column, error_state)
+
         data_type = error_state.dtype_of(column)
         if self._is_valid_dtype(data_type):
             return df
 
         if data_type.typeName() == 'void':
+            self._mark_fields_absent(column, error_state)
             error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()))
             error_state.set_dtype(column, self._target_dtype())
             return df
@@ -773,6 +839,29 @@ class DataTypeRule(Rule):
         )
         error_state.add_errors(indexes, column, self.parsing_error_details)
         return df
+
+    def _mark_fields_absent(self, column: str, error_state: ErrorState) -> None:
+        pass
+
+    def _flag_nulls(self, column: str, error_state: ErrorState) -> None:
+        error_state.set_backup(column)
+        expr = error_state.expr_of(column)
+        parent = '' if column.endswith('[]') else column.rpartition('.')[0]
+
+        if '[]' not in column:
+            boolmask = fn.isnull(expr)
+            if parent:
+                boolmask &= fn.isnotnull(error_state.expr_of(parent))
+        elif parent:
+            boolmask = fn.zip_with(expr, error_state.expr_of(parent), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+        else:
+            boolmask = fn.transform(expr, fn.isnull)
+
+        presence = error_state.presence_of(column)
+        if presence is not None:
+            boolmask = fn.zip_with(boolmask, presence, operator.and_) if '[]' in column else boolmask & presence
+
+        error_state.add_errors(boolmask, column, self.type_error_details)
 
     def _is_valid_dtype(self, data_type) -> bool:
         return isinstance(data_type, self.dtype)
@@ -825,12 +914,18 @@ class ObjectTypeRule(DataTypeRule):
     Class for casting to object type
     """
 
-    def __init__(self, schema):
-        super().__init__(None, StructType, (StringType, MapType), errors.OBJECT_TYPE, errors.OBJECT_PARSING)
+    def __init__(self, schema, nullable=True):
+        super().__init__(
+            None, StructType, (StringType, MapType), errors.OBJECT_TYPE, errors.OBJECT_PARSING, nullable=nullable
+        )
         self.struct_type = self.parse_struct_type(schema)
 
     def _is_valid_dtype(self, data_type) -> bool:
         return isinstance(data_type, StructType)
+
+    def _mark_fields_absent(self, column: str, error_state: ErrorState) -> None:
+        for name in self.struct_type.fieldNames():
+            error_state.absent.add(f'{column}.{name}')
 
     def _target_dtype(self):
         return self.struct_type
@@ -848,10 +943,13 @@ class ObjectTypeRule(DataTypeRule):
 
     def _cast_scalar(self, column, data_type, error_state):
         if isinstance(data_type, MapType):
+            error_state.key_sets[column] = fn.map_keys
             col_expr = error_state.expr_of(column)
             new_struct = fn.struct(*(col_expr[field].alias(field) for field in self.struct_type.fieldNames()))
             error_state.set_expr(column, new_struct)
             return
+
+        error_state.key_sets[column] = fn.json_object_keys
 
         # Workaround for Spark issue where from_json does not return null for malformed JSON
         # As result we need to check if all fields are null and the original value is not null
@@ -881,12 +979,15 @@ class ObjectTypeRule(DataTypeRule):
 
     def _cast_array(self, column, element_type, error_state):
         if isinstance(element_type, MapType):
+            error_state.key_sets[column] = fn.map_keys
 
             def new_struct(x):
                 return fn.struct(*(x[field].alias(field) for field in self.struct_type.fieldNames()))
 
             error_state.set_expr(column, new_struct)
             return
+
+        error_state.key_sets[column] = fn.json_object_keys
 
         # TODO: malformed JSON detection for nested array elements
         # for some reason to use same workaround as in _cast_scalar does not work in nested arrays
@@ -904,12 +1005,20 @@ class ArrayTypeRule(DataTypeRule):
     Class for casting to array type
     """
 
-    def __init__(self, schema):
-        super().__init__(None, ArrayType, (StringType, ArrayType), errors.ARRAY_TYPE, errors.ARRAY_PARSING)
+    def __init__(self, schema, nullable=True):
+        super().__init__(
+            None, ArrayType, (StringType, ArrayType), errors.ARRAY_TYPE, errors.ARRAY_PARSING, nullable=nullable
+        )
         self.struct_type = self.parse_array_type(schema)
 
     def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
         raise NotImplementedError('nested arrays are not supported yet')
+
+    def _mark_fields_absent(self, column: str, error_state: ErrorState) -> None:
+        element_type = self.struct_type.elementType
+        if isinstance(element_type, StructType):
+            for name in element_type.fieldNames():
+                error_state.absent.add(f'{column}[].{name}')
 
     def _target_dtype(self):
         return self.struct_type
@@ -917,7 +1026,8 @@ class ArrayTypeRule(DataTypeRule):
     def _cast_scalar(self, column, data_type, error_state):  # noqa: ARG002
         # TODO: malformed JSON detection for nested array elements
         # same issue as in ObjectTypeRule._cast_scalar with from_json not returning null for malformed JSON
-        error_state.set_expr(column, fn.from_json(error_state.expr_of(column), self.struct_type))
+        expr = error_state.expr_of(column)
+        error_state.set_expr(column, fn.when(expr.rlike(r'^\s*\['), fn.from_json(expr, self.struct_type)))
 
     @staticmethod
     def parse_array_type(schema) -> ArrayType:

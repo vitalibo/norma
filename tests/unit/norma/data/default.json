@@ -39,7 +39,10 @@
             "type": "string"
           },
           "col2": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "default": 25
           }
         }
@@ -251,7 +254,13 @@
       "data": [
         {
           "col1": "foo",
-          "col2": 30
+          "col2": 30,
+          "col3": {
+            "col4": {
+              "col5": null,
+              "col6": 45
+            }
+          }
         },
         {
           "col1": "bar",
@@ -311,17 +320,26 @@
             "type": "string"
           },
           "col2": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "default": 25
           },
           "col3": {
-            "type": "object",
+            "type": [
+              "object",
+              "null"
+            ],
             "properties": {
               "col4": {
                 "type": "object",
                 "properties": {
                   "col5": {
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "default": "unknown"
                   },
                   "col6": {
@@ -342,7 +360,7 @@
           "col3": {
             "col4": {
               "col5": "unknown",
-              "col6": null
+              "col6": 45
             }
           },
           "errors": {}
@@ -392,12 +410,10 @@
                           "type": "integer"
                         }
                       ]
-                    },
-                    "nullable": false
+                    }
                   }
                 ]
-              },
-              "nullable": false
+              }
             },
             {
               "name": "errors",
@@ -453,12 +469,21 @@
       "data": [
         {
           "col1": "foo",
-          "col2": 30
+          "col2": 30,
+          "col3": {
+            "col4": {
+              "col6": 45
+            }
+          }
         },
         {
           "col1": "bar",
           "col2": 25,
-          "col3": {}
+          "col3": {
+            "col4": {
+              "col6": 75
+            }
+          }
         }
       ],
       "schema": {
@@ -472,6 +497,26 @@
             {
               "name": "col2",
               "type": "integer"
+            },
+            {
+              "name": "col3",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col4",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "col6",
+                          "type": "integer"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
             }
           ]
         }
@@ -515,7 +560,7 @@
           "col3": {
             "col4": {
               "col5": "unknown",
-              "col6": null
+              "col6": 45
             }
           },
           "errors": {}
@@ -526,7 +571,7 @@
           "col3": {
             "col4": {
               "col5": "unknown",
-              "col6": null
+              "col6": 75
             }
           },
           "errors": {}
@@ -555,21 +600,19 @@
                       "type": "struct",
                       "fields": [
                         {
+                          "name": "col6",
+                          "type": "integer"
+                        },
+                        {
                           "name": "col5",
                           "type": "string",
                           "nullable": false
-                        },
-                        {
-                          "name": "col6",
-                          "type": "integer"
                         }
                       ]
-                    },
-                    "nullable": false
+                    }
                   }
                 ]
-              },
-              "nullable": false
+              }
             },
             {
               "name": "errors",
@@ -875,11 +918,11 @@
                         }
                       ]
                     },
-                    "nullable": false
+                    "nullable": true
                   }
                 ]
               },
-              "nullable": false
+              "nullable": true
             },
             {
               "name": "col4",
@@ -1064,11 +1107,11 @@
                         }
                       ]
                     },
-                    "nullable": false
+                    "nullable": true
                   }
                 ]
               },
-              "nullable": false
+              "nullable": true
             },
             {
               "name": "errors",
@@ -1223,7 +1266,10 @@
                       "type": "object",
                       "properties": {
                         "col4": {
-                          "type": "integer",
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
                           "default": -1
                         }
                       }
@@ -1302,7 +1348,7 @@
                     "name": "col2",
                     "type": {
                       "type": "array",
-                      "containsNull": false,
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -1318,7 +1364,7 @@
                                 }
                               ]
                             },
-                            "nullable": false
+                            "nullable": true
                           }
                         ]
                       }
@@ -1326,7 +1372,7 @@
                   }
                 ]
               },
-              "nullable": false
+              "nullable": true
             },
             {
               "name": "errors",
@@ -1481,7 +1527,10 @@
                       "type": "object",
                       "properties": {
                         "col4": {
-                          "type": "integer"
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
                         },
                         "col5": {
                           "type": "string",
@@ -1556,7 +1605,7 @@
                     "name": "col2",
                     "type": {
                       "type": "array",
-                      "containsNull": false,
+                      "containsNull": true,
                       "elementType": {
                         "type": "struct",
                         "fields": [
@@ -1576,7 +1625,7 @@
                                 }
                               ]
                             },
-                            "nullable": false
+                            "nullable": true
                           }
                         ]
                       }
@@ -1584,7 +1633,7 @@
                   }
                 ]
               },
-              "nullable": false
+              "nullable": true
             },
             {
               "name": "errors",
@@ -1877,7 +1926,10 @@
         "type": "object",
         "properties": {
           "col1": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "default": "2025-01-23",
             "format": "date"
           }
@@ -1967,7 +2019,10 @@
         "type": "object",
         "properties": {
           "col1": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "default": "2025-01-23",
             "format": "date"
           }
@@ -2018,7 +2073,10 @@
         "type": "object",
         "properties": {
           "col1": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "default": "2025-01-23 12:34:56",
             "format": "date-time"
           }
@@ -2108,7 +2166,10 @@
         "type": "object",
         "properties": {
           "col1": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "default": "2025-01-23 12:34:56",
             "format": "date-time"
           }

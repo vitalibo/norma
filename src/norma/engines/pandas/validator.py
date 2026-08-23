@@ -43,8 +43,11 @@ def validate(
     )
     df.index = index
 
-    out_cols = original_df.columns if schema.allow_extra else schema.columns.keys()
-    return df[[*out_cols, error_column]]
+    kept_cols = [name for name in schema.columns if name in df.columns]
+    if schema.allow_extra:
+        original = list(original_df.columns)
+        kept_cols = [*original, *(name for name in kept_cols if name not in original)]
+    return df[[*kept_cols, error_column]]
 
 
 def _validate(df, schema, error_state, parent=''):
@@ -52,10 +55,15 @@ def _validate(df, schema, error_state, parent=''):
     Recursively validate the DataFrame according to the schema
     """
 
-    columns = {column.removeprefix(parent) for column in df.columns} | set(schema.columns)
+    columns = {column.removeprefix(parent) for column in df.columns} | {
+        name for name, column in schema.columns.items()
+        if column.required or column.default is not None or column.default_factory is not None
+    }
+
     for column in columns:
         full_column = f'{parent}{column}'
         if full_column not in df.columns:
+            error_state.absent[full_column] = pd.Series(True, index=df.index)
             df[full_column] = np.nan
 
         rules = list(schema.columns[column].rules) if column in schema.columns else []
@@ -89,13 +97,26 @@ def _validate_object(df, column, inner_schema, error_state):
     Validate an object column by recursively validating a child frame built from its fields
     """
 
+    objects = [isinstance(value, dict) for value in df[column]]
+    error_state.containers[column] = pd.Series(objects, index=df.index)
     child = pd.DataFrame(
         [value if isinstance(value, dict) else {} for value in df[column]], index=df.index, dtype='object'
     )
     child.columns = [f'{column}.{name}' for name in child.columns]
+
+    # the child frame is rectangular over the union of the keys, so a row that never carried a key
+    # is indistinguishable from one holding it as null: record which rows had it while we still know
+    for name in inner_schema.columns:
+        error_state.absent[f'{column}.{name}'] = pd.Series(
+            [not (isinstance(value, dict) and name in value) for value in df[column]], index=df.index
+        )
+
+    if not any(objects):
+        for name in inner_schema.columns:
+            child[f'{column}.{name}'] = np.nan
     child = _validate(child, inner_schema, error_state, parent=f'{column}.')
 
-    names = list(inner_schema.columns)
+    names = [name for name in inner_schema.columns if f'{column}.{name}' in child.columns]
     if inner_schema.allow_extra:
         names += [
             name.removeprefix(f'{column}.')
@@ -103,12 +124,15 @@ def _validate_object(df, column, inner_schema, error_state):
             if name.removeprefix(f'{column}.') not in inner_schema.columns
         ]
 
-    # null objects materialize as a dict of null fields, mirroring how pyspark rebuilds structs;
-    # rows with errors are nullified afterward by the mask
+    if not names:
+        return df.drop(columns=[column])
+
+    # a value that was not an object stays null instead of materializing as a dict of null fields,
+    # mirroring how pyspark rebuilds structs; rows with errors are nullified afterward by the mask
     df[column] = pd.Series(
         [
-            {name: _to_native(value) for name, value in zip(names, row)}
-            for row in zip(*[child[f'{column}.{name}'].tolist() for name in names])
+            {name: _to_native(value) for name, value in zip(names, row)} if is_object else None
+            for is_object, row in zip(objects, zip(*[child[f'{column}.{name}'].tolist() for name in names]))
         ],
         index=df.index, dtype='object',
     )
@@ -138,6 +162,8 @@ def _validate_array(df, column, inner_column, error_state):
             full_column: pd.Series(values, index=pd.MultiIndex.from_arrays([rows, positions]), dtype='object')
         })
         child = _validate_array_elements(child, full_column, inner_column, error_state)
+        if full_column not in child.columns:
+            return df.drop(columns=[column])
         elements = child[full_column].tolist()
         if inner_column.dtype != 'object':
             elements = [_to_native(element) for element in elements]
@@ -238,7 +264,7 @@ def _backfill_originals(error_state, original_df):
 
     def render(index, column):
         if column in original_columns:
-            return json.dumps(original_df.loc[index, column], separators=(',', ':'), default=_json_serde)
+            return json.dumps(_to_native(original_df.loc[index, column]), separators=(',', ':'), default=_json_serde)
 
         if column not in error_state.backups:
             return 'null'

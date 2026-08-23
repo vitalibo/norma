@@ -87,7 +87,7 @@ def rule(func, priority: float = 5, **kwargs) -> Rule:
 
 def required() -> Rule:
     """
-    Ensure that the values are present and not null
+    Ensure that the column is present in the DataFrame
     """
 
     return RuleProxy('required', 0)
@@ -297,114 +297,141 @@ def min_items(value: int) -> Rule:
     return RuleProxy('min_items', value=value)
 
 
-def int_parsing() -> Rule:
+def int_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are integers or parse as integers if possible
-    :return:
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('int_parsing', 1)
+    return RuleProxy('int_parsing', 1, nullable=nullable)
 
 
-def float_parsing():
+def float_parsing(nullable: bool = False):
     """
     Ensure that the values are floats or parse as floats if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('float_parsing', 1)
+    return RuleProxy('float_parsing', 1, nullable=nullable)
 
 
-def str_parsing() -> Rule:
+def str_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are strings or parse as strings if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('str_parsing', 1)
+    return RuleProxy('str_parsing', 1, nullable=nullable)
 
 
-def bool_parsing() -> Rule:
+def bool_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are booleans or parse as booleans if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('bool_parsing', 1)
+    return RuleProxy('bool_parsing', 1, nullable=nullable)
 
 
-def datetime_parsing() -> Rule:
+def datetime_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are date-times or parse as date-times if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('datetime_parsing', 1)
+    return RuleProxy('datetime_parsing', 1, nullable=nullable)
 
 
-def date_parsing() -> Rule:
+def date_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are dates or parse as dates if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('date_parsing', 1)
+    return RuleProxy('date_parsing', 1, nullable=nullable)
 
 
-def time_parsing() -> Rule:
+def time_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are times or parse as times if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('time_parsing', 1)
+    return RuleProxy('time_parsing', 1, nullable=nullable)
 
 
-def duration_parsing() -> Rule:
+def duration_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are durations or parse as durations if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('duration_parsing', 1)
+    return RuleProxy('duration_parsing', 1, nullable=nullable)
 
 
-def uuid_parsing() -> Rule:
+def uuid_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are valid UUIDs
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('uuid_parsing', 1)
+    return RuleProxy('uuid_parsing', 1, nullable=nullable)
 
 
-def ipv4_address() -> Rule:
+def ipv4_address(nullable: bool = False) -> Rule:
     """
     Ensure that the values are valid IPv4 addresses
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('ipv4_address', 1)
+    return RuleProxy('ipv4_address', 1, nullable=nullable)
 
 
-def ipv6_address() -> Rule:
+def ipv6_address(nullable: bool = False) -> Rule:
     """
     Ensure that the values are valid IPv6 addresses
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('ipv6_address', 1)
+    return RuleProxy('ipv6_address', 1, nullable=nullable)
 
 
-def uri_parsing() -> Rule:
+def uri_parsing(nullable: bool = False) -> Rule:
     """
     Ensure that the values are valid URIs
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('uri_parsing', 1)
+    return RuleProxy('uri_parsing', 1, nullable=nullable)
 
 
-def object_parsing(schema) -> Rule:
+def object_parsing(schema, nullable: bool = False) -> Rule:
     """
     Ensure that the values are objects or parse as objects if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('object_parsing', 1, schema=schema)
+    return RuleProxy('object_parsing', 1, schema=schema, nullable=nullable)
 
 
-def array_parsing(schema) -> Rule:
+def array_parsing(schema, nullable: bool = False) -> Rule:
     """
     Ensure that the values are arrays or parse as arrays if possible
+
+    :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('array_parsing', 1, schema=schema)
+    return RuleProxy('array_parsing', 1, schema=schema, nullable=nullable)

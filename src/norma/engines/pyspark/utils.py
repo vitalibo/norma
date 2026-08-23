@@ -204,7 +204,8 @@ def nested_set_expr(  # noqa: C901, PLR0915
 
             struct_cols.append(expr.alias(nested[0]))
 
-        return fn.struct(*struct_cols)
+        struct = fn.struct(*struct_cols)
+        return struct if dtype is None else fn.when(col.isNotNull(), struct)
 
     if root_dtype is not None and root_dtype.typeName() == 'struct':
         field_names, level_dtype = root_dtype.names, root_dtype

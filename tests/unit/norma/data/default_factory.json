@@ -29,12 +29,14 @@
         "columns": {
           "col1": {
             "dtype": "str",
+            "nullable": true,
             "default_factory": {
               "expr": "lambda x: x['col2'].str.upper()"
             }
           },
           "col2": {
             "dtype": "str",
+            "nullable": true,
             "pattern": "bar|qux",
             "default": "<default>"
           }
@@ -111,12 +113,14 @@
         "columns": {
           "col1": {
             "dtype": "str",
+            "nullable": true,
             "default_factory": {
               "expr": "lambda x: fn.upper(fn.col('col2'))"
             }
           },
           "col2": {
             "dtype": "str",
+            "nullable": true,
             "pattern": "bar|qux",
             "default": "<default>"
           }
@@ -222,6 +226,16 @@
           }
         },
         {
+          "col1": {
+            "col2": {
+              "col3": null
+            }
+          },
+          "col4": {
+            "col5": "qux"
+          }
+        },
+        {
           "col1": null,
           "col4": {
             "col5": "qux"
@@ -283,12 +297,14 @@
         "columns": {
           "col1": {
             "dtype": "object",
+            "nullable": true,
             "inner_schema": {
-              "expr": "Schema({'col2': Column('object', inner_schema=Schema({'col3': Column('str', default_factory=lambda x: fn.upper(fn.col('col4.col5')))}))})"
+              "expr": "Schema({'col2': Column('object', nullable=True, inner_schema=Schema({'col3': Column('str', nullable=True, default_factory=lambda x: fn.upper(fn.col('col4.col5')))}))})"
             }
           },
           "col4": {
             "dtype": "object",
+            "nullable": true,
             "inner_schema": {
               "expr": "Schema({'col5': Column('str')})"
             }
@@ -321,25 +337,22 @@
           "errors": {}
         },
         {
-          "col1": {
-            "col2": {
-              "col3": null
-            }
-          },
+          "col1": null,
           "col4": {
-            "col5": null
+            "col5": "qux"
           },
           "errors": {}
         },
         {
           "col1": {
-            "col2": {
-              "col3": null
-            }
+            "col2": null
           },
-          "col4": {
-            "col5": null
-          },
+          "col4": null,
+          "errors": {}
+        },
+        {
+          "col1": null,
+          "col4": null,
           "errors": {}
         }
       ],
@@ -362,12 +375,10 @@
                           "type": "string"
                         }
                       ]
-                    },
-                    "nullable": false
+                    }
                   }
                 ]
-              },
-              "nullable": false
+              }
             },
             {
               "name": "col4",
@@ -471,7 +482,7 @@
           "col2": {
             "dtype": "array",
             "inner_schema": {
-              "expr": "Column('str', default_factory=lambda x: fn.upper(fn.col('col1')))"
+              "expr": "Column('str', nullable=True, default_factory=lambda x: fn.upper(fn.col('col1')))"
             }
           }
         }
@@ -620,7 +631,7 @@
           "col2": {
             "dtype": "array",
             "inner_schema": {
-              "expr": "Column('object', inner_schema=Schema({'col3': Column('str', default_factory=lambda x: fn.upper(fn.col('col1')))}))"
+              "expr": "Column('object', inner_schema=Schema({'col3': Column('str', nullable=True, default_factory=lambda x: fn.upper(fn.col('col1')))}))"
             }
           }
         }
@@ -659,7 +670,7 @@
               "name": "col2",
               "type": {
                 "type": "array",
-                "containsNull": false,
+                "containsNull": true,
                 "elementType": {
                   "type": "struct",
                   "fields": [

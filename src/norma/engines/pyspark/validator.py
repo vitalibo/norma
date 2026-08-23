@@ -34,7 +34,10 @@ def validate(schema: Schema, df: DataFrame, error_column: str) -> DataFrame:
     df = _nullify_invalid_values(df, schema, error_state)
     df = _fill_defaults(df, schema)
 
-    return df.select(*(original_cols if schema.allow_extra else schema.columns), error_column)
+    kept_cols = [name for name in schema.columns if name in df.columns]
+    if schema.allow_extra:
+        kept_cols = [*original_cols, *(col for col in kept_cols if col not in original_cols)]
+    return df.select(*kept_cols, error_column)
 
 
 def _apply_rule(df, rule, column, error_state):
@@ -59,7 +62,11 @@ def _validate(df, schema, error_state, original_cols, parent=''):
     Recursively validate the DataFrame according to the schema
     """
 
-    columns = set(schema.columns.keys())
+    columns = {
+        name for name, column in schema.columns.items()
+        if name in original_cols or
+           column.required or column.default is not None or column.default_factory is not None
+    }
     if not schema.allow_extra:
         columns.update(original_cols)
 
@@ -87,14 +94,16 @@ def _validate(df, schema, error_state, original_cols, parent=''):
             for rule in inner_schema.rules:
                 df = _apply_rule(df, rule, full_column, error_state)
 
-            dtype = error_state.dtype_of(full_column)
-            if dtype.typeName() != 'struct':
-                continue
+            inner_schema = inner_schema.inner_schema
 
-            df = _validate(df, inner_schema.inner_schema, error_state, dtype.fieldNames(), f'{full_column}.')
-        else:
-            dtype = error_state.dtype_of(full_column)
-            df = _validate(df, inner_schema, error_state, dtype.fieldNames(), f'{full_column}.')
+        dtype = error_state.dtype_of(full_column)
+        if dtype.typeName() != 'struct':
+            continue
+
+        df = _validate(df, inner_schema, error_state, dtype.fieldNames(), f'{full_column}.')
+
+        if not error_state.dtype_of(full_column).fields:
+            error_state.drop_column(full_column.removesuffix('[]'))
 
     return df
 
@@ -175,6 +184,8 @@ def _nullify_invalid_values(df, schema, error_state):
         return x.withField(nodes[0], nested_zip(x.getField(nodes[0]), y, nodes[1:]))
 
     for name, _ in reversed(schema.nested_columns.items()):
+        if name not in error_state.names:
+            continue
         if '[]' not in name:
             set_expr(name, fn.when(fn.array_size(fn.col(error_state.errors_col(name))) <= 0, expr_of(name)))
         elif error_state.indexes_col(name) in df.columns:
@@ -242,7 +253,7 @@ def _make_origin(df, column, error_state):
         if dtype_name == 'string':
             return null.otherwise(fn.concat(fn.lit('"'), value, fn.lit('"')))
         if dtype_name in {'array', 'map', 'struct'}:
-            return null.otherwise(fn.to_json(value))
+            return null.otherwise(fn.to_json(value, {'ignoreNullFields': 'false'}))
         return null.otherwise(value.cast('string'))
 
     backup_column = error_state.backup_col(column)
