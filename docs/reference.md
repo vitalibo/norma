@@ -23,10 +23,10 @@ These types have corresponding engine-specific types:
 
 | JSON    | Python API | Pandas         | PySpark |
 |---------|------------|----------------|---------|
-| array   | list       | object         | array   | 
+| array   | list       | object         | array   |
 | boolean | bool       | boolean        | boolean |
-| integer | int        | Int64          | integer | 
-| number  | float      | Float64        | float   | 
+| integer | int        | Int64          | integer |
+| number  | float      | Float64        | float   |
 | object  | object     | object         | struct  |
 | string  | str        | string[python] | string  |
 
@@ -607,9 +607,10 @@ properties.
 These constraints can be applied to different data types and include:
 
 - `required`
+- `nullable`
+- `default`
 - `enum`
 - `const`
-- `default`
 - `minimum` / `exclusiveMinimum`
 - `maximum` / `exclusiveMaximum`
 - `minLength` / `maxLength`
@@ -622,9 +623,61 @@ These constraints can be applied to different data types and include:
 The examples that follow demonstrate each constraint in JSON Schema and the Python API, alongside representative inputs
 so you can see how Norma evaluates real data.
 
+### Presence and absence
+
+`required`, `nullable` and `default` answer three different questions, and Norma keeps them apart. A field reaches the
+validator in one of three states:
+
+| Input  | State     | What it means                                      |
+|--------|-----------|----------------------------------------------------|
+| `17`   | `present` | The source carried the field, with a value         |
+| `null` | `null`    | The source carried the field, and said it is empty |
+|        | `absent`  | The source never carried the field                 |
+
+Every combination of the three states and the three keywords, plus a value that fails its own rules for a property
+declared `{"type": "integer"}`.
+
+| Input   | `required`        | `nullable`        | `default`           | Output | Error         | Reason                                                                |
+|---------|-------------------|-------------------|---------------------|--------|---------------|-----------------------------------------------------------------------|
+| `17`    | `false`<br>`true` | `false`<br>`true` | -<br>`25`<br>`null` | `17`   |               |                                                                       |
+| `"abc"` | `false`<br>`true` | `false`<br>`true` | -<br>`25`<br>`null` | `null` | `int_parsing` | Input should be a valid integer, unable to parse string as an integer |
+| `null`  | `false`<br>`true` | `false`           | -<br>`25`<br>`null` | `null` | `int_type`    | Input should be a valid integer                                       |
+| `null`  | `false`<br>`true` | `true`            | -<br>`25`<br>`null` | `null` |               |                                                                       |
+|         | `false`           | `false`<br>`true` | -                   |        |               |                                                                       |
+|         | `false`<br>`true` | `false`<br>`true` | `25`                | `25`   |               |                                                                       |
+|         | `false`<br>`true` | `false`           | `null`              | `null` | `int_type`    | Input should be a valid integer                                       |
+|         | `false`<br>`true` | `true`            | `null`              | `null` |               |                                                                       |
+|         | `true`            | `false`<br>`true` | -                   | `null` | `missing`     | Field required                                                        |
+
+Read the table as three independent rules.
+
+- `required` never looks at a value: it fires on `absent` alone, and only when no `default` was given, which is why
+  every `present` and every `null` row ignores it.
+- `nullable` never looks at presence: it fires on `null` alone, whether the null came from the source or from a
+  `default: null`, which is why it decides nothing in the `present` rows.
+- `default` never looks at a value that arrived: it fires on `absent` alone, and once it does, `missing` can no
+  longer happen.
+
+Whether a field can be absent at all depends on how it reaches the validator:
+
+| Input Type    | Engine    | How presence is decided                                        |
+|---------------|-----------|----------------------------------------------------------------|
+| `column`      | both      | Statically, by the DataFrame schema, the same for every row    |
+| `struct`      | `pyspark` | Statically, by the struct's field list, the same for every row |
+| `dict`        | `pandas`  | Per row, by the keys of the row's dict                         |
+| `map`         | `pyspark` | Per row, by the keys of the row's map                          |
+| `json_string` | both      | Per row, by the keys of the row's parsed JSON object           |
+
+For `column` and `struct` the field list is fixed for the whole DataFrame, so a field cannot be absent in one row and
+present in another. It is the frame that loses the distinction, not the validator: once records are loaded into a
+rectangle, a row that never carried a key and a row that carried it as null are the same row. So for a `column` or a
+`struct` a default answers only a field the frame's type never carried at all, and a column of nulls, including one
+typed `void`, is present, not absent.
+
 #### `required`
 
-The `required` keyword ensures that a property is present and not null in the data being validated.
+The `required` keyword ensures that a property is **present** in the data being validated. It says nothing about the
+value: a field the source carried as `null` is present, and is judged by [`nullable`](#nullable) instead.
 
 **JSON Schema**
 
@@ -648,17 +701,118 @@ The `required` keyword ensures that a property is present and not null in the da
 from norma.schema import Schema, Column
 
 Schema({
-    'name': Column(str, nullable=False)
+    'name': Column(str, required=True)
 })
 ```
 
 Use the table below to see how `required: ["name"]` behaves:
 
-| Input   | Type     | Output  | Error     | Reason         |
-|---------|----------|---------|-----------|----------------|
-| `"foo"` | `string` | `"foo"` |           |                |
-| `null`  | `string` | `null`  | `missing` | Field required |
-|         |          | `null`  | `missing` | Field required |
+| Input   | Type               | Output  | Error         | Reason                         |
+|---------|--------------------|---------|---------------|--------------------------------|
+| `"foo"` | `string`           | `"foo"` |               |                                |
+| `null`  | `string`           | `null`  | `string_type` | Input should be a valid string |
+| `null`  | `optional[string]` | `null`  |               |                                |
+|         |                    | `null`  | `missing`     | Field required                 |
+
+What an absence produces depends on where presence is decided:
+
+| Input Type            | Engine    | Not Required              | Required  |
+|-----------------------|-----------|---------------------------|-----------|
+| `column`, `struct`    | both      | the column is not created | `missing` |
+| `dict`, `json_string` | `pandas`  | the column is not created | `missing` |
+| `map`, `json_string`  | `pyspark` | `null`                    | `missing` |
+
+For `dict`, `map` and `json_string` the keys are known only when a row is read, so presence is resolved at runtime and
+only the rows that lack the key are reported. Whether the field exists at all is decided earlier: `pandas` assembles the
+output after reading the data and never creates a field that no row carried, while `pyspark` fixes the output schema
+before any value is seen, so every field the schema declares becomes a struct field, `null` in every row that lacked it.
+
+#### `nullable`
+
+Norma has no `nullable` keyword of its own. A property is made nullable by adding `null` to its `type`, as described in
+[Data Type Conventions](#data-type-conventions), or by `nullable=True` in the Python API. It governs the **value**, not
+the presence: a null is either accepted or reported, while an absent field is never a type error, whatever `nullable`
+says.
+
+**JSON Schema**
+
+```json
+{
+  "type": [
+    "string",
+    "null"
+  ]
+}
+```
+
+**Python**
+
+```python
+from norma.schema import Column
+
+Column(str, nullable=True)
+```
+
+Use the table below to see how `nullable` behaves:
+
+| Input   | Type     | Parameters        | Output  | Error         | Reason                                           |
+|---------|----------|-------------------|---------|---------------|--------------------------------------------------|
+| `"foo"` | `string` | `nullable: true`  | `"foo"` |               |                                                  |
+| `null`  | `string` | `nullable: true`  | `null`  |               |                                                  |
+| `null`  | `string` | `nullable: false` | `null`  | `string_type` | Input should be a valid string                   |
+|         |          | `nullable: false` |         |               | Absence is `required`'s business, not `nullable` |
+
+#### `default`
+
+The `default` keyword is used to specify the value to use when a property is **absent** from the input. It answers
+absence alone: a null the source supplied is left as it is. The value is injected before the parsing and the constraints,
+so it is coerced and checked like an incoming value.
+
+**JSON Schema**
+
+```json
+{
+  "type": "string",
+  "default": "default_value"
+}
+```
+
+**Python**
+
+```python
+from norma.schema import Column
+
+Column(str, default="default_value")
+```
+
+Use the table below to see how `default` behaves:
+
+| Input   | Type      | Parameters                    | Output | Error                | Reason                                                                |
+|---------|-----------|-------------------------------|--------|----------------------|-----------------------------------------------------------------------|
+|         |           | `default: 25`                 | `25`   |                      |                                                                       |
+|         |           | `default: "25"`               | `25`   |                      |                                                                       |
+|         |           | `default: "abc"`              | `null` | `int_parsing`        | Input should be a valid integer, unable to parse string as an integer |
+|         |           | `default: -5`<br>`minimum: 0` | `null` | `greater_than_equal` | Input should be greater than or equal to 0                            |
+|         |           | —                             |        |                      |                                                                       |
+|         | `integer` | `default: null`               | `null` | `int_type`           | Input should be a valid integer                                       |
+| `null`  | `string`  | `default: "abc"`              | `null` |                      |                                                                       |
+| `"abc"` | `integer` | `default: 25`                 | `null` | `int_parsing`        | Input should be a valid integer, unable to parse string as an integer |
+| `""`    | `string`  | `default: "n/a"`              | `""`   |                      |                                                                       |
+
+Use a `default` of `null` to guarantee that a column is always there. It is not the same as no default at all: without
+one, a column the input never carried never reaches the output, and everything downstream has to guard against its
+absence. With it, the column is materialized as null in its declared type whatever the source sent, so the schema, not
+the data, decides the shape of the output.
+
+A default fills a slot, and a slot exists only if its container does. A default on a nested field therefore never
+creates the object above it: a `null` parent defaults none of its children, and an absent parent is not brought back by
+a default on one of them. Giving the parent its own `"default": null` puts it in the output, but as `null`, not as an
+object built from its children's defaults.
+
+A `default` that cannot fill a slot is rejected when the schema is built: one on array items, which are never absent,
+and a non-null one on an `object` or `array` column.
+
+### Value rules
 
 #### `enum`
 
@@ -788,35 +942,6 @@ Use the table below to see how `not const: "bar"` behaves:
 | `null`  | `number`<br>`integer`<br>`string`<br>`bool`<br>`datetime`<br>`date` | `null`  |                |                                    |
 | `"foo"` | `string`                                                            | `"foo"` |                |                                    |
 | `"bar"` | `string`                                                            | `null`  | `not_equal_to` | Input should not be equal to "bar" |
-
-#### `default`
-
-The `default` keyword is used to specify a default value for a property if it is missing or null.
-
-**JSON Schema**
-
-```json
-{
-  "type": "string",
-  "default": "default_value"
-}
-```
-
-**Python**
-
-```python
-from norma.schema import Column
-
-Column(str, default="default_value")
-```
-
-Use the table below to see how `default` behaves:
-
-| Input   | Type                                                                | Parameters       | Output  | Error         | Reason                                                                |
-|---------|---------------------------------------------------------------------|------------------|---------|---------------|-----------------------------------------------------------------------|
-| ` `     | `number`<br>`integer`<br>`string`<br>`bool`<br>`datetime`<br>`date` | `default: 25`    | `25`    |               |                                                                       |
-| `null`  | `string`                                                            | `default: "abc"` | `"abc"` |               |                                                                       |
-| `"abc"` | `string`                                                            | `default: 25`    | `25`    | `int_parsing` | Input should be a valid integer, unable to parse string as an integer |
 
 #### `minimum`
 

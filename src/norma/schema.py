@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Any, Callable, Dict, List, TypeVar, Union
+from typing import Any, Dict, List, TypeVar, Union
 
 import norma.rules
 from norma.rules import Rule
@@ -17,6 +17,8 @@ except ImportError:
     PySparkDataFrame = None
 
 T = TypeVar('T')
+
+_UNSET = object()
 
 
 class Column:
@@ -42,8 +44,7 @@ class Column:
     :param min_items: The minimum number of items in the array
     :param max_items: The maximum number of items in the array
     :param unique_items: Whether the items in the array must be unique
-    :param default: The default value for the column
-    :param default_factory: A factory function to generate the default value
+    :param default: The value to use when the field is absent from the input, `None` included
     """
 
     def __init__(  # noqa: PLR0913
@@ -69,8 +70,7 @@ class Column:
             max_items: Union[int, None] = None,
             unique_items: bool = False,
             inner_schema: Union[Schema, Column, None] = None,
-            default: Any = None,
-            default_factory: Union[Callable, None] = None,
+            default: Any = _UNSET,
     ) -> None:
         dtype_parsing = {
             alias: parsing
@@ -101,15 +101,17 @@ class Column:
         if dtype in {'array', 'list'} and inner_schema is None:
             raise ValueError("inner_schema must be provided for 'array' dtype")
 
-        if default is not None and default_factory is not None:
-            raise ValueError('default and default_factory cannot be used together')
+        if dtype in {'array', 'list'} and inner_schema.has_default:
+            raise ValueError("'default' is not applicable to array items")
+        if dtype in {'object', 'array', 'list'} and default is not _UNSET and default is not None:
+            raise ValueError(f"'default' is not applicable to '{dtype}' columns")
 
         defined_rules = {
             rule.name: rule
             for rule in [
                 rule_definition(value)
                 for rule_definition, value in [
-                    (lambda _: norma.rules.required(), True if required else None),
+                    (lambda _: norma.rules.required(), True if required and default is _UNSET else None),
                     (lambda _: dtype_parsing[dtype](nullable=nullable), True),
                     (norma.rules.equal_to, eq),
                     (norma.rules.not_equal_to, ne),
@@ -144,8 +146,8 @@ class Column:
                 defined_rules[str(rule)] = rule
 
         self.rules = sorted(defined_rules.values(), key=lambda x: x.priority)
-        self.default = default
-        self.default_factory = default_factory
+        self.has_default = default is not _UNSET
+        self.default = None if default is _UNSET else default
         self.inner_schema = inner_schema
         self.required = required
         self.nullable = nullable

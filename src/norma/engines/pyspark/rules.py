@@ -28,6 +28,7 @@ class ErrorState(IErrorState):
         self.names = {}
         self.reserved_names = set()
         self.absent = set()
+        self.filled = set()
         self.key_sets = {}
 
         self.exprs = self.dtypes = self.input_columns = self.pending_errors = self.pending_indexes = \
@@ -224,6 +225,9 @@ class ErrorState(IErrorState):
         Return a column presence expression, or None if statically defined by the schema.
         """
 
+        if column in self.filled:
+            return None
+
         parent, _, name = column.rpartition('.')
         keys_of = self.key_sets.get(parent)
         if keys_of is None:
@@ -418,6 +422,55 @@ class RequiredRule(Rule):
 
 def required() -> Rule:
     return RequiredRule()
+
+
+class DefaultRule(Rule):
+    """
+    Rule injecting a static value into the slots the input never populates
+    """
+
+    accumulates = True
+
+    def __init__(self, value: Any) -> None:
+        self.value = value
+
+    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
+        presence = error_state.presence_of(column)
+        if presence is None:
+            if column not in error_state.absent:
+                return df
+
+            literal = fn.lit(self.value)
+            error_state.set_expr(column, literal)
+            error_state.set_dtype(column, df.select(literal.alias('_')).schema[0].dataType)
+            error_state.absent.discard(column)
+            return df
+
+        literal = fn.lit(self.value).cast(error_state.dtype_of(column))
+        error_state.filled.add(column)
+        if '[]' not in column:
+            error_state.set_expr(column, fn.when(~presence, literal).otherwise(error_state.expr_of(column)))
+            return df
+
+        def fill(value: Column, present: Column, nodes: Iterable[str], literal: Column) -> Column:
+            if not nodes:
+                return fn.when(~present, literal).otherwise(value)
+
+            head, *rest = nodes
+            return value.withField(head, fill(value.getField(head), present, rest, literal))
+
+        root, _, nested = column.partition('[].')
+        root = root.removesuffix('[]')
+        nodes = nested.split('.') if nested else []
+        error_state.set_expr(
+            root,
+            fn.zip_with(error_state.expr_of(root), presence, lambda x, y: fill(x, y, nodes, literal)),
+        )
+        return df
+
+
+def default(value: Any) -> Rule:
+    return DefaultRule(value)
 
 
 def equal_to(eq: Any) -> Rule:

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 import norma.rules
-from norma.engines.pandas.rules import ErrorState, extra_forbidden
+from norma.engines.pandas.rules import ErrorState, default, extra_forbidden
 
 if TYPE_CHECKING:
     from norma.schema import Schema
@@ -57,16 +57,18 @@ def _validate(df, schema, error_state, parent=''):
 
     columns = {column.removeprefix(parent) for column in df.columns} | {
         name for name, column in schema.columns.items()
-        if column.required or column.default is not None or column.default_factory is not None
+        if column.required or column.has_default
     }
 
-    for column in columns:
+    for column in sorted(columns):
         full_column = f'{parent}{column}'
         if full_column not in df.columns:
             error_state.absent[full_column] = pd.Series(True, index=df.index)
             df[full_column] = np.nan
 
         rules = list(schema.columns[column].rules) if column in schema.columns else []
+        if column in schema.columns and schema.columns[column].has_default:
+            rules.insert(0, default(schema.columns[column].default))
         if not schema.allow_extra:
             rules.append(extra_forbidden([f'{parent}{allowed}' for allowed in schema.columns]))
 
@@ -89,7 +91,7 @@ def _validate(df, schema, error_state, parent=''):
             else:
                 df = _validate_object(df, full_column, inner_schema, error_state)
 
-    return _finalize(df, schema, error_state, parent)
+    return _finalize(df, error_state)
 
 
 def _validate_object(df, column, inner_schema, error_state):
@@ -199,18 +201,15 @@ def _validate_array_elements(child, full_column, inner_column, error_state):
         if mask.any():
             child.loc[mask, full_column] = None
 
-    if inner_column.default is not None:
-        child[full_column] = child[full_column].fillna(inner_column.default)
-
     if inner_column.inner_schema is not None and inner_column.dtype == 'object':
         child = _validate_object(child, full_column, inner_column.inner_schema, error_state)
 
     return child
 
 
-def _finalize(df, schema, error_state, parent=''):
+def _finalize(df, error_state):
     """
-    Nullify invalid values and fill defaults
+    Nullify invalid values
     """
 
     for full_column in df.columns:
@@ -220,16 +219,6 @@ def _finalize(df, schema, error_state, parent=''):
         if not mask.any():
             continue
         df.loc[mask, full_column] = None
-
-    for column in schema.columns:
-        full_column = f'{parent}{column}'
-        if full_column in df.columns and schema.columns[column].default is not None:
-            df[full_column] = df[full_column].fillna(schema.columns[column].default)
-
-    for column in schema.columns:
-        full_column = f'{parent}{column}'
-        if full_column in df.columns and schema.columns[column].default_factory is not None:
-            df[full_column] = df[full_column].fillna(schema.columns[column].default_factory(df))
 
     return df
 

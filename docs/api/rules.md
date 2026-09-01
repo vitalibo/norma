@@ -47,7 +47,10 @@ These factories cover common validation scenarios.
 
 ### Presence
 
-- `required()` — reject null or missing values.
+- `required()` — report a field the input never carried as `missing`. Not added when the column has a `default`, which
+  answers the absence instead.
+- `default(value)` — inject a value where the field is absent, before the parsing and the constraints, so the value is
+  coerced and checked like an incoming one.
 - `extra_forbidden(allowed)` — reject columns not explicitly allowed.
 
 ### Equality
@@ -135,7 +138,7 @@ from norma.schema import Schema, Column
 
 class MyRule(Rule):
     def verify(self, df, column, error_state):
-        mask =  df[column][df[column].notna()] % 2 != 0
+        mask = df[column][df[column].notna()] % 2 != 0
         error_state.add_errors(
             mask, column,
             details={

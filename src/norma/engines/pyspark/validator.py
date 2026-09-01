@@ -6,7 +6,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as fn
 
 import norma.rules
-from norma.engines.pyspark.rules import ErrorState, extra_forbidden
+from norma.engines.pyspark.rules import ErrorState, default, extra_forbidden
 from norma.engines.pyspark.utils import dtype_at, nested_get_expr, nested_set_expr
 
 if TYPE_CHECKING:
@@ -32,7 +32,6 @@ def validate(schema: Schema, df: DataFrame, error_column: str) -> DataFrame:
 
     df = _format_error_details(df, error_state)
     df = _nullify_invalid_values(df, schema, error_state)
-    df = _fill_defaults(df, schema)
 
     kept_cols = [name for name in schema.columns if name in df.columns]
     if schema.allow_extra:
@@ -64,18 +63,19 @@ def _validate(df, schema, error_state, original_cols, parent=''):
 
     columns = {
         name for name, column in schema.columns.items()
-        if name in original_cols or
-           column.required or column.default is not None or column.default_factory is not None
+        if name in original_cols or column.required or column.has_default
     }
     if not schema.allow_extra:
         columns.update(original_cols)
 
-    for column in columns:
+    for column in sorted(columns):
         full_column = f'{parent}{column}'
         error_state.track_column(full_column)
 
         rules = []
         if column in schema.columns:
+            if schema.columns[column].has_default:
+                rules.append(default(schema.columns[column].default))
             rules.extend(schema.columns[column].rules)
         if not schema.allow_extra:
             rules.append(extra_forbidden([f'{parent}{o}' for o in schema.columns]))
@@ -199,48 +199,6 @@ def _nullify_invalid_values(df, schema, error_state):
             )
 
     return apply(df)
-
-
-def _fill_defaults(df, schema):
-    """
-    Fill null with default values in the DataFrame according to the schema
-    """
-
-    def default_as_lit(column):
-        if column.dtype == 'date':
-            return fn.lit(column.default).cast('date')
-        if column.dtype == 'datetime':
-            return fn.lit(column.default).cast('timestamp')
-        return fn.lit(column.default)
-
-    def default_if_null(default):
-        def wrap(column):
-            return fn.coalesce(column, default)
-
-        return wrap
-
-    expr_of, set_expr, apply = _expr_accumulator(df)
-    for name, col in schema.nested_columns.items():
-        if col.default is None:
-            continue
-        if '[]' not in name:
-            set_expr(name, fn.coalesce(expr_of(name), default_as_lit(col)))
-        else:
-            set_expr(name, default_if_null(default_as_lit(col)))
-    df = apply(df)
-
-    for name, col in schema.nested_columns.items():
-        if col.default_factory is None:
-            continue
-        root = name.split('.')[0].removesuffix('[]')
-        dtype = df.schema[root].dataType if root in df.columns else None
-        if '[]' not in name:
-            val = fn.coalesce(fn.col(name), col.default_factory(df))
-        else:
-            val = default_if_null(col.default_factory(df))
-        df = df.withColumn(root, nested_set_expr(name, val, None, dtype))
-
-    return df
 
 
 def _make_origin(df, column, error_state):

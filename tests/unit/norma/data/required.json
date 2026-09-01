@@ -4772,7 +4772,7 @@
     }
   },
   {
-    "description": "$.col2 is required and has default, but missing, error is raised",
+    "description": "$.col2 is required and has default, but missing",
     "engines": [
       "pandas",
       "pyspark"
@@ -4817,17 +4817,7 @@
         {
           "col1": "foo",
           "col2": 42,
-          "errors": {
-            "col2": {
-              "details": [
-                {
-                  "type": "missing",
-                  "msg": "Field required"
-                }
-              ],
-              "original": "null"
-            }
-          }
+          "errors": {}
         }
       ],
       "schema": {
@@ -4840,8 +4830,7 @@
             },
             {
               "name": "col2",
-              "type": "integer",
-              "nullable": false
+              "type": "integer"
             },
             {
               "name": "errors",
@@ -4888,7 +4877,7 @@
     }
   },
   {
-    "description": "$.col1.col2 is required and has default, but missing, error is raised",
+    "description": "$.col1.col2 is required and has default, but missing",
     "engines": [
       "pandas",
       "pyspark"
@@ -4950,17 +4939,7 @@
             "col3": "x",
             "col2": "D"
           },
-          "errors": {
-            "col1.col2": {
-              "details": [
-                {
-                  "type": "missing",
-                  "msg": "Field required"
-                }
-              ],
-              "original": "null"
-            }
-          }
+          "errors": {}
         }
       ],
       "schema": {
@@ -4978,8 +4957,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "string",
-                    "nullable": false
+                    "type": "string"
                   }
                 ]
               }
@@ -5029,169 +5007,7 @@
     }
   },
   {
-    "description": "$.col2 is required and has default_factory () -> 'F', but missing, error is raised",
-    "engines": [
-      "pandas"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": "foo"
-        }
-      ]
-    },
-    "when": {
-      "schema": {
-        "columns": {
-          "col1": {
-            "dtype": "str"
-          },
-          "col2": {
-            "dtype": "str",
-            "required": true,
-            "default_factory": {
-              "expr": "lambda x: 'F'"
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": "foo",
-          "col2": "F",
-          "errors": {
-            "col2": {
-              "details": [
-                {
-                  "type": "missing",
-                  "msg": "Field required"
-                }
-              ],
-              "original": "null"
-            }
-          }
-        }
-      ]
-    }
-  },
-  {
-    "description": "$.col2 is required and has default_factory () -> fn.lit('F'), but missing, error is raised",
-    "engines": [
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": "foo"
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": "string"
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "schema": {
-        "columns": {
-          "col1": {
-            "dtype": "str"
-          },
-          "col2": {
-            "dtype": "str",
-            "required": true,
-            "default_factory": {
-              "expr": "lambda x: fn.lit('F')"
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": "foo",
-          "col2": "F",
-          "errors": {
-            "col2": {
-              "details": [
-                {
-                  "type": "missing",
-                  "msg": "Field required"
-                }
-              ],
-              "original": "null"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": "string"
-            },
-            {
-              "name": "col2",
-              "type": "string",
-              "nullable": false
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "each($.col1[].col3) is required and has default, but missing, error is raised",
+    "description": "each($.col1[].col3) is required and has default, but missing",
     "engines": [
       "pandas",
       "pyspark"
@@ -5264,20 +5080,7 @@
               "col3": "D"
             }
           ],
-          "errors": {
-            "col1[].col3": {
-              "details": [
-                {
-                  "type": "missing",
-                  "msg": "Field required",
-                  "loc": [
-                    0
-                  ]
-                }
-              ],
-              "original": "[null]"
-            }
-          }
+          "errors": {}
         }
       ],
       "schema": {
@@ -5297,8 +5100,7 @@
                     },
                     {
                       "name": "col3",
-                      "type": "string",
-                      "nullable": false
+                      "type": "string"
                     }
                   ]
                 },

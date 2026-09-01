@@ -99,12 +99,14 @@ class ErrorState(IErrorState):
 
         return self.containers[parent].reindex(index, fill_value=False)
 
-    def set_backup(self, column, series):
+    def set_backup(self, column, series, overwrite: bool = False):
         """
         Snapshot the pre-cast values of a column for error reporting (first backup wins)
+
+        :param overwrite: Replace an existing snapshot, used when a default becomes the reported value
         """
 
-        if column not in self.backups:
+        if overwrite or column not in self.backups:
             self.backups[column] = series.copy()
 
 
@@ -161,6 +163,21 @@ def required() -> Rule:
             error_state.add_errors(boolmask, column, details=errors.MISSING)
 
         return df[column]
+
+    return verify
+
+
+def default(value: Any) -> Rule:
+    @Rule.new
+    def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+        boolmask = error_state.absent_of(column, df.index) & error_state.container_of(column, df.index)
+        if not boolmask.any():
+            return df[column]
+
+        series = pd.Series(value, index=df.index) if boolmask.all() else df[column].where(~boolmask, value)
+        error_state.set_backup(column, series, overwrite=True)
+        error_state.absent[column] = error_state.absent_of(column, df.index) & ~boolmask
+        return series
 
     return verify
 
