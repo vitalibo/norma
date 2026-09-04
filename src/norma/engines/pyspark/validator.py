@@ -7,7 +7,7 @@ from pyspark.sql import functions as fn
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, default, extra_forbidden
-from norma.engines.pyspark.utils import dtype_at, nested_get_expr, nested_set_expr
+from norma.engines.pyspark.utils import dtype_at, format_value, nested_get_expr, nested_set_expr
 
 if TYPE_CHECKING:
     from norma.schema import Schema
@@ -120,26 +120,29 @@ def _format_error_details(df, error_state) -> DataFrame:
         if error_state.errors_col(name) in df.columns
     }
 
+    details_map = fn.map_filter(
+        fn.map_from_arrays(
+            fn.array(*[fn.lit(name) for name in errors]),
+            fn.array(*[
+                fn.when(
+                    fn.array_size(fn.col(error)) > 0,
+                    fn.struct(
+                        fn.col(error).alias('details'),
+                        _make_origin(df, name, error_state).alias('original'),
+                    ),
+                )
+                for name, error in errors.items()
+            ]),
+        ),
+        lambda _, v: fn.isnotnull(v),
+    )
+
+    if error_state.extras:
+        details_map = fn.map_concat(details_map, *error_state.extras.values())
+
     return df \
         .withColumns({details: fn.filter(fn.col(details), fn.isnotnull) for details in errors.values()}) \
-        .withColumn(
-            error_column, fn.map_filter(
-                fn.map_from_arrays(
-                    fn.array(*[fn.lit(name) for name in errors]),
-                    fn.array(*[
-                        fn.when(
-                            fn.array_size(fn.col(error)) > 0,
-                            fn.struct(
-                                fn.col(error).alias('details'),
-                                _make_origin(df, name, error_state).alias('original'),
-                            ),
-                        )
-                        for name, error in errors.items()
-                    ]),
-                ),
-                lambda _, v: fn.isnotnull(v),
-            ),
-        )
+        .withColumn(error_column, details_map)
 
 
 def _expr_accumulator(df):
@@ -205,14 +208,6 @@ def _make_origin(df, column, error_state):
     """
     Format the original value of a column for error reporting
     """
-
-    def format_value(value, dtype_name):
-        null = fn.when(value.isNull(), fn.lit('null'))
-        if dtype_name == 'string':
-            return null.otherwise(fn.concat(fn.lit('"'), value, fn.lit('"')))
-        if dtype_name in {'array', 'map', 'struct'}:
-            return null.otherwise(fn.to_json(value, {'ignoreNullFields': 'false'}))
-        return null.otherwise(value.cast('string'))
 
     backup_column = error_state.backup_col(column)
     if backup_column in df.columns:

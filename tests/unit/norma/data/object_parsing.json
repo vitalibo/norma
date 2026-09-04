@@ -1541,7 +1541,7 @@
     }
   },
   {
-    "description": "cast({col1='foo', col2='123', col3='456'} <map> as struct) => {col1='foo', col2=123}, false positive",
+    "description": "cast({col1='foo', col2='123', col3='456'} <map> as struct) => {col1='foo', col2=123}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1597,7 +1597,17 @@
             "col1": "foo",
             "col2": 123
           },
-          "errors": {}
+          "errors": {
+            "col.col3": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "\"456\""
+            }
+          }
         }
       ],
       "schema": {
@@ -1717,7 +1727,7 @@
     }
   },
   {
-    "description": "cast('{\"co1\":\"foo\",\"col2\":123,\"col3\":\"456\"}' <string> as struct) => {col1='foo', col2=123}, false positive",
+    "description": "cast('{\"co1\":\"foo\",\"col2\":123,\"col3\":\"456\"}' <string> as struct) => {col1='foo', col2=123}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1764,7 +1774,17 @@
             "col1": "foo",
             "col2": 123
           },
-          "errors": {}
+          "errors": {
+            "col.col3": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "\"456\""
+            }
+          }
         }
       ],
       "schema": {
@@ -5160,7 +5180,7 @@
     }
   },
   {
-    "description": "each(cast([{col1='123', col2='456', col3='789'}] map as array<struct>)) => {col=[{col1=123, col2='455'}]}, false positive",
+    "description": "each(cast([{col1='123', col2='456', col3='789'}] map as array<struct>)) => {col=[{col1=123, col2='455'}]}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -5227,7 +5247,20 @@
               "col2": "456"
             }
           ],
-          "errors": {}
+          "errors": {
+            "col[].col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"789\"]"
+            }
+          }
         }
       ],
       "schema": {
@@ -5309,68 +5342,7 @@
   {
     "description": "each(cast(['{\"col1\": \"123\", \"col2\": 456, \"col3\": \"789\"}'] as array<struct>)) => {col=[{col1=123, col2='455'}]}, error is raised",
     "engines": [
-      "pandas"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": [
-            "{\"col1\": \"123\", \"col2\": 456, \"col3\": \"789\"}"
-          ]
-        }
-      ]
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "col1": {
-                  "type": "integer"
-                },
-                "col2": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col": [
-            {
-              "col1": 123,
-              "col2": "456"
-            }
-          ],
-          "errors": {
-            "col[].col3": {
-              "details": [
-                {
-                  "loc": [
-                    0
-                  ],
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "[\"789\"]"
-            }
-          }
-        }
-      ]
-    }
-  },
-  {
-    "description": "each(cast(['{\"col1\": \"123\", \"col2\": 456, \"col3\": \"789\"}'] as array<struct>)) => {col=[{col1=123, col2='455'}]}, false positive",
-    "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -5427,7 +5399,20 @@
               "col2": "456"
             }
           ],
-          "errors": {}
+          "errors": {
+            "col[].col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"789\"]"
+            }
+          }
         }
       ],
       "schema": {
@@ -7841,7 +7826,7 @@
     }
   },
   {
-    "description": "each(cast($.col1.col2.col3[.col4.col5={col6='123', col7='456', col8='789'}] map as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, false positive",
+    "description": "each(cast($.col1.col2.col3[.col4.col5={col6='123', col7='456', col8='789'}] map as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, error is raised",
     "engines": [
       "pyspark"
     ],
@@ -7976,7 +7961,20 @@
               ]
             }
           },
-          "errors": {}
+          "errors": {
+            "col1.col2.col3[].col4.col5.col8": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"789\"]"
+            }
+          }
         }
       ],
       "schema": {
@@ -8090,100 +8088,7 @@
   {
     "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\",\"col7\":456,\"col8\":\"789\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, error is raised",
     "engines": [
-      "pandas"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": {
-              "col3": [
-                "{\"col4\":{\"col5\":{\"col6\":\"123\",\"col7\":456,\"col8\":\"789\"}}}"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "properties": {
-              "col2": {
-                "type": "object",
-                "properties": {
-                  "col3": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "col4": {
-                          "type": "object",
-                          "properties": {
-                            "col5": {
-                              "type": "object",
-                              "properties": {
-                                "col6": {
-                                  "type": "integer"
-                                },
-                                "col7": {
-                                  "type": "string"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": {
-              "col3": [
-                {
-                  "col4": {
-                    "col5": {
-                      "col6": 123,
-                      "col7": "456"
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "errors": {
-            "col1.col2.col3[].col4.col5.col8": {
-              "details": [
-                {
-                  "loc": [
-                    0
-                  ],
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "[\"789\"]"
-            }
-          }
-        }
-      ]
-    }
-  },
-  {
-    "description": "each(cast($.col1.col2.col3['{\"col4\":{\"col5\":{\"col6\":\"123\",\"col7\":456,\"col8\":\"789\"}}}'] as array<struct>)) => {col1={col2={col3=[{col4={col5={col6=123, col7='456'}}}]}}}, false positive",
-    "engines": [
+      "pandas",
       "pyspark"
     ],
     "given": {
@@ -8288,7 +8193,20 @@
               ]
             }
           },
-          "errors": {}
+          "errors": {
+            "col1.col2.col3[].col4.col5.col8": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"789\"]"
+            }
+          }
         }
       ],
       "schema": {
@@ -8400,7 +8318,7 @@
     }
   },
   {
-    "description": "cast({c9='x'} as struct) => column is dropped, error is raised",
+    "description": "cast(json that holds no object as struct) => null, error is raised",
     "engines": [
       "pandas",
       "pyspark"
@@ -8408,9 +8326,16 @@
     "given": {
       "data": [
         {
-          "col": {
-            "c9": "x"
-          }
+          "col": "[1,2]"
+        },
+        {
+          "col": "123"
+        },
+        {
+          "col": "true"
+        },
+        {
+          "col": "null"
         }
       ],
       "schema": {
@@ -8419,15 +8344,7 @@
           "fields": [
             {
               "name": "col",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "c9",
-                    "type": "string"
-                  }
-                ]
-              }
+              "type": "string"
             }
           ]
         }
@@ -8444,7 +8361,7 @@
                 "type": "string"
               },
               "col2": {
-                "type": "string"
+                "type": "integer"
               }
             }
           }
@@ -8454,81 +8371,60 @@
     "then": {
       "data": [
         {
+          "col": null,
           "errors": {
-            "col.c9": {
+            "col": {
               "details": [
                 {
-                  "type": "extra_forbidden",
-                  "msg": "Extra inputs are not permitted"
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
                 }
               ],
-              "original": "\"x\""
+              "original": "\"[1,2]\""
             }
           }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "each(cast([{c9='x'}] as array<struct>)) => column is dropped, error is raised",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
+        },
         {
-          "col": [
-            {
-              "c9": "x"
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "\"123\""
             }
-          ]
+          }
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "\"true\""
+            }
+          }
+        },
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "\"null\""
+            }
+          }
         }
       ],
       "schema": {
@@ -8538,67 +8434,19 @@
             {
               "name": "col",
               "type": {
-                "type": "array",
-                "containsNull": true,
-                "elementType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "c9",
-                      "type": "string"
-                    }
-                  ]
-                }
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col1",
+                    "type": "string"
+                  },
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
               }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "col1": {
-                  "type": "string"
-                },
-                "col2": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "errors": {
-            "col[].c9": {
-              "details": [
-                {
-                  "type": "extra_forbidden",
-                  "msg": "Extra inputs are not permitted",
-                  "loc": [
-                    0
-                  ]
-                }
-              ],
-              "original": "[\"x\"]"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
+            },
             {
               "name": "errors",
               "type": {
@@ -8623,14 +8471,6 @@
                             {
                               "name": "msg",
                               "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
                             }
                           ]
                         }

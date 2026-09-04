@@ -1,7 +1,6 @@
 import inspect  # noqa: I001
 import json
 import operator
-from functools import reduce
 from typing import Any, Iterable, Optional
 
 from pyspark.sql import Column, DataFrame
@@ -12,7 +11,9 @@ from pyspark.sql.types import (
 )
 
 from norma import errors
-from norma.engines.pyspark.utils import dtype_drop, dtype_set, nested_drop_expr, nested_get_expr, nested_set_expr
+from norma.engines.pyspark.utils import (
+    dtype_drop, dtype_set, format_value, nested_drop_expr, nested_get_expr, nested_set_expr,
+)
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
 
@@ -30,6 +31,7 @@ class ErrorState(IErrorState):
         self.absent = set()
         self.filled = set()
         self.key_sets = {}
+        self.extras = {}
 
         self.exprs = self.dtypes = self.input_columns = self.pending_errors = self.pending_indexes = \
             self.pending_backups = self.initialized_errors = self.created_roots = self.dropped_roots = None
@@ -268,6 +270,27 @@ class ErrorState(IErrorState):
         self.pending_errors.setdefault(column, [])
         self.initialized_errors.add(column)
 
+    def details_expr(self, details, loc: Optional[Column] = None) -> Column:
+        """
+        Return a details array holding a single error, shaped like the accumulated ones.
+        """
+
+        details_lit = [fn.lit(value).alias(name) for name, value in dict(details).items()]
+        if self.has_array:
+            details_lit.append((fn.lit(None).cast('array<int>') if loc is None else loc).alias('loc'))
+
+        return fn.array(fn.struct(*details_lit)).cast(self._details_dtype())
+
+    def errors_dtype(self) -> DataType:
+        """
+        Return the data type of the error map reported to the caller.
+        """
+
+        return MapType(StringType(), StructType([
+            StructField('details', self._details_dtype(), nullable=False),
+            StructField('original', StringType()),
+        ]))
+
     def errors_col(self, column: str) -> str:
         """
         Return the name of the error-details column for a given column.
@@ -313,11 +336,11 @@ class ErrorState(IErrorState):
         self.reserved_names |= derived
         return True
 
-    def _details_dtype(self):
-        loc = ''
+    def _details_dtype(self) -> DataType:
+        fields = [StructField('type', StringType()), StructField('msg', StringType())]
         if self.has_array:
-            loc = ',loc:array<int>'
-        return f'array<struct<type:string,msg:string{loc}>>'
+            fields.append(StructField('loc', ArrayType(IntegerType())))
+        return ArrayType(StructType(fields))
 
     def _empty_errors_details(self):
         return fn.array().cast(self._details_dtype())
@@ -638,14 +661,13 @@ class ExtraForbiddenRule(Rule):
             return df
 
         error_state.set_backup(column)
+        boolmask = error_state.container_of(column)
         if '[]' in column and not column.endswith('[]'):
-            boolmask = fn.transform(error_state.expr_of(column.split('[]', maxsplit=1)[0]), lambda _: fn.lit(True))
             error_state.drop_column(column)
-            error_state.add_errors(boolmask, column, errors.EXTRA_FORBIDDEN)
-            return df
+        else:
+            error_state.drop_column(column.removesuffix('[]'))
 
-        error_state.drop_column(column.removesuffix('[]'))
-        error_state.add_errors(fn.lit(True), column, errors.EXTRA_FORBIDDEN)
+        error_state.add_errors(boolmask, column, errors.EXTRA_FORBIDDEN)
         return df
 
 
@@ -972,6 +994,7 @@ class ObjectTypeRule(DataTypeRule):
             None, StructType, (StringType, MapType), errors.OBJECT_TYPE, errors.OBJECT_PARSING, nullable=nullable
         )
         self.struct_type = self.parse_struct_type(schema)
+        self.allow_extra = schema.allow_extra
 
     def _is_valid_dtype(self, data_type) -> bool:
         return isinstance(data_type, StructType)
@@ -997,56 +1020,115 @@ class ObjectTypeRule(DataTypeRule):
     def _cast_scalar(self, column, data_type, error_state):
         if isinstance(data_type, MapType):
             error_state.key_sets[column] = fn.map_keys
-            col_expr = error_state.expr_of(column)
-            new_struct = fn.struct(*(col_expr[field].alias(field) for field in self.struct_type.fieldNames()))
-            error_state.set_expr(column, new_struct)
+            self._flag_extra_keys(column, data_type, error_state)
+            error_state.set_expr(column, self._struct_of(error_state.expr_of(column)))
             return
 
         error_state.key_sets[column] = fn.json_object_keys
-
-        # Workaround for Spark issue where from_json does not return null for malformed JSON
-        # As result we need to check if all fields are null and the original value is not null
-        # then for those cases we should try to parse the JSON using Python json.loads
-        # and if it fails then we consider it as malformed JSON
-        @fn.udf(returnType=BooleanType())
-        def malformed_json_udf(struct_fields_is_null_and_origin_is_not_null, val):
-            if not struct_fields_is_null_and_origin_is_not_null:
-                return False
-
-            try:
-                json.loads(val)
-                return False
-            except:  # noqa: E722
-                return True
-
-        error_state.set_expr(column, fn.from_json(error_state.expr_of(column), self.struct_type))
-        parsed = error_state.expr_of(column)
-        backup = error_state.backup_expr(column)
-        is_malformed = malformed_json_udf(
-            reduce(operator.and_, (fn.isnull(parsed.getField(field)) for field in self.struct_type.fieldNames()))
-            & fn.isnotnull(backup),
-            backup,
-        )
-
-        error_state.set_expr(column, fn.when(~is_malformed, error_state.expr_of(column)))
+        self._flag_extra_keys(column, data_type, error_state)
+        error_state.set_expr(column, self._parse_json(error_state.expr_of(column)))
 
     def _cast_array(self, column, element_type, error_state):
         if isinstance(element_type, MapType):
             error_state.key_sets[column] = fn.map_keys
-
-            def new_struct(x):
-                return fn.struct(*(x[field].alias(field) for field in self.struct_type.fieldNames()))
-
-            error_state.set_expr(column, new_struct)
+            self._flag_extra_element_keys(column, element_type, error_state)
+            error_state.set_expr(column, self._struct_of)
             return
 
         error_state.key_sets[column] = fn.json_object_keys
+        self._flag_extra_element_keys(column, element_type, error_state)
+        error_state.set_expr(column, self._parse_json)
 
-        # TODO: malformed JSON detection for nested array elements
-        # for some reason to use same workaround as in _cast_scalar does not work in nested arrays
-        # so currently we do not support malformed JSON detection in nested arrays
-        # this should be revisited in future
-        error_state.set_expr(column, lambda x: fn.from_json(x, self.struct_type))
+    def _parse_json(self, col_expr: Column) -> Column:
+        return self._struct_of(fn.from_json(col_expr, MapType(StringType(), StringType())))
+
+    def _struct_of(self, col_expr: Column) -> Column:
+        fields = fn.struct(*(col_expr[field].alias(field) for field in self.struct_type.fieldNames()))
+        return fn.when(col_expr.isNotNull(), fields)
+
+    def _flag_extra_keys(self, column, data_type, error_state) -> None:
+        if self.allow_extra:
+            return
+
+        extras = self._extras_of(fn.col(error_state.backup_col(column)), data_type)
+        keys = fn.coalesce(fn.map_keys(extras), fn.array().cast('array<string>'))
+
+        error_state.extras[column] = fn.map_from_arrays(
+            fn.transform(keys, lambda key: fn.concat(fn.lit(f'{column}.'), key)),
+            fn.transform(keys, lambda key: fn.struct(
+                error_state.details_expr(errors.EXTRA_FORBIDDEN).alias('details'),
+                fn.element_at(extras, key).alias('original'),
+            )),
+        ).cast(error_state.errors_dtype())
+
+    def _flag_extra_element_keys(self, column, element_type, error_state) -> None:
+        if self.allow_extra:
+            return
+
+        extras = self._extras_of(fn.col(error_state.backup_col(column)), element_type, elementwise=True)
+        keys = fn.array_distinct(fn.coalesce(
+            fn.flatten(
+                fn.transform(extras, lambda item: fn.coalesce(fn.map_keys(item), fn.array().cast('array<string>')))),
+            fn.array().cast('array<string>')
+        ))
+
+        def loc_of(key):
+            return fn.filter(
+                fn.transform(extras, lambda item, i: fn.when(fn.array_contains(fn.map_keys(item), key), i)),
+                fn.isnotnull,
+            )
+
+        def origin_of(key):
+            values = fn.transform(extras, lambda item: fn.coalesce(fn.element_at(item, key), fn.lit('null')))
+            return fn.concat(fn.lit('['), fn.array_join(values, ','), fn.lit(']'))
+
+        error_state.extras[column] = fn.map_from_arrays(
+            fn.transform(keys, lambda key: fn.concat(fn.lit(f'{column}.'), key)),
+            fn.transform(keys, lambda key: fn.struct(
+                error_state.details_expr(errors.EXTRA_FORBIDDEN, loc_of(key)).alias('details'),
+                origin_of(key).alias('original'),
+            )),
+        ).cast(error_state.errors_dtype())
+
+    def _extras_of(self, col_expr: Column, value_type: DataType, elementwise: bool = False) -> Column:
+        allowed = frozenset(self.struct_type.fieldNames())
+        if isinstance(value_type, MapType):
+            names = fn.array(*[fn.lit(name) for name in allowed]).cast('array<string>')
+
+            def extras_of(item):
+                return fn.transform_values(
+                    fn.map_filter(item, lambda key, _: ~fn.array_contains(names, key)),
+                    lambda _, value: format_value(value, value_type.valueType.typeName())
+                )
+
+            return fn.transform(col_expr, extras_of) if elementwise else extras_of(col_expr)
+
+        def _extra_keys(text, allowed_keys):
+            try:
+                value = json.loads(text)
+            except (TypeError, ValueError):
+                return None
+
+            if not isinstance(value, dict):
+                return None
+
+            return {
+                key: json.dumps(item, separators=(',', ':'))
+                for key, item in value.items()
+                if key not in allowed_keys
+            }
+
+        if elementwise:
+            # a python udf cannot be called from inside a higher order function, so the whole array is handed over
+            @fn.udf(returnType=ArrayType(MapType(StringType(), StringType())))
+            def _json_extras(texts):
+                return None if texts is None else [_extra_keys(text, allowed) for text in texts]
+        else:
+            @fn.udf(returnType=MapType(StringType(), StringType()))
+            def _json_extras(text):
+                return _extra_keys(text, allowed)
+
+        return _json_extras(col_expr)
 
     @staticmethod
     def parse_struct_type(schema) -> StructType:
@@ -1077,8 +1159,8 @@ class ArrayTypeRule(DataTypeRule):
         return self.struct_type
 
     def _cast_scalar(self, column, data_type, error_state):  # noqa: ARG002
-        # TODO: malformed JSON detection for nested array elements
-        # same issue as in ObjectTypeRule._cast_scalar with from_json not returning null for malformed JSON
+        # from_json reads a bare object as a single element array, which the schema did not ask for: only
+        # text that opens as an array is parsed, and anything else is left to the parsing error to report
         expr = error_state.expr_of(column)
         error_state.set_expr(column, fn.when(expr.rlike(r'^\s*\['), fn.from_json(expr, self.struct_type)))
 

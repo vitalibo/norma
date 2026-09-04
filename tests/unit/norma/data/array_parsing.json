@@ -1584,7 +1584,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], false positive, error is raised",
+    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {col3=123}], error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1651,26 +1651,24 @@
         {
           "col1": {
             "col2": [
-              {
-                "col3": null
-              },
+              null,
               {
                 "col3": 123
               }
             ]
           },
           "errors": {
-            "col1.col2[].col3": {
+            "col1.col2[]": {
               "details": [
                 {
-                  "type": "int_type",
-                  "msg": "Input should be a valid integer",
                   "loc": [
                     0
-                  ]
+                  ],
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
                 }
               ],
-              "original": "[null,\"123\"]"
+              "original": "[\"foo\",\"{\\\"col3\\\":\\\"123\\\"}\"]"
             }
           }
         }
@@ -1756,7 +1754,7 @@
     }
   },
   {
-    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {optional[col3]=123}], false positive",
+    "description": "cast($.col1.col2=['foo', '{\"col3\": \"123\"}'] as array<struct>) => [null, {optional[col3]=123}], error is raised",
     "engines": [
       "pyspark"
     ],
@@ -1826,15 +1824,26 @@
         {
           "col1": {
             "col2": [
-              {
-                "col3": null
-              },
+              null,
               {
                 "col3": 123
               }
             ]
           },
-          "errors": {}
+          "errors": {
+            "col1.col2[]": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "[\"foo\",\"{\\\"col3\\\":\\\"123\\\"}\"]"
+            }
+          }
         }
       ],
       "schema": {

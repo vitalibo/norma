@@ -262,3 +262,16 @@ def nested_drop_expr(column: str, root_expr: Column, root_dtype: DataType) -> Co
         return fn.struct(*struct_cols)
 
     return build_struct(root_dtype.names, nested_names, root_dtype, root_expr)
+
+
+def format_value(value: Column, dtype_name: str) -> Column:
+    """
+    Render a value as the JSON text reported as the original next to an error.
+    """
+
+    null = fn.when(value.isNull(), fn.lit('null'))
+    if dtype_name == 'string':
+        return null.otherwise(fn.concat(fn.lit('"'), value, fn.lit('"')))
+    if dtype_name in {'array', 'map', 'struct'}:
+        return null.otherwise(fn.to_json(value, {'ignoreNullFields': 'false'}))
+    return null.otherwise(value.cast('string'))

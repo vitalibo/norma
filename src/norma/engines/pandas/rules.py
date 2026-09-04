@@ -28,6 +28,7 @@ class ErrorState(IErrorState):
         self.backups = {}
         self.absent = {}
         self.containers = {}
+        self.parsed = set()
         self.has_array = has_array
 
     def add_errors(self, boolmask, column, **kwargs):
@@ -381,7 +382,7 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
         if column in allowed:
             return df[column]
 
-        error_state.add_errors(pd.Series(True, index=df.index), column, details=errors.EXTRA_FORBIDDEN)
+        error_state.add_errors(~error_state.absent_of(column, df.index), column, details=errors.EXTRA_FORBIDDEN)
 
         error_state.masks.pop(column, None)
         df.drop(column, axis=1, inplace=True)  # noqa: PD002
@@ -523,8 +524,13 @@ class ObjectTypeRule(TypeRule):
                     parsing_mask[index] = True
                     return None
                 if not isinstance(parsed, dict):
+                    parsing_mask[index] = True
                     return None
-                return {key: _stringify(item) for key, item in parsed.items()}
+                error_state.parsed.add(column)
+                return {
+                    key: _stringify(item) if key in self.schema.columns else item
+                    for key, item in parsed.items()
+                }
             type_mask[index] = True
             return None
 

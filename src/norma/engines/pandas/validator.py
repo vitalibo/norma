@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def validate(
-        schema: Schema, df: pd.DataFrame, error_column: str
+    schema: Schema, df: pd.DataFrame, error_column: str
 ) -> pd.DataFrame:
     """
     Validate the Pandas DataFrame according to the schema
@@ -107,34 +107,57 @@ def _validate_object(df, column, inner_schema, error_state):
     child.columns = [f'{column}.{name}' for name in child.columns]
 
     # the child frame is rectangular over the union of the keys, so a row that never carried a key
-    # is indistinguishable from one holding it as null: record which rows had it while we still know
-    for name in inner_schema.columns:
+    # is indistinguishable from one holding it as null: record which rows had it while we still know.
+    # extra keys are recorded too, so extra_forbidden only flags the rows that actually carried them
+    keys = [name.removeprefix(f'{column}.') for name in child.columns]
+    for name in [*inner_schema.columns, *(key for key in keys if key not in inner_schema.columns)]:
         error_state.absent[f'{column}.{name}'] = pd.Series(
             [not (isinstance(value, dict) and name in value) for value in df[column]], index=df.index
         )
 
-    if not any(objects):
+    if not any(objects) or (
+        column in error_state.parsed
+        and not any(f'{column}.{name}' in child.columns for name in inner_schema.columns)
+    ):
         for name in inner_schema.columns:
-            child[f'{column}.{name}'] = np.nan
+            if f'{column}.{name}' not in child.columns:
+                child[f'{column}.{name}'] = np.nan
     child = _validate(child, inner_schema, error_state, parent=f'{column}.')
 
     names = [name for name in inner_schema.columns if f'{column}.{name}' in child.columns]
-    if inner_schema.allow_extra:
-        names += [
-            name.removeprefix(f'{column}.')
-            for name in child.columns
-            if name.removeprefix(f'{column}.') not in inner_schema.columns
-        ]
+    extras = inner_schema.allow_extra and any(
+        name.removeprefix(f'{column}.') not in inner_schema.columns for name in child.columns
+    )
 
-    if not names:
+    if not names and not extras:
         return df.drop(columns=[column])
+
+    values = [child[f'{column}.{name}'].tolist() for name in names]
+    rows = zip(*values) if values else [()] * len(df.index)
 
     # a value that was not an object stays null instead of materializing as a dict of null fields,
     # mirroring how pyspark rebuilds structs; rows with errors are nullified afterward by the mask
+    if not extras:
+        df[column] = pd.Series(
+            [
+                {name: _to_native(value) for name, value in zip(names, row)} if is_object else None
+                for is_object, row in zip(objects, rows)
+            ],
+            index=df.index, dtype='object',
+        )
+        return df
+
     df[column] = pd.Series(
         [
-            {name: _to_native(value) for name, value in zip(names, row)} if is_object else None
-            for is_object, row in zip(objects, zip(*[child[f'{column}.{name}'].tolist() for name in names]))
+            {
+                **{name: _to_native(value) for name, value in zip(names, row)},
+                **{
+                    key: _to_native(value)
+                    for key, value in source.items()
+                    if key not in inner_schema.columns
+                },
+            } if is_object else None
+            for is_object, row, source in zip(objects, rows, df[column])
         ],
         index=df.index, dtype='object',
     )

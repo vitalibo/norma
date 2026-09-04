@@ -213,582 +213,6 @@
     }
   },
   {
-    "description": "allowed in $.col1",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": 30,
-            "col3": "foo"
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": "integer"
-                  },
-                  {
-                    "name": "col3",
-                    "type": "string"
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "additionalProperties": true,
-            "properties": {
-              "col2": {
-                "type": "integer"
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": 30,
-            "col3": "foo"
-          },
-          "errors": {}
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": "integer"
-                  },
-                  {
-                    "name": "col3",
-                    "type": "string"
-                  }
-                ]
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "forbidden in $.col1, error is raised",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": 30,
-            "col3": "foo"
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": "integer"
-                  },
-                  {
-                    "name": "col3",
-                    "type": "string"
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "col2": {
-                "type": "integer"
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": 30
-          },
-          "errors": {
-            "col1.col3": {
-              "details": [
-                {
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "\"foo\""
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": "integer"
-                  }
-                ]
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "allowed in $.col1.col2",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": {
-              "col3": 30,
-              "col4": "foo"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "struct",
-                      "fields": [
-                        {
-                          "name": "col3",
-                          "type": "integer"
-                        },
-                        {
-                          "name": "col4",
-                          "type": "string"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "properties": {
-              "col2": {
-                "type": "object",
-                "additionalProperties": true,
-                "properties": {
-                  "col3": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": {
-              "col3": 30,
-              "col4": "foo"
-            }
-          },
-          "errors": {}
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "struct",
-                      "fields": [
-                        {
-                          "name": "col3",
-                          "type": "integer"
-                        },
-                        {
-                          "name": "col4",
-                          "type": "string"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "forbidden in $.col1.col2, error is raised",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": {
-              "col3": 30,
-              "col4": "foo"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "struct",
-                      "fields": [
-                        {
-                          "name": "col3",
-                          "type": "integer"
-                        },
-                        {
-                          "name": "col4",
-                          "type": "string"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "properties": {
-              "col2": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "col3": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": {
-              "col3": 30
-            }
-          },
-          "errors": {
-            "col1.col2.col4": {
-              "details": [
-                {
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "\"foo\""
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "struct",
-                      "fields": [
-                        {
-                          "name": "col3",
-                          "type": "integer"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
     "description": "allowed in $.col1.col2.col3",
     "engines": [
       "pandas",
@@ -1311,1374 +735,6 @@
                     }
                   ]
                 }
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "forbidden in $.col1[], error is raised",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": [
-            {
-              "col2": 30,
-              "col3": "foo"
-            },
-            {
-              "col2": 25,
-              "col3": "bar"
-            }
-          ]
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "array",
-                "containsNull": true,
-                "elementType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "col2",
-                      "type": "integer"
-                    },
-                    {
-                      "name": "col3",
-                      "type": "string"
-                    }
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "col2": {
-                  "type": "integer"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": [
-            {
-              "col2": 30
-            },
-            {
-              "col2": 25
-            }
-          ],
-          "errors": {
-            "col1[].col3": {
-              "details": [
-                {
-                  "loc": [
-                    0,
-                    1
-                  ],
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "[\"foo\",\"bar\"]"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "array",
-                "containsNull": true,
-                "elementType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "col2",
-                      "type": "integer"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "allowed in $.col1[].col2",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": [
-            {
-              "col2": {
-                "col3": 30,
-                "col4": "foo"
-              }
-            },
-            {
-              "col2": {
-                "col3": 25,
-                "col4": "bar"
-              }
-            }
-          ]
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "array",
-                "containsNull": true,
-                "elementType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "col2",
-                      "type": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          },
-                          {
-                            "name": "col4",
-                            "type": "string"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "col2": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "properties": {
-                    "col3": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": [
-            {
-              "col2": {
-                "col3": 30,
-                "col4": "foo"
-              }
-            },
-            {
-              "col2": {
-                "col3": 25,
-                "col4": "bar"
-              }
-            }
-          ],
-          "errors": {}
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "array",
-                "containsNull": true,
-                "elementType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "col2",
-                      "type": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          },
-                          {
-                            "name": "col4",
-                            "type": "string"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "forbidden in $.col1[].col2, error is raised",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": [
-            {
-              "col2": {
-                "col3": 30,
-                "col4": "foo"
-              }
-            },
-            {
-              "col2": {
-                "col3": 25,
-                "col4": "bar"
-              }
-            }
-          ]
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "array",
-                "containsNull": true,
-                "elementType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "col2",
-                      "type": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          },
-                          {
-                            "name": "col4",
-                            "type": "string"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "col2": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "col3": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": [
-            {
-              "col2": {
-                "col3": 30
-              }
-            },
-            {
-              "col2": {
-                "col3": 25
-              }
-            }
-          ],
-          "errors": {
-            "col1[].col2.col4": {
-              "details": [
-                {
-                  "loc": [
-                    0,
-                    1
-                  ],
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "[\"foo\",\"bar\"]"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "array",
-                "containsNull": true,
-                "elementType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "col2",
-                      "type": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "allowed in $.col1.col2[]",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": 30,
-                "col4": "foo"
-              },
-              {
-                "col3": 25,
-                "col4": "bar"
-              }
-            ]
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          },
-                          {
-                            "name": "col4",
-                            "type": "string"
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "properties": {
-              "col2": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "properties": {
-                    "col3": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": 30,
-                "col4": "foo"
-              },
-              {
-                "col3": 25,
-                "col4": "bar"
-              }
-            ]
-          },
-          "errors": {}
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          },
-                          {
-                            "name": "col4",
-                            "type": "string"
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "forbidden in $.col1.col2[], error is raised",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": 30,
-                "col4": "foo"
-              },
-              {
-                "col3": 25,
-                "col4": "bar"
-              }
-            ]
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          },
-                          {
-                            "name": "col4",
-                            "type": "string"
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "properties": {
-              "col2": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "col3": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": 30
-              },
-              {
-                "col3": 25
-              }
-            ]
-          },
-          "errors": {
-            "col1.col2[].col4": {
-              "details": [
-                {
-                  "loc": [
-                    0,
-                    1
-                  ],
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "[\"foo\",\"bar\"]"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": "integer"
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "allowed in $.col1.col2[].col3",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": {
-                  "col4": "foo",
-                  "col5": 30
-                }
-              },
-              {
-                "col3": {
-                  "col4": "bar",
-                  "col5": 25
-                }
-              }
-            ]
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": {
-                              "type": "struct",
-                              "fields": [
-                                {
-                                  "name": "col4",
-                                  "type": "string"
-                                },
-                                {
-                                  "name": "col5",
-                                  "type": "integer"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "properties": {
-              "col2": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "col3": {
-                      "type": "object",
-                      "additionalProperties": true,
-                      "properties": {
-                        "col4": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": {
-                  "col4": "foo",
-                  "col5": 30
-                }
-              },
-              {
-                "col3": {
-                  "col4": "bar",
-                  "col5": 25
-                }
-              }
-            ]
-          },
-          "errors": {}
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": {
-                              "type": "struct",
-                              "fields": [
-                                {
-                                  "name": "col4",
-                                  "type": "string"
-                                },
-                                {
-                                  "name": "col5",
-                                  "type": "integer"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "nullable": false
-            }
-          ]
-        }
-      }
-    }
-  },
-  {
-    "description": "forbidden in $.col1.col2[].col3, error is raised",
-    "engines": [
-      "pandas",
-      "pyspark"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": {
-                  "col4": "foo",
-                  "col5": 30
-                }
-              },
-              {
-                "col3": {
-                  "col4": "bar",
-                  "col5": 25
-                }
-              }
-            ]
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": {
-                              "type": "struct",
-                              "fields": [
-                                {
-                                  "name": "col4",
-                                  "type": "string"
-                                },
-                                {
-                                  "name": "col5",
-                                  "type": "integer"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    },
-    "when": {
-      "json_schema": {
-        "type": "object",
-        "properties": {
-          "col1": {
-            "type": "object",
-            "properties": {
-              "col2": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "col3": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "col4": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "then": {
-      "data": [
-        {
-          "col1": {
-            "col2": [
-              {
-                "col3": {
-                  "col4": "foo"
-                }
-              },
-              {
-                "col3": {
-                  "col4": "bar"
-                }
-              }
-            ]
-          },
-          "errors": {
-            "col1.col2[].col3.col5": {
-              "details": [
-                {
-                  "loc": [
-                    0,
-                    1
-                  ],
-                  "msg": "Extra inputs are not permitted",
-                  "type": "extra_forbidden"
-                }
-              ],
-              "original": "[30,25]"
-            }
-          }
-        }
-      ],
-      "schema": {
-        "pyspark": {
-          "type": "struct",
-          "fields": [
-            {
-              "name": "col1",
-              "type": {
-                "type": "struct",
-                "fields": [
-                  {
-                    "name": "col2",
-                    "type": {
-                      "type": "array",
-                      "containsNull": true,
-                      "elementType": {
-                        "type": "struct",
-                        "fields": [
-                          {
-                            "name": "col3",
-                            "type": {
-                              "type": "struct",
-                              "fields": [
-                                {
-                                  "name": "col4",
-                                  "type": "string"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  }
-                ]
               }
             },
             {
@@ -3295,7 +1351,7 @@
     }
   },
   {
-    "description": "allowed",
+    "description": "column is in the allowed list",
     "engines": [
       "pandas_api"
     ],
@@ -3327,7 +1383,7 @@
     }
   },
   {
-    "description": "forbidden, error is raised",
+    "description": "column is not in the allowed list, error is raised",
     "engines": [
       "pandas_api"
     ],
@@ -3361,6 +1417,3155 @@
               }
             ]
           }
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1[], pandas list of dicts, only elements carrying the key are flagged, error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": 30,
+              "col3": "foo"
+            },
+            {
+              "col2": 25
+            }
+          ]
+        },
+        {
+          "col1": [
+            {
+              "col2": 20
+            }
+          ]
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "col2": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": 30
+            },
+            {
+              "col2": 25
+            }
+          ],
+          "errors": {
+            "col1[].col3": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "[\"foo\",null]"
+            }
+          }
+        },
+        {
+          "col1": [
+            {
+              "col2": 20
+            }
+          ],
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "forbidden in $.col1[], array of structs, every element carries the field, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": 30,
+              "col3": "foo"
+            },
+            {
+              "col2": 25
+            }
+          ]
+        },
+        {
+          "col1": [
+            {
+              "col2": 20
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col2",
+                      "type": "integer"
+                    },
+                    {
+                      "name": "col3",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "col2": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": 30
+            },
+            {
+              "col2": 25
+            }
+          ],
+          "errors": {
+            "col1[].col3": {
+              "details": [
+                {
+                  "loc": [
+                    0,
+                    1
+                  ],
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "[\"foo\",null]"
+            }
+          }
+        },
+        {
+          "col1": [
+            {
+              "col2": 20
+            }
+          ],
+          "errors": {
+            "col1[].col3": {
+              "details": [
+                {
+                  "loc": [
+                    0
+                  ],
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "[null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col2",
+                      "type": "integer"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "allowed in $.col1, pyspark struct, unrelated errors are raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": "foo"
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          }
+        },
+        {
+          "col1": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "col3",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": "foo"
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": 31,
+            "col3": null
+          },
+          "errors": {}
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "col3",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1, pyspark struct, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": "foo"
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          }
+        },
+        {
+          "col1": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "col3",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "allowed in $.col1, pandas dict",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": "foo"
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": "foo"
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "known issue: allowed in $.col1, pyspark map",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": "30",
+            "col3": "foo"
+          }
+        },
+        {
+          "col1": {
+            "col2": "31"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1, pyspark map / pandas dict, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": "30",
+            "col3": "foo"
+          }
+        },
+        {
+          "col1": {
+            "col2": "31"
+          }
+        },
+        {
+          "col1": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {}
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "allowed in $.col1, pandas json string, unrelated errors are raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "{\"col2\": 30, \"col3\": \"foo\", \"col4\": 456}"
+        },
+        {
+          "col1": "{\"col2\": 31}"
+        },
+        {
+          "col1": "not a json"
+        },
+        {
+          "col1": null
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": "foo",
+            "col4": 456
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {}
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "\"not a json\""
+            }
+          }
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "allowed in $.col1, pyspark json string, unrelated errors are raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "{\"col2\": 30, \"col3\": \"foo\"}"
+        },
+        {
+          "col1": "{\"col2\": 31}"
+        },
+        {
+          "col1": "not a json"
+        },
+        {
+          "col1": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {}
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {}
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "\"not a json\""
+            }
+          }
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1, json string, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "{\"col2\": 30, \"col3\": \"foo\", \"col4\": 456, \"col5\": \"456\", \"col6\": {\"col7\": 1}}"
+        },
+        {
+          "col1": "{\"col2\": 31}"
+        },
+        {
+          "col1": "not a json"
+        },
+        {
+          "col1": null
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "\"foo\""
+            },
+            "col1.col4": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "456"
+            },
+            "col1.col5": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "\"456\""
+            },
+            "col1.col6": {
+              "details": [
+                {
+                  "msg": "Extra inputs are not permitted",
+                  "type": "extra_forbidden"
+                }
+              ],
+              "original": "{\"col7\":1}"
+            }
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {}
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object, unable to parse string as an object",
+                  "type": "object_parsing"
+                }
+              ],
+              "original": "\"not a json\""
+            }
+          }
+        },
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "msg": "Input should be a valid object",
+                  "type": "object_type"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "nullable": false,
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "nullable": false,
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1[], array of pyspark maps, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": "30",
+              "col3": "foo"
+            },
+            {
+              "col2": "25"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "map",
+                  "keyType": "string",
+                  "valueContainsNull": true,
+                  "valueType": "string"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "col2": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": 30
+            },
+            {
+              "col2": 25
+            }
+          ],
+          "errors": {
+            "col1[].col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"foo\",null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col2",
+                      "type": "integer"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1[], array of json strings, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": [
+            "{\"col2\": 30, \"col3\": \"foo\"}",
+            "{\"col2\": 25}"
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "col2": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": 30
+            },
+            {
+              "col2": 25
+            }
+          ],
+          "errors": {
+            "col1[].col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"foo\",null]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col2",
+                      "type": "integer"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1, pandas dict, a key name contains a dot, error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "a.b": "foo"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {
+            "col1.a.b": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "forbidden in $.col1, pandas dict, the extra key is null, error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": null
+          }
+        },
+        {
+          "col1": {
+            "col2": 31,
+            "col3": "foo"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "forbidden in $.col1, pyspark map, the extra key is null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": "30",
+            "col3": null
+          }
+        },
+        {
+          "col1": {
+            "col2": "31",
+            "col3": "foo"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "null"
+            }
+          }
+        },
+        {
+          "col1": {
+            "col2": 31
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1, every field is extra, the column is dropped, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {}
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "errors": {
+            "col1.col2": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "30"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1[], every field is extra, the column is dropped, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col2": "foo"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col2",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "errors": {
+            "col1[].col2": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"foo\"]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden by default in $.col1, no declared key is present, the column is dropped, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col4": "x"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col4",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "string"
+              },
+              "col3": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "errors": {
+            "col1.col4": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"x\""
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden by default in $.col1[], no declared key is present, the column is dropped, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": [
+            {
+              "col4": "x"
+            }
+          ]
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "array",
+                "containsNull": true,
+                "elementType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "col4",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "col2": {
+                  "type": "string"
+                },
+                "col3": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "errors": {
+            "col1[].col4": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[\"x\"]"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            },
+                            {
+                              "name": "loc",
+                              "type": {
+                                "type": "array",
+                                "containsNull": true,
+                                "elementType": "integer"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "known issue: forbidden in $.col1, pandas dict, the declared key is missing in every row, the column is dropped, error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col3": "foo"
+          }
+        },
+        {
+          "col1": {
+            "col4": "bar"
+          }
+        }
+      ]
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        },
+        {
+          "errors": {
+            "col1.col4": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "description": "forbidden in $.col1, pyspark map, the declared key is missing in every row, the key is filled with null, error is raised",
+    "engines": [
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col3": "foo"
+          }
+        },
+        {
+          "col1": {
+            "col4": "bar"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": null
+          },
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        },
+        {
+          "col1": {
+            "col2": null
+          },
+          "errors": {
+            "col1.col4": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"bar\""
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1, an empty json object, no extra keys are found",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "{}"
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": null
+          },
+          "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $., alongside an int_parsing error in the same row, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": "foo",
+          "col2": 30
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "string"
+            },
+            {
+              "name": "col2",
+              "type": "integer"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "col1": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": null,
+          "errors": {
+            "col1": {
+              "details": [
+                {
+                  "type": "int_parsing",
+                  "msg": "Input should be a valid integer, unable to parse string as an integer"
+                }
+              ],
+              "original": "\"foo\""
+            },
+            "col2": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "30"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": "integer"
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1 while $. allows extra, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30,
+            "col3": "foo"
+          },
+          "col4": 25
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "col3",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "col4",
+              "type": "integer"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "col4": 25,
+          "errors": {
+            "col1.col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "col4",
+              "type": "integer"
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "forbidden in $.col1, pyspark map, extra keys are case sensitive, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": "30",
+            "COL2": "foo"
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "col2": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col2": 30
+          },
+          "errors": {
+            "col1.COL2": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "\"foo\""
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": {
+                "type": "map",
+                "keyType": "string",
+                "valueContainsNull": true,
+                "valueType": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "details",
+                      "type": {
+                        "type": "array",
+                        "containsNull": true,
+                        "elementType": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            {
+                              "name": "msg",
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "name": "original",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "nullable": false
+            }
+          ]
         }
       }
     }
