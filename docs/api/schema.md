@@ -17,8 +17,8 @@ Schema(
 
 - `columns`: `dict[str, Column]` - Dictionary mapping column names to `Column` instances that define type,
   constraints and defaults for each field.
-- `allow_extra`: `bool` - When `False`, unexpected columns in the input data will trigger validation errors.
-  When `True`, unexpected columns are ignored.
+- `allow_extra`: `bool` - When `False`, which is the default, an input the schema does not declare is dropped and
+  reported as `extra_forbidden`.
 
 ## Methods
 
@@ -42,7 +42,7 @@ validate(
 #### Returns
 
 - `DataFrame` - Input DataFrame with an additional column containing validation results. When `allow_extra=False`,
-  only schema-defined columns (plus the error column) are returned; unexpected inputs are dropped.
+  only schema-defined columns (plus the error column) are returned; unexpected inputs are dropped and reported.
 
 #### Raises
 

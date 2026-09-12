@@ -31,7 +31,7 @@ These types have corresponding engine-specific types:
 | string  | str        | string[python] | string  |
 
 Unlike JSON Schema, Norma does not fully support union types (i.e. `type` as an array).
-The exception is `null`, which allows properties to be nullable.
+The exception is `null`, which makes a property nullable, as described in [Null values](#null-values).
 
 Here are some examples of data type rules defined in JSON Schema:
 
@@ -67,6 +67,22 @@ schema = Schema({
 })
 ```
 
+#### Null values
+
+A `null` passes only a nullable property. Nullability is part of the type: add `null` to `type` in JSON Schema, or pass
+`nullable=True` in the Python API. A property is not nullable unless it says so.
+
+- **Not nullable**: a `null` is reported with the type error of the declared type (`bool_type`, `int_type`,
+  `string_type`, …) and stays `null` in the output.
+- **Nullable**: a `null` passes without an error.
+
+| Input  | Type             | Output | Error         | Reason                         |
+|--------|------------------|--------|---------------|--------------------------------|
+| `null` | `string`         | `null` | `string_type` | Input should be a valid string |
+| `null` | `[string, null]` | `null` |               |                                |
+| `foo`  | `string`         | `foo`  |               |                                |
+| `foo`  | `[string, null]` | `foo`  |               |                                |
+
 #### `boolean`
 
 The `boolean` type is used to represent true/false values.
@@ -91,19 +107,20 @@ Norma accepts common truthy and falsy strings or numbers when coercing to `boole
 
 Use the table below to coerce other types to `boolean`:
 
-| Input                                                                  | Type                                           | Output  | Error          | Reason                                                     |
-|------------------------------------------------------------------------|------------------------------------------------|---------|----------------|------------------------------------------------------------|
-| `null`                                                                 | `boolean`<br>`string`<br>`integer`<br>`number` | `null`  |                |                                                            |
-| `true`                                                                 | `boolean`                                      | `true`  |                |                                                            |
-| `false`                                                                | `boolean`                                      | `false` |                |                                                            |
-| `"true"`<br>`"True"`<br>`"t"`<br>`"on"`<br>`"yes"`<br>`"y"`<br>`"1"`   | `string`                                       | `true`  |                |                                                            |
-| `"false"`<br>`"False"`<br>`"f"`<br>`"off"`<br>`"no"`<br>`"n"`<br>`"0"` | `string`                                       | `false` |                |                                                            |
-| `1`<br>`123`                                                           | `integer`                                      | `true`  |                |                                                            |
-| `0`                                                                    | `integer`                                      | `false` |                |                                                            |
-| `1.23`<br>`0.123`                                                      | `number`                                       | `true`  |                |                                                            |
-| `0.0`                                                                  | `number`                                       | `false` |                |                                                            |
-| `"foo"`                                                                | `string`                                       | `null`  | `bool_parsing` | Input should be a valid boolean, unable to interpret input |
-| `{"foo":"bar"}`<br>`["foo","bar"]`                                     | `object`<br>`array`                            | `null`  | `bool_type`    | Input should be a valid boolean                            |
+| Input                                                                  | Type                | Output  | Error          | Reason                                                     |
+|------------------------------------------------------------------------|---------------------|---------|----------------|------------------------------------------------------------|
+| `null`                                                                 | `boolean`           | `null`  | `bool_type`    | Input should be a valid boolean                            |
+| `null`                                                                 | `[boolean, null]`   | `null`  |                |                                                            |
+| `true`                                                                 | `boolean`           | `true`  |                |                                                            |
+| `false`                                                                | `boolean`           | `false` |                |                                                            |
+| `"true"`<br>`"True"`<br>`"t"`<br>`"on"`<br>`"yes"`<br>`"y"`<br>`"1"`   | `string`            | `true`  |                |                                                            |
+| `"false"`<br>`"False"`<br>`"f"`<br>`"off"`<br>`"no"`<br>`"n"`<br>`"0"` | `string`            | `false` |                |                                                            |
+| `1`<br>`123`                                                           | `integer`           | `true`  |                |                                                            |
+| `0`                                                                    | `integer`           | `false` |                |                                                            |
+| `1.23`<br>`0.123`                                                      | `number`            | `true`  |                |                                                            |
+| `0.0`                                                                  | `number`            | `false` |                |                                                            |
+| `"foo"`                                                                | `string`            | `null`  | `bool_parsing` | Input should be a valid boolean, unable to interpret input |
+| `{"foo":"bar"}`<br>`["foo","bar"]`                                     | `object`<br>`array` | `null`  | `bool_type`    | Input should be a valid boolean                            |
 
 #### `integer`
 
@@ -127,18 +144,19 @@ Column(int)
 
 Use the table below to coerce other types to `integer`:
 
-| Input                              | Type                                           | Output | Error         | Reason                                                                |
-|------------------------------------|------------------------------------------------|--------|---------------|-----------------------------------------------------------------------|
-| `null`                             | `boolean`<br>`string`<br>`integer`<br>`number` | `null` |               |                                                                       |
-| `123`                              | `integer`                                      | `123`  |               |                                                                       |
-| `123.0`                            | `number`                                       | `123`  |               |                                                                       |
-| `123.45`                           | `number`                                       | `123`  |               |                                                                       |
-| `"123"`                            | `string`                                       | `123`  |               |                                                                       |
-| `"123.45"`                         | `string`                                       | `123`  |               |                                                                       |
-| `true`                             | `boolean`                                      | `1`    |               |                                                                       |
-| `false`                            | `boolean`                                      | `0`    |               |                                                                       |
-| `"foo"`                            | `string`                                       | `null` | `int_parsing` | Input should be a valid integer, unable to parse string as an integer |
-| `{"foo":"bar"}`<br>`["foo","bar"]` | `object`<br>`array`                            | `null` | `int_type`    | Input should be a valid integer                                       |
+| Input                              | Type                | Output | Error         | Reason                                                                |
+|------------------------------------|---------------------|--------|---------------|-----------------------------------------------------------------------|
+| `null`                             | `integer`           | `null` | `int_type`    | Input should be a valid integer                                       |
+| `null`                             | `[integer, null]`   | `null` |               |                                                                       |
+| `123`                              | `integer`           | `123`  |               |                                                                       |
+| `123.0`                            | `number`            | `123`  |               |                                                                       |
+| `123.45`                           | `number`            | `123`  |               |                                                                       |
+| `"123"`                            | `string`            | `123`  |               |                                                                       |
+| `"123.45"`                         | `string`            | `123`  |               |                                                                       |
+| `true`                             | `boolean`           | `1`    |               |                                                                       |
+| `false`                            | `boolean`           | `0`    |               |                                                                       |
+| `"foo"`                            | `string`            | `null` | `int_parsing` | Input should be a valid integer, unable to parse string as an integer |
+| `{"foo":"bar"}`<br>`["foo","bar"]` | `object`<br>`array` | `null` | `int_type`    | Input should be a valid integer                                       |
 
 #### `number`
 
@@ -162,17 +180,18 @@ Column(float)
 
 Use the table below to coerce other types to `number`:
 
-| Input                              | Type                                           | Output   | Error           | Reason                                                             |
-|------------------------------------|------------------------------------------------|----------|-----------------|--------------------------------------------------------------------|
-| `null`                             | `boolean`<br>`string`<br>`integer`<br>`number` | `null`   |                 |                                                                    |
-| `123.45`                           | `number`                                       | `123.45` |                 |                                                                    |
-| `123`                              | `integer`                                      | `123.0`  |                 |                                                                    |
-| `"123.45"`                         | `string`                                       | `123.45` |                 |                                                                    |
-| `"123"`                            | `string`                                       | `123.0`  |                 |                                                                    |
-| `true`                             | `boolean`                                      | `1.0`    |                 |                                                                    |
-| `false`                            | `boolean`                                      | `0.0`    |                 |                                                                    |
-| `"foo"`                            | `string`                                       | `null`   | `float_parsing` | Input should be a valid number, unable to parse string as a number |
-| `{"foo":"bar"}`<br>`["foo","bar"]` | `object`<br>`array`                            | `null`   | `float_type`    | Input should be a valid number                                     |
+| Input                              | Type                | Output   | Error           | Reason                                                             |
+|------------------------------------|---------------------|----------|-----------------|--------------------------------------------------------------------|
+| `null`                             | `number`            | `null`   | `float_type`    | Input should be a valid number                                     |
+| `null`                             | `[number, null]`    | `null`   |                 |                                                                    |
+| `123.45`                           | `number`            | `123.45` |                 |                                                                    |
+| `123`                              | `integer`           | `123.0`  |                 |                                                                    |
+| `"123.45"`                         | `string`            | `123.45` |                 |                                                                    |
+| `"123"`                            | `string`            | `123.0`  |                 |                                                                    |
+| `true`                             | `boolean`           | `1.0`    |                 |                                                                    |
+| `false`                            | `boolean`           | `0.0`    |                 |                                                                    |
+| `"foo"`                            | `string`            | `null`   | `float_parsing` | Input should be a valid number, unable to parse string as a number |
+| `{"foo":"bar"}`<br>`["foo","bar"]` | `object`<br>`array` | `null`   | `float_type`    | Input should be a valid number                                     |
 
 #### `string`
 
@@ -198,21 +217,20 @@ Non-string inputs are stringified using their canonical representations when coe
 
 Use the table below to coerce other types to `string`:
 
-| Input                              | Type                                                          | Output                   | Error         | Reason                         |
-|------------------------------------|---------------------------------------------------------------|--------------------------|---------------|--------------------------------|
-| `null`                             | `boolean`<br>`string`<br>`integer`<br>`number`<br>`timestamp` | `null`                   |               |                                |
-| `"foo"`                            | `string`                                                      | `"foo"`                  |               |                                |
-| `123`                              | `integer`                                                     | `"123"`                  |               |                                |
-| `123.45`                           | `number`                                                      | `"123.45"`               |               |                                |
-| `true`                             | `boolean`                                                     | `"true"`                 |               |                                |
-| `2023-10-05T14:48:00Z`             | `timestamp`                                                   | `"2023-10-05T14:48:00Z"` |               |                                |
-| `{"foo":"bar"}`<br>`["foo","bar"]` | `object`<br>`array`                                           | `null`                   | `string_type` | Input should be a valid string |
+| Input                              | Type                | Output                   | Error         | Reason                         |
+|------------------------------------|---------------------|--------------------------|---------------|--------------------------------|
+| `null`                             | `string`            | `null`                   | `string_type` | Input should be a valid string |
+| `null`                             | `[string, null]`    | `null`                   |               |                                |
+| `"foo"`                            | `string`            | `"foo"`                  |               |                                |
+| `123`                              | `integer`           | `"123"`                  |               |                                |
+| `123.45`                           | `number`            | `"123.45"`               |               |                                |
+| `true`                             | `boolean`           | `"true"`                 |               |                                |
+| `2023-10-05T14:48:00Z`             | `timestamp`         | `"2023-10-05T14:48:00Z"` |               |                                |
+| `{"foo":"bar"}`<br>`["foo","bar"]` | `object`<br>`array` | `null`                   | `string_type` | Input should be a valid string |
 
 #### `array`
 
 The `array` type is used to represent ordered lists of values of the same type.
-
-> **Note:** Currently, only PySpark arrays are supported.
 
 Array elements can be any supported Norma type except another `array`; nested arrays are not yet supported.
 
@@ -241,7 +259,8 @@ Use the table below to coerce other types to `array`:
 
 | Input                                         | Type                                           | Output          | Error           | Reason                                                            |
 |-----------------------------------------------|------------------------------------------------|-----------------|-----------------|-------------------------------------------------------------------|
-| `null`                                        | `string`<br>`array`                            | `null`          |                 |                                                                   |
+| `null`                                        | `array`                                        | `null`          | `array_type`    | Input should be a valid array                                     |
+| `null`                                        | `[array, null]`                                | `null`          |                 |                                                                   |
 | `["foo","bar"]`                               | `array`                                        | `["foo","bar"]` |                 |                                                                   |
 | `'["foo","bar"]'`                             | `string`                                       | `["foo","bar"]` |                 |                                                                   |
 | `"[1, 2]"`                                    | `string`                                       | `["1","2"]`     |                 |                                                                   |
@@ -251,8 +270,6 @@ Use the table below to coerce other types to `array`:
 #### `object`
 
 The `object` type is used to represent structured data with key-value pairs.
-
-> **Note:** Currently, only PySpark structs are supported.
 
 **JSON Schema**
 
@@ -283,7 +300,8 @@ Use the table below to coerce other types to `object`:
 
 | Input                                         | Type                                          | Output          | Error            | Reason                                                              |
 |-----------------------------------------------|-----------------------------------------------|-----------------|------------------|---------------------------------------------------------------------|
-| `null`                                        | `string`<br>`struct`<br>`map`                 | `null`          |                  |                                                                     |
+| `null`                                        | `object`                                      | `null`          | `object_type`    | Input should be a valid object                                      |
+| `null`                                        | `[object, null]`                              | `null`          |                  |                                                                     |
 | `{"foo":"bar"}`                               | `struct`<br>`map`                             | `{"foo":"bar"}` |                  |                                                                     |
 | `'{"foo":"bar"}'`                             | `string`                                      | `{"foo":"bar"}` |                  |                                                                     |
 | `"foo"`                                       | `string`                                      | `null`          | `object_parsing` | Input should be a valid object, unable to parse string as an object |
@@ -310,16 +328,16 @@ Norma supports the following format types based on JSON Schema:
 
 These types have corresponding engine-specific types:
 
-| JSON      | Python API | Pandas         | PySpark   |
-|-----------|------------|----------------|-----------|
-| date-time | datetime   | datetime64[ns] | timestamp |
-| date      | date       | datetime64[D]  | date      |
-| time      | time       | string[python] | string    |
-| duration  | duration   | string[python] | string    |
-| ipv4      | str        | string[python] | string    |
-| ipv6      | str        | string[python] | string    |
-| uri       | str        | string[python] | string    |
-| uuid      | str        | string[python] | string    |
+| JSON      | Python API | Pandas              | PySpark   |
+|-----------|------------|---------------------|-----------|
+| date-time | datetime   | datetime64[ns, UTC] | timestamp |
+| date      | date       | datetime64[s]       | date      |
+| time      | time       | string[python]      | string    |
+| duration  | duration   | string[python]      | string    |
+| ipv4      | str        | string[python]      | string    |
+| ipv6      | str        | string[python]      | string    |
+| uri       | str        | string[python]      | string    |
+| uuid      | str        | string[python]      | string    |
 
 Here are some examples of format rules defined in JSON Schema:
 
@@ -371,7 +389,8 @@ Use the table below to coerce other types to `date-time`:
 
 | Input                                                 | Type                                          | Output                       | Error              | Reason                                                                 |
 |-------------------------------------------------------|-----------------------------------------------|------------------------------|--------------------|------------------------------------------------------------------------|
-| `null`                                                | `string`<br>`datetime`<br>`date`              | `null`                       |                    |                                                                        |
+| `null`                                                | `string`                                      | `null`                       | `datetime_type`    | Input should be a valid datetime                                       |
+| `null`                                                | `[string, null]`                              | `null`                       |                    |                                                                        |
 | `"2025-01-23T12:34:56Z"`                              | `string`                                      | `"2025-01-23T12:34:56.000Z"` |                    |                                                                        |
 | `"2025-01-23 12:34:56"`                               | `string`                                      | `"2025-01-23T12:34:56.000Z"` |                    |                                                                        |
 | `"2025-01-23"`                                        | `date`                                        | `"2025-01-23T00:00:00.000Z"` |                    |                                                                        |
@@ -403,7 +422,8 @@ Use the table below to coerce other types to `date`:
 
 | Input                                                 | Type                                          | Output         | Error          | Reason                                                         |
 |-------------------------------------------------------|-----------------------------------------------|----------------|----------------|----------------------------------------------------------------|
-| `null`                                                | `string`<br>`date`<br>`timestamp`             | `null`         |                |                                                                |
+| `null`                                                | `string`                                      | `null`         | `date_type`    | Input should be a valid date                                   |
+| `null`                                                | `[string, null]`                              | `null`         |                |                                                                |
 | `"2025-10-05"`                                        | `string`                                      | `"2025-10-05"` |                |                                                                |
 | `"2025-10-05"`                                        | `date`                                        | `"2025-10-05"` |                |                                                                |
 | `"2025-10-05T14:48:00Z"`                              | `string`                                      | `"2025-10-05"` |                |                                                                |
@@ -433,14 +453,15 @@ Column('time')
 
 Use the table below to coerce other types to `time`:
 
-| Input                                                 | Type                                          | Output            | Error          | Reason                                                         |
-|-------------------------------------------------------|-----------------------------------------------|-------------------|----------------|----------------------------------------------------------------|
-| `null`                                                | `string`<br>`time`                            | `null`            |                |                                                                |
-| `"14:48:00Z"`                                         | `string`                                      | `"14:48:00Z"`     |                |                                                                |
-| `"14:48:00"`                                          | `string`                                      | `"14:48:00"`      |                |                                                                |
-| `"14:48:00.123Z"`                                     | `string`                                      | `"14:48:00.123Z"` |                |                                                                |
-| `"foo"`                                               | `string`                                      | `null`            | `time_parsing` | Input should be a valid time, unable to parse string as a time |
-| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`            | `time_type`    | Input should be a valid time                                   |
+| Input                                                 | Type                                          | Output            | Error          | Reason                                                                   |
+|-------------------------------------------------------|-----------------------------------------------|-------------------|----------------|--------------------------------------------------------------------------|
+| `null`                                                | `string`                                      | `null`            | `time_type`    | Input should be a valid time                                             |
+| `null`                                                | `[string, null]`                              | `null`            |                |                                                                          |
+| `"14:48:00Z"`                                         | `string`                                      | `"14:48:00Z"`     |                |                                                                          |
+| `"14:48:00"`                                          | `string`                                      | `"14:48:00"`      |                |                                                                          |
+| `"14:48:00.123Z"`                                     | `string`                                      | `"14:48:00.123Z"` |                |                                                                          |
+| `"foo"`                                               | `string`                                      | `null`            | `time_parsing` | Input should be in a valid time format, unable to parse string as a time |
+| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`            | `time_type`    | Input should be a valid time                                             |
 
 #### `duration`
 
@@ -467,7 +488,8 @@ Use the table below to coerce other types to `duration`:
 
 | Input                                                 | Type                                          | Output    | Error              | Reason                                                                 |
 |-------------------------------------------------------|-----------------------------------------------|-----------|--------------------|------------------------------------------------------------------------|
-| `null`                                                | `string`                                      | `null`    |                    |                                                                        |
+| `null`                                                | `string`                                      | `null`    | `duration_type`    | Input should be a valid duration                                       |
+| `null`                                                | `[string, null]`                              | `null`    |                    |                                                                        |
 | `"PT30M"`                                             | `string`                                      | `"PT30M"` |                    |                                                                        |
 | `"P1D"`                                               | `string`                                      | `"P1D"`   |                    |                                                                        |
 | `"foo"`                                               | `string`                                      | `null`    | `duration_parsing` | Input should be a valid duration, unable to parse string as a duration |
@@ -498,12 +520,13 @@ Column('ipv4')
 
 Use the table below to coerce other types to `ipv4`:
 
-| Input                                                 | Type                                          | Output          | Error          | Reason                            |
-|-------------------------------------------------------|-----------------------------------------------|-----------------|----------------|-----------------------------------|
-| `null`                                                | `string`                                      | `null`          |                |                                   |
-| `"192.168.1.1"`                                       | `string`                                      | `"192.168.1.1"` |                |                                   |
-| `"foo"`                                               | `string`                                      | `null`          | `ipv4_address` | Input is not a valid IPv4 address |
-| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`          | `ipv4_address` | Input is not a valid IPv4 address |
+| Input                                                 | Type                                          | Output          | Error  | Reason                            |
+|-------------------------------------------------------|-----------------------------------------------|-----------------|--------|-----------------------------------|
+| `null`                                                | `string`                                      | `null`          | `ipv4` | Input is not a valid IPv4 address |
+| `null`                                                | `[string, null]`                              | `null`          |        |                                   |
+| `"192.168.1.1"`                                       | `string`                                      | `"192.168.1.1"` |        |                                   |
+| `"foo"`                                               | `string`                                      | `null`          | `ipv4` | Input is not a valid IPv4 address |
+| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`          | `ipv4` | Input is not a valid IPv4 address |
 
 #### `ipv6`
 
@@ -528,12 +551,13 @@ Column('ipv6')
 
 Use the table below to coerce other types to `ipv6`:
 
-| Input                                                 | Type                                          | Output                             | Error          | Reason                            |
-|-------------------------------------------------------|-----------------------------------------------|------------------------------------|----------------|-----------------------------------|
-| `null`                                                | `string`                                      | `null`                             |                |                                   |
-| `"2001:0db8:85a3::8a2e:0370:7334"`                    | `string`                                      | `"2001:0db8:85a3::8a2e:0370:7334"` |                |                                   |
-| `"foo"`                                               | `string`                                      | `null`                             | `ipv6_address` | Input is not a valid IPv6 address |
-| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`                             | `ipv6_address` | Input is not a valid IPv6 address |
+| Input                                                 | Type                                          | Output                             | Error  | Reason                            |
+|-------------------------------------------------------|-----------------------------------------------|------------------------------------|--------|-----------------------------------|
+| `null`                                                | `string`                                      | `null`                             | `ipv6` | Input is not a valid IPv6 address |
+| `null`                                                | `[string, null]`                              | `null`                             |        |                                   |
+| `"2001:0db8:85a3::8a2e:0370:7334"`                    | `string`                                      | `"2001:0db8:85a3::8a2e:0370:7334"` |        |                                   |
+| `"foo"`                                               | `string`                                      | `null`                             | `ipv6` | Input is not a valid IPv6 address |
+| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`                             | `ipv6` | Input is not a valid IPv6 address |
 
 ### Resource Identifiers
 
@@ -563,7 +587,8 @@ Use the table below to coerce other types to `uri`:
 
 | Input                                                 | Type                                          | Output                           | Error         | Reason                                                       |
 |-------------------------------------------------------|-----------------------------------------------|----------------------------------|---------------|--------------------------------------------------------------|
-| `null`                                                | `string`                                      | `null`                           |               |                                                              |
+| `null`                                                | `string`                                      | `null`                           | `uri_type`    | Input should be a valid URI                                  |
+| `null`                                                | `[string, null]`                              | `null`                           |               |                                                              |
 | `"https://example.com/path?q=v"`                      | `string`                                      | `"https://example.com/path?q=v"` |               |                                                              |
 | `"ftp://files.example.com"`                           | `string`                                      | `"ftp://files.example.com"`      |               |                                                              |
 | `"foo"`                                               | `string`                                      | `null`                           | `uri_parsing` | Input should be a valid URI, unable to parse string as a URI |
@@ -594,10 +619,11 @@ Use the table below to coerce other types to `uuid`:
 
 | Input                                                 | Type                                          | Output                                   | Error          | Reason                                                         |
 |-------------------------------------------------------|-----------------------------------------------|------------------------------------------|----------------|----------------------------------------------------------------|
-| `null`                                                | `string`                                      | `null`                                   |                |                                                                |
+| `null`                                                | `string`                                      | `null`                                   | `uuid_type`    | UUID input should be a string                                  |
+| `null`                                                | `[string, null]`                              | `null`                                   |                |                                                                |
 | `"b9e95281-2f6b-4f75-8010-5afabaca81e7"`              | `string`                                      | `"b9e95281-2f6b-4f75-8010-5afabaca81e7"` |                |                                                                |
 | `"foo"`                                               | `string`                                      | `null`                                   | `uuid_parsing` | Input should be a valid UUID, unable to parse string as a UUID |
-| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`                                   | `uuid_type`    | Input should be a valid UUID                                   |
+| `123`<br>`true`<br>`{"foo":"bar"}`<br>`["foo","bar"]` | `integer`<br>`boolean`<br>`object`<br>`array` | `null`                                   | `uuid_type`    | UUID input should be a string                                  |
 
 ## Value constraints
 
@@ -609,6 +635,7 @@ These constraints can be applied to different data types and include:
 - `required`
 - `nullable`
 - `default`
+- `additionalProperties`
 - `enum`
 - `const`
 - `minimum` / `exclusiveMinimum`
@@ -622,6 +649,9 @@ These constraints can be applied to different data types and include:
 
 The examples that follow demonstrate each constraint in JSON Schema and the Python API, alongside representative inputs
 so you can see how Norma evaluates real data.
+
+A constraint never checks a `null`, so the `null` rows in these tables assume a nullable property. See
+[Null values](#null-values) for a property that is not nullable.
 
 ### Presence and absence
 
@@ -707,12 +737,12 @@ Schema({
 
 Use the table below to see how `required: ["name"]` behaves:
 
-| Input   | Type               | Output  | Error         | Reason                         |
-|---------|--------------------|---------|---------------|--------------------------------|
-| `"foo"` | `string`           | `"foo"` |               |                                |
-| `null`  | `string`           | `null`  | `string_type` | Input should be a valid string |
-| `null`  | `optional[string]` | `null`  |               |                                |
-|         |                    | `null`  | `missing`     | Field required                 |
+| Input   | Type             | Output  | Error         | Reason                         |
+|---------|------------------|---------|---------------|--------------------------------|
+| `"foo"` | `string`         | `"foo"` |               |                                |
+| `null`  | `string`         | `null`  | `string_type` | Input should be a valid string |
+| `null`  | `[string, null]` | `null`  |               |                                |
+|         |                  | `null`  | `missing`     | Field required                 |
 
 What an absence produces depends on where presence is decided:
 
@@ -730,7 +760,7 @@ before any value is seen, so every field the schema declares becomes a struct fi
 #### `nullable`
 
 Norma has no `nullable` keyword of its own. A property is made nullable by adding `null` to its `type`, as described in
-[Data Type Conventions](#data-type-conventions), or by `nullable=True` in the Python API. It governs the **value**, not
+[Null values](#null-values), or by `nullable=True` in the Python API. It governs the **value**, not
 the presence: a null is either accepted or reported, while an absent field is never a type error, whatever `nullable`
 says.
 
@@ -812,6 +842,43 @@ object built from its children's defaults.
 A `default` that cannot fill a slot is rejected when the schema is built: one on array items, which are never absent,
 and a non-null one on an `object` or `array` column.
 
+#### `additionalProperties`
+
+The `additionalProperties` keyword answers the state the other three keywords never see: a field that **is** there but
+the schema never declared. It defaults to `false`, so an undeclared field is dropped from the output and reported under
+its own path with the `extra_forbidden` error code, whatever the shape it arrived in — a column, a `struct` field, a key
+of a`map` or of a Pandas `dict`, or a key of an object held as a JSON string.
+
+**JSON Schema**
+
+```json
+{
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "col": {
+      "type": "string"
+    }
+  }
+}
+```
+
+**Python**
+
+```python
+from norma.schema import Schema, Column
+
+Schema({'col': Column(str)}, allow_extra=True)
+```
+
+Use the table below to see how `additionalProperties` behaves for an input carrying `foo` and an undeclared `bar`:
+
+| Parameters                    | Output       | Error             | Reason                         |
+|-------------------------------|--------------|-------------------|--------------------------------|
+| `additionalProperties: true`  | `foo`, `bar` |                   |                                |
+| `additionalProperties: false` | `foo`        | `extra_forbidden` | Extra inputs are not permitted |
+| —                             | `foo`        | `extra_forbidden` | Extra inputs are not permitted |
+
 ### Value rules
 
 #### `enum`
@@ -839,7 +906,7 @@ from norma.schema import Column
 Column(str, isin=["red", "green", "blue"])
 ```
 
-Use bellow matrix to see how `enum: ["red","green","blue"]` behaves:
+Use the table below to see how `enum: ["red","green","blue"]` behaves:
 
 | Input      | Type                                                                | Output | Error  | Reason                                   |
 |------------|---------------------------------------------------------------------|--------|--------|------------------------------------------|
@@ -1003,6 +1070,20 @@ from norma.schema import Column
 Column(float, gt=0)
 ```
 
+Norma also accepts the draft-4 form, where `exclusiveMinimum` is a boolean that modifies a neighbouring `minimum`
+instead of carrying the bound itself:
+
+```json
+{
+  "type": "number",
+  "minimum": 3,
+  "exclusiveMinimum": true
+}
+```
+
+`true` turns the bound into `greater_than(gt=3)`, `false` leaves it as the inclusive `greater_than_equal(ge=3)`.
+When `exclusiveMinimum` sits next to a `minimum` but is not a boolean, `Schema.from_json_schema` raises `ValueError`.
+
 Use the table below to see how `exclusiveMinimum` behaves:
 
 | Input                    | Type                                                                | Parameters                                 | Output                   | Error          | Reason                                              |
@@ -1080,6 +1161,20 @@ from norma.schema import Column
 
 Column(float, lt=100)
 ```
+
+Norma also accepts the draft-4 form, where `exclusiveMaximum` is a boolean that modifies a neighbouring `maximum`
+instead of carrying the bound itself:
+
+```json
+{
+  "type": "number",
+  "maximum": 3,
+  "exclusiveMaximum": true
+}
+```
+
+`true` turns the bound into `less_than(lt=3)`, `false` leaves it as the inclusive `less_than_equal(le=3)`.
+When `exclusiveMaximum` sits next to a `maximum` but is not a boolean, `Schema.from_json_schema` raises `ValueError`.
 
 Use the table below to see how `exclusiveMaximum` behaves:
 

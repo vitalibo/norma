@@ -11,7 +11,8 @@ outlines the supported engines and any notable capabilities or limitations.
 - **Error handling**: Errors are collected in an engine-specific `norma.engines.pandas.rules.ErrorState` and returned in
   the requested `error_col`. The validator keeps the original column values alongside normalised ones for easier
   debugging.
-- **Nested data**: Currently, nested data structures (e.g., lists or dictionaries within cells) are not supported.
+- **Nested data**: Structs and arrays of structs are supported; a cell holds a `dict` or a `list` of `dict`. A JSON
+  string is parsed into the same shape. Deeply nested arrays (arrays of arrays) are not yet implemented.
 - **Dependencies**: Requires `pandas` (and `numpy`, which Pandas brings along). User code should import and pass a
   Pandas DataFrame; no additional setup is needed.
 
@@ -40,10 +41,10 @@ df = schema.validate(df)
 - **How it works**: When given a `pyspark.sql.DataFrame`, Norma executes `norma.engines.pyspark.validator.validate`.
   Rule proxies are turned into Spark column expressions defined in `norma.engines.pyspark.rules`.
 - **Error handling**: Errors are accumulated in a struct-array column managed by the engine
-  `norma.engines.pyyspark.rules.ErrorState`. Each failure stores the rule metadata and, when validating arrays, the
+  `norma.engines.pyspark.rules.ErrorState`. Each failure stores the rule metadata and, when validating arrays, the
   failing element indexes.
-- **Nested data**: Schema nesting is supported for structs and arrays of structs. Deeply nested arrays (arrays of
-  arrays) are not yet implemented.
+- **Nested data**: Schema nesting is supported for structs and arrays of structs. A `map` column and a JSON string
+  column are cast to the declared struct. Deeply nested arrays (arrays of arrays) are not yet implemented.
 - **Dependencies**: Requires `pyspark`. Spark sessions must be initialised by user code before calling
   `norma.schema.Schema.validate`.
 

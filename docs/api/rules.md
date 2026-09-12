@@ -50,8 +50,9 @@ These factories cover common validation scenarios.
 - `required()` — report a field the input never carried as `missing`. Not added when the column has a `default`, which
   answers the absence instead.
 - `default(value)` — inject a value where the field is absent, before the parsing and the constraints, so the value is
-  coerced and checked like an incoming one.
-- `extra_forbidden(allowed)` — reject columns not explicitly allowed.
+  coerced and checked like an incoming one. Configured with `Column(default=...)`.
+- `extra_forbidden(allowed)` — report an input the schema does not declare as `extra_forbidden`. Configured with
+  `Schema(allow_extra=False)`, which is also the default.
 
 ### Equality
 
@@ -103,8 +104,9 @@ cannot perform a true cast, the helper validates the format and leaves the value
 - `ipv4_address()` - validate IPv4 strings and return the original string value.
 - `ipv6_address()` - validate IPv6 strings and return the original string value.
 - `uri_parsing()` - validate URI strings and return the original string value.
-- `object_parsing(schema)` — coerce nested objects using the supplied schema (Pyspark only; Pandas raises exception).
-- `array_parsing(schema)` — coerce arrays/lists using the supplied item schema (Pyspark only; Pandas raises exception).
+- `object_parsing(schema)` — coerce nested objects using the supplied schema.
+- `array_parsing(schema)` — coerce arrays/lists using the supplied item schema. Arrays of arrays are not
+  supported.
 
 ## Custom Rules
 
@@ -215,5 +217,4 @@ schema = Schema({
 
 During validation, the `verify` method receives the entire `pyspark.sql.DataFrame`, the name of the column being
 validated, and an instance of `norma.rules.ErrorState` to record validation errors. The method should return transformed
-dataframe. Unlike Pandas, Pyspark supports nested columns and arrays, so when implementing custom rules, users should
-account for these scenarios.
+dataframe.
