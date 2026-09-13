@@ -9,6 +9,7 @@ from pyxis.pyspark import LocalTestSpark  # noqa: E402
 @pytest.fixture(scope='module', name='spark')
 def spark_fixture():
     session = SparkSession.builder \
+        .master('local[2]') \
         .appName('PyTest') \
         .config('spark.sql.session.timeZone', 'UTC') \
         .config('spark.sql.jsonGenerator.ignoreNullFields', False) \

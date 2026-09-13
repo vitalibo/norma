@@ -26,6 +26,7 @@ dev = [
     "pyspark==3.5.4",
     "pytest==8.4.2",
     "pytest-cov==7.1.0",
+    "pytest-xdist==3.8.0",
     "ruff==0.15.20",
     "isort==6.1.0",
     "vitalibo.pyxis==0.2.12",

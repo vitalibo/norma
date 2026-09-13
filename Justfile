@@ -20,7 +20,7 @@ check *args:
 
 # run unit tests
 test *args:
-    uv run -m pytest -v -p no:cacheprovider --disable-warnings {{ args }} ./tests/
+    uv run -m pytest -v -p no:cacheprovider --disable-warnings -n 6 {{ args }} ./tests/
 
 # run unit tests with coverage
 coverage *args:
