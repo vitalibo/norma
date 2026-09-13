@@ -14,6 +14,10 @@ from norma import rules  # noqa: F401
 from norma.engines.pandas import rules as pandas_rules
 from norma.schema import Column, Schema
 
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+DEFINITIONS_DIR = os.path.join(DATA_DIR, 'definitions')
+REF_PREFIX = '!ref #/definitions/'
+
 
 def make_test(test_name, value):
     @pytest.mark.parametrize(
@@ -34,14 +38,28 @@ def make_test(test_name, value):
     return func
 
 
-for root, _, files in os.walk(os.path.join(os.path.dirname(__file__), 'data')):
+def resolve_refs(node):
+    if isinstance(node, dict):
+        return {key: resolve_refs(value) for key, value in node.items()}
+    if isinstance(node, list):
+        return [resolve_refs(value) for value in node]
+    if isinstance(node, str) and node.startswith(REF_PREFIX):
+        with open(os.path.join(DEFINITIONS_DIR, f'{node.removeprefix(REF_PREFIX)}.json'), encoding='utf-8') as f:
+            return resolve_refs(json.loads(f.read()))
+    return node
+
+
+for root, _, files in os.walk(DATA_DIR):
+    if root == DEFINITIONS_DIR:
+        continue
+
     for file in files:
         if not file.endswith('.json'):
             continue
 
         test = file.split('.')[0]
         with open(os.path.join(root, file), encoding='utf-8') as f:
-            cases = json.loads(f.read())
+            cases = resolve_refs(json.loads(f.read()))
             globals()[f'test_{test}'] = make_test(test, cases)
 
 

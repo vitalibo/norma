@@ -64,41 +64,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -164,41 +130,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -261,41 +193,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -358,41 +256,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -455,41 +319,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -552,41 +382,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -649,41 +445,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -746,41 +508,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -843,41 +571,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -950,41 +644,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1057,41 +717,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1164,41 +790,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1271,41 +863,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1378,41 +936,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1485,41 +1009,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1592,41 +1082,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1699,41 +1155,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1806,41 +1228,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -1913,41 +1301,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2020,41 +1374,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2127,41 +1447,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2234,41 +1520,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2341,41 +1593,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2448,41 +1666,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2617,41 +1801,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2796,41 +1946,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors",
               "nullable": false
             }
           ]
@@ -2912,49 +2028,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors_loc",
               "nullable": false
             }
           ]
@@ -3049,49 +2123,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors_loc",
               "nullable": false
             }
           ]
@@ -3332,49 +2364,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors_loc",
               "nullable": false
             }
           ]
@@ -3605,49 +2595,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors_loc",
               "nullable": false
             }
           ]
@@ -3895,49 +2843,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors_loc",
               "nullable": false
             }
           ]
@@ -4181,49 +3087,7 @@
             },
             {
               "name": "errors",
-              "type": {
-                "type": "map",
-                "keyType": "string",
-                "valueContainsNull": true,
-                "valueType": {
-                  "type": "struct",
-                  "fields": [
-                    {
-                      "name": "details",
-                      "type": {
-                        "type": "array",
-                        "containsNull": true,
-                        "elementType": {
-                          "type": "struct",
-                          "fields": [
-                            {
-                              "name": "type",
-                              "type": "string"
-                            },
-                            {
-                              "name": "msg",
-                              "type": "string"
-                            },
-                            {
-                              "name": "loc",
-                              "type": {
-                                "type": "array",
-                                "containsNull": true,
-                                "elementType": "integer"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "nullable": false
-                    },
-                    {
-                      "name": "original",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
+              "type": "!ref #/definitions/errors_loc",
               "nullable": false
             }
           ]
