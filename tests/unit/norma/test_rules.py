@@ -90,7 +90,7 @@ def make_test_pandas(case):
             if 'json_schema' in case['when']
             else crete_schema(case['when']['schema'])
         )
-        actual = schema.validate(df)
+        actual = schema.validate(df, error_column=case['when'].get('error_column', 'errors'))
 
         assert json.loads(json.dumps(actual.to_dict(orient='records'), default=json_serde)) == case['then']['data']
         return
@@ -113,7 +113,7 @@ def make_test_pyspark(spark_session, case):
             if 'json_schema' in case['when']
             else crete_schema(case['when']['schema'])
         )
-        actual = schema.validate(df)
+        actual = schema.validate(df, error_column=case['when'].get('error_column', 'errors'))
 
         assert list(map(json.loads, actual.toJSON().collect())) == case['then']['data']
         assert actual.schema.json() == StructType.from_json(case['then']['schema']['pyspark']).json()

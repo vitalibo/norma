@@ -171,27 +171,28 @@ class Schema:
             raise NotImplementedError('nested arrays are not supported yet')
         self.contains_arrays = array_depth > 0
 
-    def validate(self, df: T, error_col: str = 'errors') -> T:
+    def validate(self, df: T, error_column: str = 'errors') -> T:
         """
         Validates the given DataFrame against the schema
 
         :param df: The DataFrame to validate (supported engines are Pandas and PySpark)
-        :param error_col: Optional column name to store the validation errors
+        :param error_column: Optional column name to store the validation errors
         :return: The validated DataFrame with the error column
         :raises NotImplementedError: If the engine is not supported
+        :raises ValueError: If the error column already exists in the DataFrame
         """
 
         if PandasDataFrame and isinstance(df, PandasDataFrame):
             from norma.engines.pandas import validator  # noqa: PLC0415
-
-            return validator.validate(self, df, error_col)
-
-        if PySparkDataFrame and isinstance(df, PySparkDataFrame):
+        elif PySparkDataFrame and isinstance(df, PySparkDataFrame):
             from norma.engines.pyspark import validator  # noqa: PLC0415
+        else:
+            raise NotImplementedError('unsupported engine')
 
-            return validator.validate(self, df, error_col)
+        if error_column in df.columns:
+            raise ValueError(f"error column '{error_column}' already exists in the DataFrame")
 
-        raise NotImplementedError('unsupported engine')
+        return validator.validate(self, df, error_column)
 
     @property
     def nested_columns(self):

@@ -1,0 +1,95 @@
+[
+  {
+    "description": "$.errors already exists in the input, ValueError is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo",
+          "errors": "bar"
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "error column 'errors' already exists in the DataFrame"
+      }
+    }
+  },
+  {
+    "description": "$.issues already exists in the input and is used as error_column, ValueError is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "foo",
+          "issues": "bar"
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "issues",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string"
+          }
+        }
+      },
+      "error_column": "issues"
+    },
+    "then": {
+      "raises": {
+        "type": "ValueError",
+        "match": "error column 'issues' already exists in the DataFrame"
+      }
+    }
+  }
+]

@@ -34,14 +34,14 @@ containing validation results.
 ```python
 validate(
     df,
-    error_col='errors',
+    error_column='errors',
 )
 ```
 
 #### Parameters
 
 - `df`: `DataFrame` - Input DataFrame. Only Pandas and PySpark engines are supported.
-- `error_col`: `str` - Optional column name where validation errors are collected. Defaults to `"errors"`.
+- `error_column`: `str` - Optional column name where validation errors are collected. Defaults to `"errors"`.
 
 #### Returns
 
@@ -51,6 +51,7 @@ validate(
 #### Raises
 
 - `NotImplementedError` - Raises when the provided engine is unsupported.
+- `ValueError` - Raises when the input DataFrame already has a column named `error_column`.
 
 ### from_json_schema
 

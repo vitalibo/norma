@@ -9,7 +9,7 @@ outlines the supported engines and any notable capabilities or limitations.
 - **How it works**: When the input is a `pandas.DataFrame`, Norma uses `norma.engines.pandas.validator.validate`. Each
   column rule is resolved into a Pandas-aware implementation (see `norma.engines.pandas.rules`).
 - **Error handling**: Errors are collected in an engine-specific `norma.engines.pandas.rules.ErrorState` and returned in
-  the requested `error_col`. The validator keeps the original column values alongside normalised ones for easier
+  the requested `error_column`. The validator keeps the original column values alongside normalised ones for easier
   debugging.
 - **Nested data**: Structs and arrays of structs are supported; a cell holds a `dict` or a `list` of `dict`. A JSON
   string is parsed into the same shape. Deeply nested arrays (arrays of arrays) are not yet implemented.
