@@ -20,6 +20,10 @@ Schema(
 - `allow_extra`: `bool` - When `False`, which is the default, an input the schema does not declare is dropped and
   reported as `extra_forbidden`.
 
+#### Raises
+
+- `NotImplementedError` - Raises when an array of objects declares another array inside its items.
+
 ## Methods
 
 ### validate

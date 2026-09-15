@@ -166,6 +166,11 @@ class Schema:
         self.columns = columns
         self.allow_extra = allow_extra
 
+        array_depth = max((name.count('[]') for name in self.nested_columns), default=0)
+        if array_depth > 1:
+            raise NotImplementedError('nested arrays are not supported yet')
+        self.contains_arrays = array_depth > 0
+
     def validate(self, df: T, error_col: str = 'errors') -> T:
         """
         Validates the given DataFrame against the schema

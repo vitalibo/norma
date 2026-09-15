@@ -68,7 +68,7 @@ def test_schema_from_json_schema():
         actual = Schema.from_json_schema(json_schema)
 
     assert actual.columns.keys() == {'name', 'age', 'height', 'disabled', 'releaseDate', 'address'}
-    assert mock_column.mock_calls == [
+    assert mock_column.call_args_list == [
         mock.call('string', required=True, nullable=False, inner_schema=None, min_length=3, max_length=256,
                   pattern='^[A-Za-z ]+$'),
         mock.call('integer', required=True, nullable=False, inner_schema=None, ge=0, le=120, isin=[0, 1, 2, 3]),

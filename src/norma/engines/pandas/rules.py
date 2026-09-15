@@ -19,17 +19,17 @@ class ErrorState(IErrorState):
     Error state for Pandas DataFrame validation
 
     :param index: The index of the original DataFrame
-    :param has_array: Whether the schema contains at least one array column
+    :param with_loc: Whether error details carry the 'loc' field with positions of invalid array items
     """
 
-    def __init__(self, index: pd.Index, has_array: bool = False) -> None:
+    def __init__(self, index: pd.Index, with_loc: bool = False) -> None:
         self.masks = defaultdict(lambda: pd.Series(False, index=index))
         self.errors = {}
         self.backups = {}
         self.absent = {}
         self.containers = {}
         self.parsed = set()
-        self.has_array = has_array
+        self.with_loc = with_loc
 
     def add_errors(self, boolmask, column, **kwargs):
         """
@@ -42,7 +42,7 @@ class ErrorState(IErrorState):
             self._add_element_errors(boolmask, column, details)
             return
 
-        if self.has_array:
+        if self.with_loc:
             details['loc'] = None
 
         for index in boolmask[boolmask].index:

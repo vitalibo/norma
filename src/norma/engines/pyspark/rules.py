@@ -23,9 +23,9 @@ class ErrorState(IErrorState):
     Error state for PySpark DataFrame validation.
     """
 
-    def __init__(self, error_column: str, schema):
+    def __init__(self, error_column: str, with_loc: bool = False):
         self.error_column = error_column
-        self.has_array = self._has_array_column(schema)
+        self.with_loc = with_loc
         self.names = {}
         self.reserved_names = set()
         self.absent = set()
@@ -54,7 +54,7 @@ class ErrorState(IErrorState):
         else:
             # if DataFrame has at least one array column, we need to add indexes
             # because we cannot append a struct to an array with different types
-            if self.has_array:
+            if self.with_loc:
                 details_lit.append(fn.lit(None).cast('array<int>').alias('loc'))
             details_col = fn.when(boolmask, fn.struct(*details_lit))
 
@@ -276,7 +276,7 @@ class ErrorState(IErrorState):
         """
 
         details_lit = [fn.lit(value).alias(name) for name, value in dict(details).items()]
-        if self.has_array:
+        if self.with_loc:
             details_lit.append((fn.lit(None).cast('array<int>') if loc is None else loc).alias('loc'))
 
         return fn.array(fn.struct(*details_lit)).cast(self._details_dtype())
@@ -338,7 +338,7 @@ class ErrorState(IErrorState):
 
     def _details_dtype(self) -> DataType:
         fields = [StructField('type', StringType()), StructField('msg', StringType())]
-        if self.has_array:
+        if self.with_loc:
             fields.append(StructField('loc', ArrayType(IntegerType())))
         return ArrayType(StructType(fields))
 
@@ -349,16 +349,6 @@ class ErrorState(IErrorState):
     def _root_of(column):
         root = column.split('.')[0]
         return root.removesuffix('[]')
-
-    @staticmethod
-    def _has_array_column(schema):
-        has_array = False
-        for name in schema.nested_columns:
-            if '[]' in name:
-                has_array = True
-            if name.count('[]') > 1:
-                raise NotImplementedError('nested arrays are not supported yet')
-        return has_array
 
 
 class BaseRule(Rule):
@@ -662,11 +652,7 @@ class ExtraForbiddenRule(Rule):
 
         error_state.set_backup(column)
         boolmask = error_state.container_of(column)
-        if '[]' in column and not column.endswith('[]'):
-            error_state.drop_column(column)
-        else:
-            error_state.drop_column(column.removesuffix('[]'))
-
+        error_state.drop_column(column.removesuffix('[]'))
         error_state.add_errors(boolmask, column, errors.EXTRA_FORBIDDEN)
         return df
 

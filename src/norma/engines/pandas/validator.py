@@ -24,17 +24,11 @@ def validate(
     :param error_column: The name of the column to store error information
     """
 
-    has_array = False
-    for name in schema.nested_columns:
-        if name.count('[]') > 1:
-            raise NotImplementedError('nested arrays are not supported yet')
-        has_array = has_array or '[]' in name
-
     index = df.index
     df = df.reset_index(drop=True)
     original_df = df.copy()
 
-    error_state = ErrorState(df.index, has_array=has_array)
+    error_state = ErrorState(df.index, with_loc=schema.contains_arrays)
     df = _validate(df, schema, error_state)
     _backfill_originals(error_state, original_df)
 

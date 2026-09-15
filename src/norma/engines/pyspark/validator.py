@@ -22,7 +22,7 @@ def validate(schema: Schema, df: DataFrame, error_column: str) -> DataFrame:
     :param error_column: The name of the column to store error information
     """
 
-    error_state = ErrorState(error_column, schema)
+    error_state = ErrorState(error_column, with_loc=schema.contains_arrays)
     error_state.seed()
     error_state.resync(df)
     original_cols = df.columns
