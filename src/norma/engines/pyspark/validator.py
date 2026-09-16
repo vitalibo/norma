@@ -23,14 +23,13 @@ def validate(schema: Schema, df: DataFrame, error_column: str) -> DataFrame:
     """
 
     error_state = ErrorState(error_column, with_loc=schema.contains_arrays)
-    error_state.seed()
     error_state.resync(df)
     original_cols = df.columns
 
     df = _validate(df, schema, error_state, original_cols)
     df = error_state.flush(df)
 
-    df = _format_error_details(df, error_state)
+    df = _format_error_details(df, error_state, error_column)
     df = _nullify_invalid_values(df, schema, error_state)
 
     kept_cols = [name for name in schema.columns if name in df.columns]
@@ -70,7 +69,7 @@ def _validate(df, schema, error_state, original_cols, parent=''):
 
     for column in sorted(columns):
         full_column = f'{parent}{column}'
-        error_state.track_column(full_column)
+        error_state.stub_if_absent(full_column)
 
         rules = []
         if column in schema.columns:
@@ -108,18 +107,18 @@ def _validate(df, schema, error_state, original_cols, parent=''):
     return df
 
 
-def _format_error_details(df, error_state) -> DataFrame:
+def _format_error_details(df, error_state, error_column) -> DataFrame:
     """
     Format the error details in the DataFrame
     """
 
-    error_column = error_state.error_column
     errors = {
-        name: error_state.errors_col(name)
+        name: error_state.details_column_for(name)
         for name in list(error_state.names)
-        if error_state.errors_col(name) in df.columns
+        if error_state.details_column_for(name) in df.columns
     }
 
+    # without any error columns the map would be inferred as map<void,void>
     details_map = fn.map_filter(
         fn.map_from_arrays(
             fn.array(*[fn.lit(name) for name in errors]),
@@ -135,7 +134,7 @@ def _format_error_details(df, error_state) -> DataFrame:
             ]),
         ),
         lambda _, v: fn.isnotnull(v),
-    )
+    ).cast(error_state.errors_dtype())
 
     if error_state.extras:
         details_map = fn.map_concat(details_map, *error_state.extras.values())
@@ -189,15 +188,15 @@ def _nullify_invalid_values(df, schema, error_state):
     for name, _ in reversed(schema.nested_columns.items()):
         if name not in error_state.names:
             continue
-        if '[]' not in name:
-            set_expr(name, fn.when(fn.array_size(fn.col(error_state.errors_col(name))) <= 0, expr_of(name)))
-        elif error_state.indexes_col(name) in df.columns:
+        if '[]' not in name and error_state.details_column_for(name) in df.columns:
+            set_expr(name, fn.when(fn.array_size(fn.col(error_state.details_column_for(name))) <= 0, expr_of(name)))
+        elif '[]' in name and error_state.indexes_column_for(name) in df.columns:
             root, *nested = name.split('[].')
             root = root.removesuffix('[]')
             nested = nested[0].split('.') if nested else []
             set_expr(
                 root, fn.zip_with(
-                    expr_of(root), fn.col(error_state.indexes_col(name)), lambda x, y: nested_zip(x, y, nested)  # noqa: B023
+                    expr_of(root), fn.col(error_state.indexes_column_for(name)), lambda x, y: nested_zip(x, y, nested)  # noqa: B023
                 ),
             )
 
@@ -209,9 +208,9 @@ def _make_origin(df, column, error_state):
     Format the original value of a column for error reporting
     """
 
-    backup_column = error_state.backup_col(column)
-    if backup_column in df.columns:
-        column = backup_column
+    backup = error_state.backup_column_for(column)
+    if backup in df.columns:
+        column = backup
 
     dtype = dtype_at(df.schema, column).typeName()
 

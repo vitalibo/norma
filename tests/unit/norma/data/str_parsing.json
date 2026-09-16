@@ -255,6 +255,68 @@
     }
   },
   {
+    "description": "cast(123 as optional[str]) => '123'",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": 123
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "integer"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "123",
+          "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            },
+            {
+              "name": "errors",
+              "type": "!ref #/definitions/errors",
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
     "description": "cast(123.45 as str) => '123.45'",
     "engines": [
       "pandas",
