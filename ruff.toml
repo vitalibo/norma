@@ -60,6 +60,10 @@ ignore = [
 "**/conftest.py" = [
     "INP001", # implicit-namespace-package
 ]
+"tests/bench/**" = [
+    "INP001", # implicit-namespace-package
+    "T201", # print
+]
 
 [lint.isort]
 combine-as-imports = false

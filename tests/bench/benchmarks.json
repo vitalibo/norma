@@ -1,0 +1,646 @@
+[
+  {
+    "benchmark": "flat",
+    "description": "cols top level string columns",
+    "runs": [
+      "cols=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4",
+      "cols=8",
+      "cols=16",
+      "cols=32",
+      "cols=128,rows=1000000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "!for(i in 0..{cols})": {
+              "f{i}": "(row + {i}) % 110 - 5"
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": {
+          "!for(i in 0..{cols})": [
+            {
+              "name": "f{i}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "!for(i in 0..{cols})": {
+          "f{i}": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "multipleOf": 2
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "struct",
+    "description": "one struct column with cols string fields",
+    "runs": [
+      "cols=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4",
+      "cols=8",
+      "cols=16",
+      "cols=32",
+      "cols=128,rows=1000000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "n0": {
+              "!for(i in 0..{cols})": {
+                "f{i}": "(row + {i}) % 110 - 5"
+              }
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "n0",
+            "type": {
+              "type": "struct",
+              "fields": {
+                "!for(i in 0..{cols})": [
+                  {
+                    "name": "f{i}",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "n0": {
+          "type": "object",
+          "properties": {
+            "!for(i in 0..{cols})": {
+              "f{i}": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+                "multipleOf": 2
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "struct_deep",
+    "description": "cols string fields at the bottom of four nested structs",
+    "runs": [
+      "cols=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4",
+      "cols=8",
+      "cols=16",
+      "cols=32",
+      "cols=128,rows=1000000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "n0": {
+              "n1": {
+                "n2": {
+                  "n3": {
+                    "!for(i in 0..{cols})": {
+                      "f{i}": "(row + {i}) % 110 - 5"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "n0",
+            "type": {
+              "type": "struct",
+              "fields": [
+                {
+                  "name": "n1",
+                  "type": {
+                    "type": "struct",
+                    "fields": [
+                      {
+                        "name": "n2",
+                        "type": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "n3",
+                              "type": {
+                                "type": "struct",
+                                "fields": {
+                                  "!for(i in 0..{cols})": [
+                                    {
+                                      "name": "f{i}",
+                                      "type": "string"
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "n0": {
+          "type": "object",
+          "properties": {
+            "n1": {
+              "type": "object",
+              "properties": {
+                "n2": {
+                  "type": "object",
+                  "properties": {
+                    "n3": {
+                      "type": "object",
+                      "properties": {
+                        "!for(i in 0..{cols})": {
+                          "f{i}": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "struct_wide",
+    "description": "cols / 4 struct columns with four string fields each",
+    "runs": [
+      "cols=2,analyzed_plan=true,physical_plan=true",
+      "cols=4",
+      "cols=8,schema=true",
+      "cols=16",
+      "cols=32",
+      "cols=128,rows=1000000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "!for(i in 0..{cols}:4)": {
+              "n{i}": {
+                "!for(j in {i}..{min(i + 4, cols)})": {
+                  "f{j}": "(row + {j}) % 110 - 5"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": {
+          "!for(i in 0..{cols}:4)": [
+            {
+              "name": "n{i}",
+              "type": {
+                "type": "struct",
+                "fields": {
+                  "!for(j in {i}..{min(i + 4, cols)})": [
+                    {
+                      "name": "f{j}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "!for(i in 0..{cols}:4)": {
+          "n{i}": {
+            "type": "object",
+            "properties": {
+              "!for(j in {i}..{min(i + 4, cols)})": {
+                "f{j}": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "object_map",
+    "description": "one map<string,string> column with cols keys",
+    "runs": [
+      "cols=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4",
+      "cols=8",
+      "cols=16",
+      "cols=32",
+      "cols=128,rows=100000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "n0": {
+              "!for(i in 0..{cols})": {
+                "f{i}": "(row + {i}) % 110 - 5"
+              }
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "n0",
+            "type": {
+              "type": "map",
+              "keyType": "string",
+              "valueType": "string",
+              "valueContainsNull": true
+            }
+          }
+        ]
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "n0": {
+          "type": "object",
+          "properties": {
+            "!for(i in 0..{cols})": {
+              "f{i}": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "object_json",
+    "description": "one string column holding a json object with cols keys",
+    "runs": [
+      "cols=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4",
+      "cols=8",
+      "cols=16",
+      "cols=32",
+      "cols=128,rows=100000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "n0": {
+              "!for(i in 0..{cols})": {
+                "f{i}": "(row + {i}) % 110 - 5"
+              }
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "n0",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "n0": {
+          "type": "object",
+          "properties": {
+            "!for(i in 0..{cols})": {
+              "f{i}": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "array",
+    "description": "cols array<string> columns with items elements each",
+    "runs": [
+      "cols=2,items=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4,items=2",
+      "cols=8,items=2",
+      "cols=16,items=2",
+      "cols=32,items=2",
+      "cols=128,items=2,rows=10000",
+      "cols=128,items=8,rows=10000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "!for(i in 0..{cols})": {
+              "a{i}": [
+                {
+                  "!for(j in 0..{items})": [
+                    "(row + {i} + {j}) % 110 - 5"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": {
+          "!for(i in 0..{cols})": [
+            {
+              "name": "a{i}",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "!for(i in 0..{cols})": {
+          "a{i}": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "array_struct",
+    "description": "one array column of items structs with cols string fields each",
+    "runs": [
+      "cols=2,items=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4,items=2",
+      "cols=8,items=2",
+      "cols=16,items=2",
+      "cols=32,items=2",
+      "cols=128,items=2,rows=10000",
+      "cols=128,items=8,rows=10000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "a0": [
+              {
+                "!for(j in 0..{items})": [
+                  {
+                    "!for(i in 0..{cols})": {
+                      "f{i}": "(row + {i} + {j}) % 110 - 5"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "a0",
+            "type": {
+              "type": "array",
+              "containsNull": true,
+              "elementType": {
+                "type": "struct",
+                "fields": {
+                  "!for(i in 0..{cols})": [
+                    {
+                      "name": "f{i}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "a0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "!for(i in 0..{cols})": {
+                "f{i}": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "benchmark": "array_struct_deep",
+    "description": "one array column of items structs, each with cols string fields three structs deep (n0.n1.n2)",
+    "runs": [
+      "cols=2,items=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4,items=2",
+      "cols=8,items=2",
+      "cols=16,items=2",
+      "cols=32,items=2",
+      "cols=128,items=2,rows=10000",
+      "cols=128,items=8,rows=10000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "a0": [
+              {
+                "!for(j in 0..{items})": [
+                  {
+                    "n0": {
+                      "n1": {
+                        "n2": {
+                          "!for(i in 0..{cols})": {
+                            "f{i}": "(row + {i} + {j}) % 110 - 5"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "a0",
+            "type": {
+              "type": "array",
+              "containsNull": true,
+              "elementType": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "n0",
+                    "type": {
+                      "type": "struct",
+                      "fields": [
+                        {
+                          "name": "n1",
+                          "type": {
+                            "type": "struct",
+                            "fields": [
+                              {
+                                "name": "n2",
+                                "type": {
+                                  "type": "struct",
+                                  "fields": {
+                                    "!for(i in 0..{cols})": [
+                                      {
+                                        "name": "f{i}",
+                                        "type": "string"
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "a0": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "n0": {
+                "type": "object",
+                "properties": {
+                  "n1": {
+                    "type": "object",
+                    "properties": {
+                      "n2": {
+                        "type": "object",
+                        "properties": {
+                          "!for(i in 0..{cols})": {
+                            "f{i}": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]
