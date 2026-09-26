@@ -7,7 +7,7 @@ from pyspark.sql import functions as fn
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, default, extra_forbidden
-from norma.engines.pyspark.utils import dtype_at, format_value, nested_get_expr, nested_set_expr
+from norma.engines.pyspark.utils import dtype_at, format_value, nested_get_expr, nested_set_expr, overlay_column
 
 if TYPE_CHECKING:
     from norma.schema import Schema
@@ -158,7 +158,8 @@ def _expr_accumulator(df):
         return root.removesuffix('[]')
 
     def expr_of(path):
-        return nested_get_expr(path, exprs.get(root_of(path)))
+        root = root_of(path)
+        return nested_get_expr(path, exprs.get(root), dtypes.get(root))
 
     def set_expr(path, val):
         root = root_of(path)
@@ -167,7 +168,10 @@ def _expr_accumulator(df):
     def apply(df):
         if not exprs:
             return df
-        return df.select(*(exprs.get(column, fn.col(column)).alias(column) for column in df.columns))
+        return df.select(*(
+            overlay_column(exprs[column], dtypes[column]).alias(column) if column in exprs else fn.col(column)
+            for column in df.columns
+        ))
 
     return expr_of, set_expr, apply
 
@@ -179,12 +183,7 @@ def _nullify_invalid_values(df, schema, error_state):
 
     expr_of, set_expr, apply = _expr_accumulator(df)
 
-    def nested_zip(x, y, nodes):
-        if not nodes:
-            return fn.when(~y, x)
-
-        return x.withField(nodes[0], nested_zip(x.getField(nodes[0]), y, nodes[1:]))
-
+    masks = {}
     for name, _ in reversed(schema.nested_columns.items()):
         if name not in error_state.names:
             continue
@@ -192,15 +191,41 @@ def _nullify_invalid_values(df, schema, error_state):
             set_expr(name, fn.when(fn.array_size(fn.col(error_state.details_column_for(name))) <= 0, expr_of(name)))
         elif '[]' in name and error_state.indexes_column_for(name) in df.columns:
             root, *nested = name.split('[].')
-            root = root.removesuffix('[]')
-            nested = nested[0].split('.') if nested else []
-            set_expr(
-                root, fn.zip_with(
-                    expr_of(root), fn.col(error_state.indexes_column_for(name)), lambda x, y: nested_zip(x, y, nested)  # noqa: B023
-                ),
-            )
+            path = nested[0] if nested else ''
+            masks.setdefault(root.removesuffix('[]'), []).append((path, fn.col(error_state.indexes_column_for(name))))
+
+    for root, flags in masks.items():
+        try:
+            dtype = dtype_at(df.schema, root)
+        except KeyError:
+            # the column was dropped along the way
+            continue
+        set_expr(root, _nullify_elements(expr_of(root), flags, dtype.elementType))
 
     return apply(df)
+
+
+def _nullify_elements(array, flags, element_dtype):
+    """
+    Reset the invalid values held by the elements of an array, given the per-element error flags of its nested
+    columns. All flags are zipped with the elements at once: a zip_with per column would nest one lambda per column,
+    and the analyzer resolves a single level of nesting per iteration.
+    """
+
+    zipped = fn.arrays_zip(array.alias('_0'), *(flag.alias(f'_{i}') for i, (_, flag) in enumerate(flags, start=1)))
+
+    def element_of(item):
+        value = item['_0']
+        for i, (path, _) in enumerate(flags, start=1):
+            flag = item[f'_{i}']
+            if not path:
+                value = fn.when(~flag, overlay_column(value, element_dtype))
+                continue
+            # the element is kept in a struct overlay, so each field is reset without rebuilding its siblings
+            value = nested_set_expr(f'_.{path}', lambda x, flag=flag: fn.when(~flag, x), value, element_dtype)
+        return overlay_column(value, element_dtype)
+
+    return fn.transform(zipped, element_of)
 
 
 def _make_origin(df, column, error_state):

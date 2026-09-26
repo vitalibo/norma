@@ -12,7 +12,7 @@
           }
         ]
       },
-      "nullable": false
+      "nullable": true
     }
   ]
 }

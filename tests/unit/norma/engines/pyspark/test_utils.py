@@ -5,7 +5,7 @@ from pyspark.sql.types import ArrayType, IntegerType, StringType, StructField, S
 from pyxis import resources
 
 from norma.engines.pyspark.utils import (
-    dtype_at, dtype_drop, dtype_set, nested_drop_expr, nested_get_expr, nested_set_expr,
+    dtype_at, dtype_drop, dtype_set, nested_drop_expr, nested_get_expr, nested_set_expr, overlay_column,
 )
 
 
@@ -45,15 +45,13 @@ def test_nested_set_expr(case, column, spark):
 
     root = column.split('.')[0].removesuffix('[]')
     exists = root in df.columns
-    actual = df.withColumn(
-        root,
-        nested_set_expr(
-            column,
-            fn.lit('new_value'),
-            fn.col(root) if exists else None,
-            df.schema[root].dataType if exists else None,
-        ),
+    value = nested_set_expr(
+        column,
+        fn.lit('new_value'),
+        fn.col(root) if exists else None,
+        df.schema[root].dataType if exists else None,
     )
+    actual = df.withColumn(root, overlay_column(value, schema[root].dataType))
 
     spark.assert_dataframe_equals(actual, expected, schema=schema)
 
@@ -122,7 +120,8 @@ def test_nested_drop_expr(case, column, spark):
     )
 
     root = column.split('.')[0].removesuffix('[]')
-    actual = df.withColumn(root, nested_drop_expr(column, fn.col(root), df.schema[root].dataType))
+    value = nested_drop_expr(column, fn.col(root), df.schema[root].dataType)
+    actual = df.withColumn(root, overlay_column(value, schema[root].dataType))
 
     spark.assert_dataframe_equals(actual, expected, schema=schema)
 

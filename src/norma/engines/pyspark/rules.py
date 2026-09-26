@@ -12,7 +12,8 @@ from pyspark.sql.types import (
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    dtype_at, dtype_drop, dtype_set, format_value, nested_drop_expr, nested_get_expr, nested_set_expr,
+    StructOverlay, dtype_at, dtype_drop, dtype_set, format_value, nested_drop_expr, nested_get_expr,
+    nested_is_not_null_expr, nested_set_expr, overlay_column,
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
@@ -70,7 +71,7 @@ class ErrorState(IErrorState):
 
         existing = set(df.columns)
         selection = {name: fn.col(name) for name in df.columns}
-        selection.update(self.exprs)
+        selection.update({name: overlay_column(expr, self.dtypes.get(name)) for name, expr in self.exprs.items()})
         for column, details in self.details.items():
             name = self.details_column_for(column)
             # nulls stay in the error details: filtering them out here would disable the whole-stage codegen
@@ -92,7 +93,8 @@ class ErrorState(IErrorState):
         Return the current value expression of a column (flattened values for array columns).
         """
 
-        return nested_get_expr(column, self.exprs.get(self._root_of(column)))
+        root = self._root_of(column)
+        return nested_get_expr(column, self.exprs.get(root), self.dtypes.get(root))
 
     def dtype_of(self, column: str) -> DataType:
         """
@@ -171,7 +173,8 @@ class ErrorState(IErrorState):
         if not parent:
             return fn.lit(True)
 
-        return self._elementwise(parent, fn.isnotnull, self.expr_of(parent))
+        root = self._root_of(parent)
+        return nested_is_not_null_expr(parent, self.exprs.get(root), self.dtypes.get(root))
 
     def stub_if_absent(self, column: str) -> None:
         """
@@ -210,6 +213,9 @@ class ErrorState(IErrorState):
     def backup_column_for(self, column: str) -> str:
         return f'{self.error_column}_{self._name_for(column)}_bak'
 
+    def parsed_column_for(self, column: str) -> str:
+        return f'{self.error_column}_{self._name_for(column)}_json'
+
     def _name_for(self, column: str) -> str:
         """
         Return a deterministic per-column base for service column names, avoiding
@@ -220,7 +226,7 @@ class ErrorState(IErrorState):
             return self.names[column]
 
         def try_reserve(candidate):
-            derived = {f'{self.error_column}_{candidate}{kind}' for kind in ('', '_idx', '_bak')}
+            derived = {f'{self.error_column}_{candidate}{kind}' for kind in ('', '_idx', '_bak', '_json')}
             if derived & self.reserved_names or derived & self.columns:
                 return False
             self.reserved_names |= derived
@@ -818,9 +824,9 @@ class DataTypeRule(Rule):
         if '[]' not in column:
             boolmask = fn.isnull(expr)
             if parent:
-                boolmask &= fn.isnotnull(error_state.expr_of(parent))
+                boolmask &= error_state.container_exists(column)
         elif parent:
-            boolmask = fn.zip_with(expr, error_state.expr_of(parent), lambda x, y: fn.isnull(x) & fn.isnotnull(y))
+            boolmask = fn.zip_with(expr, error_state.container_exists(column), lambda x, y: fn.isnull(x) & y)
         else:
             boolmask = fn.transform(expr, fn.isnull)
 
@@ -891,6 +897,16 @@ class ObjectTypeRule(DataTypeRule):
     def _is_valid_dtype(self, data_type) -> bool:
         return isinstance(data_type, StructType)
 
+    def _verify_scalar(self, df: DataFrame, column: str, data_type: DataType, error_state: ErrorState) -> DataFrame:
+        if isinstance(data_type, StringType):
+            # the json text is parsed once into a service column: an inlined from_json would be evaluated again by
+            # every expression reading one of the fields
+            parsed = error_state.parsed_column_for(column)
+            error_state.exprs[parsed] = fn.from_json(error_state.expr_of(column), MapType(StringType(), StringType()))
+            df = error_state.flush(df)
+
+        return super()._verify_scalar(df, column, data_type, error_state)
+
     def _mark_fields_absent(self, column: str, error_state: ErrorState) -> None:
         for name in self.struct_type.fieldNames():
             error_state.absent.add(f'{column}.{name}')
@@ -917,28 +933,32 @@ class ObjectTypeRule(DataTypeRule):
             error_state.set_expr(column, self._struct_of(error_state.expr_of(column)), dtype)
             return
 
-        error_state.dynamic_keys[column] = fn.json_object_keys
+        parsed = fn.col(error_state.parsed_column_for(column))
+        error_state.dynamic_keys[column] = lambda _: fn.map_keys(parsed)
         self._flag_extra_keys(column, data_type, error_state)
-        error_state.set_expr(column, self._parse_json(error_state.expr_of(column)), dtype)
+        error_state.set_expr(column, self._struct_of(parsed), dtype)
 
     def _cast_array(self, column, element_type, error_state):
         dtype = self._cast_result_dtype(element_type)
         if isinstance(element_type, MapType):
             error_state.dynamic_keys[column] = fn.map_keys
             self._flag_extra_element_keys(column, element_type, error_state)
-            error_state.set_expr(column, self._struct_of, dtype)
+            error_state.set_expr(column, lambda item: self._struct_of(item).column(dtype), dtype)
             return
 
         error_state.dynamic_keys[column] = fn.json_object_keys
         self._flag_extra_element_keys(column, element_type, error_state)
-        error_state.set_expr(column, self._parse_json, dtype)
+        error_state.set_expr(column, lambda item: self._parse_json(item).column(dtype), dtype)
 
-    def _parse_json(self, col_expr: Column) -> Column:
+    def _parse_json(self, col_expr: Column) -> StructOverlay:
         return self._struct_of(fn.from_json(col_expr, MapType(StringType(), StringType())))
 
-    def _struct_of(self, col_expr: Column) -> Column:
-        fields = fn.struct(*(col_expr[field].alias(field) for field in self.struct_type.fieldNames()))
-        return fn.when(col_expr.isNotNull(), fields)
+    def _struct_of(self, col_expr: Column) -> StructOverlay:
+        # every field reads its own key: a single struct expression would be inlined into each field reference,
+        # growing the plan quadratically with the number of fields
+        overlay = StructOverlay(col_expr)
+        overlay.fields.update({field: col_expr[field] for field in self.struct_type.fieldNames()})
+        return overlay
 
     def _flag_extra_keys(self, column, data_type, error_state) -> None:
         if self.allow_extra:
