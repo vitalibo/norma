@@ -43,11 +43,13 @@ class ErrorState(IErrorState):
 
         details = dict(details or kwargs)
         if '[]' not in column:
-            self.details.setdefault(column, []).append(fn.when(boolmask, self._details_struct(details)))
+            self.details.setdefault(column, []).append(fn.when(boolmask, fn.array(self._details_struct(details))))
             return
 
         loc = fn.filter(fn.transform(boolmask, fn.when), fn.isnotnull)
-        self.details.setdefault(column, []).append(fn.when(fn.array_size(loc) > 0, self._details_struct(details, loc)))
+        self.details.setdefault(column, []).append(
+            fn.when(fn.array_size(loc) > 0, fn.array(self._details_struct(details, loc)))
+        )
 
         name = self.indexes_column_for(column)
         indexes = self.exprs.get(name, fn.col(name) if name in self.columns else None)
@@ -72,13 +74,13 @@ class ErrorState(IErrorState):
         existing = set(df.columns)
         selection = {name: fn.col(name) for name in df.columns}
         selection.update({name: overlay_column(expr, self.dtypes.get(name)) for name, expr in self.exprs.items()})
+        empty = fn.array()
         for column, details in self.details.items():
             name = self.details_column_for(column)
-            # nulls stay in the error details: filtering them out here would disable the whole-stage codegen
-            values = fn.array(*details).cast(self._details_dtype())
+            values = fn.concat(*(detail.otherwise(empty) for detail in details)).cast(self._details_dtype())
             if name not in existing:
                 selection[name] = values
-            elif details:
+            else:
                 selection[name] = fn.concat(fn.col(name), values)
         for name in self.dropped:
             selection.pop(name, None)

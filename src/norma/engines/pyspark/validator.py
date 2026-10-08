@@ -118,30 +118,28 @@ def _format_error_details(df, error_state, error_column) -> DataFrame:
         if error_state.details_column_for(name) in df.columns
     }
 
-    # without any error columns the map would be inferred as map<void,void>
-    details_map = fn.map_filter(
-        fn.map_from_arrays(
-            fn.array(*[fn.lit(name) for name in errors]),
-            fn.array(*[
-                fn.when(
-                    fn.array_size(fn.col(error)) > 0,
-                    fn.struct(
-                        fn.col(error).alias('details'),
-                        _make_origin(df, name, error_state).alias('original'),
-                    ),
-                )
-                for name, error in errors.items()
-            ]),
-        ),
-        lambda _, v: fn.isnotnull(v),
-    ).cast(error_state.errors_dtype())
+    empty = fn.array()
+    entries = [
+        fn.when(
+            fn.array_size(fn.col(error)) > 0,
+            fn.array(fn.struct(
+                fn.lit(name).alias('key'),
+                fn.struct(
+                    fn.col(error).alias('details'),
+                    _make_origin(df, name, error_state).alias('original'),
+                ).alias('value'),
+            )),
+        ).otherwise(empty)
+        for name, error in errors.items()
+    ]
+
+    details_map = fn.map_from_entries(fn.concat(*entries)) if entries else fn.create_map()
+    details_map = details_map.cast(error_state.errors_dtype())
 
     if error_state.extras:
         details_map = fn.map_concat(details_map, *error_state.extras.values())
 
-    return df \
-        .withColumns({details: fn.filter(fn.col(details), fn.isnotnull) for details in errors.values()}) \
-        .withColumn(error_column, details_map)
+    return df.withColumn(error_column, details_map)
 
 
 def _expr_accumulator(df):
