@@ -12,8 +12,8 @@ from pyspark.sql.types import (
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    StructOverlay, dtype_at, dtype_drop, dtype_set, format_value, nested_drop_expr, nested_get_expr,
-    nested_is_not_null_expr, nested_set_expr, overlay_column,
+    PendingStruct, dtype_at, dtype_drop, dtype_set, format_value, materialize, nested_drop_expr, nested_get_expr,
+    nested_is_not_null_expr, nested_set_expr,
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
@@ -73,7 +73,7 @@ class ErrorState(IErrorState):
 
         existing = set(df.columns)
         selection = {name: fn.col(name) for name in df.columns}
-        selection.update({name: overlay_column(expr, self.dtypes.get(name)) for name, expr in self.exprs.items()})
+        selection.update({name: materialize(expr, self.dtypes.get(name)) for name, expr in self.exprs.items()})
         empty = fn.array()
         for column, details in self.details.items():
             name = self.details_column_for(column)
@@ -945,22 +945,20 @@ class ObjectTypeRule(DataTypeRule):
         if isinstance(element_type, MapType):
             error_state.dynamic_keys[column] = fn.map_keys
             self._flag_extra_element_keys(column, element_type, error_state)
-            error_state.set_expr(column, lambda item: self._struct_of(item).column(dtype), dtype)
+            error_state.set_expr(column, lambda item: self._struct_of(item).materialize(dtype), dtype)
             return
 
         error_state.dynamic_keys[column] = fn.json_object_keys
         self._flag_extra_element_keys(column, element_type, error_state)
-        error_state.set_expr(column, lambda item: self._parse_json(item).column(dtype), dtype)
+        error_state.set_expr(column, lambda item: self._parse_json(item).materialize(dtype), dtype)
 
-    def _parse_json(self, col_expr: Column) -> StructOverlay:
+    def _parse_json(self, col_expr: Column) -> PendingStruct:
         return self._struct_of(fn.from_json(col_expr, MapType(StringType(), StringType())))
 
-    def _struct_of(self, col_expr: Column) -> StructOverlay:
-        # every field reads its own key: a single struct expression would be inlined into each field reference,
-        # growing the plan quadratically with the number of fields
-        overlay = StructOverlay(col_expr)
-        overlay.fields.update({field: col_expr[field] for field in self.struct_type.fieldNames()})
-        return overlay
+    def _struct_of(self, col_expr: Column) -> PendingStruct:
+        pending = PendingStruct(col_expr)
+        pending.fields.update({field: col_expr[field] for field in self.struct_type.fieldNames()})
+        return pending
 
     def _flag_extra_keys(self, column, data_type, error_state) -> None:
         if self.allow_extra:

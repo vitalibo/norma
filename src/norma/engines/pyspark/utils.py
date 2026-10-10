@@ -98,20 +98,16 @@ def dtype_drop(dtype: DataType, path: str) -> DataType:
     return StructType(fields)
 
 
-class StructOverlay:
+class PendingStruct:
     """
-    Pending value of a struct that keeps every assigned field apart from its siblings. Rebuilding the struct on
-    each assignment would inline the previous struct once per sibling, growing the plan exponentially with the
-    number of assignments.
-
-    :param base: current value of the struct (None when the struct is built from scratch)
+    Pending value of a struct that keeps every assigned field apart from its siblings.
     """
 
     def __init__(self, base: Optional[Column]) -> None:
         self.base = base
         self.fields = {}
 
-    def get(self, name: str) -> Union[Column, StructOverlay]:
+    def get(self, name: str) -> Union[Column, PendingStruct]:
         """
         Return the pending value of a direct field (an overlay for a struct field assigned deeper).
         """
@@ -120,16 +116,14 @@ class StructOverlay:
             return self.fields[name]
         return self.base.getField(name)
 
-    def column(self, dtype: Optional[DataType]) -> Column:
+    def materialize(self, dtype: Optional[DataType]) -> Column:
         """
         Materialize the struct with the fields of the given data type, in its order.
         """
 
         names = list(dtype.names) if isinstance(dtype, StructType) else []
         names += [name for name in self.fields if name not in names]
-        struct = fn.struct(*(
-            overlay_column(self.get(name), _field_dtype(dtype, name)).alias(name) for name in names
-        ))
+        struct = fn.struct(*(materialize(self.get(name), _field_dtype(dtype, name)).alias(name) for name in names))
         return struct if self.base is None else fn.when(self.base.isNotNull(), struct)
 
     def is_not_null(self) -> Column:
@@ -140,14 +134,10 @@ class StructOverlay:
         return fn.lit(True) if self.base is None else self.base.isNotNull()
 
 
-class ArrayOverlay:
+class PendingArrayStruct:
     """
     Pending value of an array of structs that keeps every assigned element field as its own array, aligned with the
-    base array. Rebuilding the elements on each assignment would chain one transform per assignment and inline the
-    whole chain into every later read of a field, growing the plan polynomially with the number of fields. A struct
-    field assigned deeper is kept as a nested overlay over the array of its values.
-
-    :param base: current value of the array
+    base array.
     """
 
     def __init__(self, base: Column) -> None:
@@ -156,17 +146,16 @@ class ArrayOverlay:
         # set once a field is dropped: the elements must then be rebuilt even without any assigned field
         self.reshaped = False
 
-    def get(self, name: str) -> Union[Column, ArrayOverlay]:
+    def get(self, name: str) -> Union[Column, PendingArrayStruct]:
         """
-        Return the pending values of a direct element field, as an array aligned with the base array (an overlay for
-        a struct field assigned deeper).
+        Return the pending values of a direct element field, as an array aligned with the base array.
         """
 
         if name in self.fields:
             return self.fields[name]
         return fn.transform(self.base, lambda x: x.getField(name))
 
-    def column(self, dtype: Optional[DataType]) -> Column:
+    def materialize(self, dtype: Optional[DataType]) -> Column:
         """
         Materialize the array with elements holding the fields of the given data type, in its order.
         """
@@ -181,7 +170,7 @@ class ArrayOverlay:
 
         # the field arrays are zipped rather than indexed from a lambda, which would evaluate them once per element
         zipped = fn.arrays_zip(self.base.alias('_0'), *(
-            overlay_column(self.fields[name], _array_of(_field_dtype(element_dtype, name))).alias(slot)
+            materialize(self.fields[name], _array_of(_field_dtype(element_dtype, name))).alias(slot)
             for name, slot in slots.items()
         ))
 
@@ -201,16 +190,15 @@ class ArrayOverlay:
         return fn.transform(self.base, fn.isnotnull)
 
 
-def overlay_column(value: Union[Column, StructOverlay, ArrayOverlay], dtype: Optional[DataType]) -> Column:
-    """
-    Materialize a pending value (either an expression or a struct or array overlay) into an expression.
+Pending = Union[Column, PendingStruct, PendingArrayStruct]
 
-    :param value: pending value
-    :param dtype: current data type of the value
-    :return: value expression
+
+def materialize(value: Optional[Pending], dtype: Optional[DataType]) -> Optional[Column]:
+    """
+    Materialize a pending value into an expression.
     """
 
-    return value.column(dtype) if isinstance(value, (StructOverlay, ArrayOverlay)) else value
+    return value.materialize(dtype) if isinstance(value, (PendingStruct, PendingArrayStruct)) else value
 
 
 def _element_path_of(column: str) -> Optional[list]:
@@ -239,7 +227,7 @@ def _array_of(dtype: Optional[DataType]) -> Optional[DataType]:
     return None if dtype is None else ArrayType(dtype)
 
 
-def _array_overlay_get(overlay: ArrayOverlay, path: list, element_dtype: Optional[DataType]):
+def _array_overlay_get(overlay: PendingArrayStruct, path: list, element_dtype: Optional[DataType]):
     """
     Return the pending values of a field below the elements of an array overlay, as an array aligned with it (or a
     nested overlay), along with the element data type of that array.
@@ -247,7 +235,7 @@ def _array_overlay_get(overlay: ArrayOverlay, path: list, element_dtype: Optiona
 
     value, dtype = overlay, element_dtype
     for i, part in enumerate(path):
-        if not isinstance(value, ArrayOverlay):
+        if not isinstance(value, PendingArrayStruct):
             rest = path[i:]
             value = fn.transform(value, lambda x: functools.reduce(Column.getField, rest, x))  # noqa: B023
             for name in rest:
@@ -272,30 +260,30 @@ def _array_overlay_at(root_expr, root, path: list, root_dtype: Optional[DataType
     if not isinstance(_element_dtype(root_dtype), StructType):
         return None
 
-    top = root_expr if isinstance(root_expr, ArrayOverlay) else ArrayOverlay(
+    top = root_expr if isinstance(root_expr, PendingArrayStruct) else PendingArrayStruct(
         root_expr if root_expr is not None else fn.col(root)
     )
     overlay, dtype = top, _element_dtype(root_dtype)
     for part in path[:-1]:
         nested = overlay.fields.get(part)
-        if not isinstance(nested, ArrayOverlay):
-            nested = overlay.fields[part] = ArrayOverlay(overlay_column(overlay.get(part), None))
+        if not isinstance(nested, PendingArrayStruct):
+            nested = overlay.fields[part] = PendingArrayStruct(materialize(overlay.get(part), None))
         overlay, dtype = nested, _field_dtype(dtype, part)
     return top, overlay, dtype
 
 
-def _overlay_of(value: Union[Column, StructOverlay, None], dtype: Optional[DataType]) -> StructOverlay:
-    if isinstance(value, StructOverlay):
+def _overlay_of(value: Union[Column, PendingStruct, None], dtype: Optional[DataType]) -> PendingStruct:
+    if isinstance(value, PendingStruct):
         return value
     # a missing value or a non-struct one is replaced with a struct built from scratch
-    return StructOverlay(value if isinstance(dtype, StructType) else None)
+    return PendingStruct(value if isinstance(dtype, StructType) else None)
 
 
 def _overlay_set(value, path, val, dtype):
     if not path:
-        if isinstance(val, (Column, StructOverlay)):
+        if isinstance(val, (Column, PendingStruct)):
             return val
-        return val(overlay_column(value, dtype))
+        return val(materialize(value, dtype))
 
     name, _, rest = path.partition('.')
     overlay = _overlay_of(value, dtype)
@@ -321,7 +309,7 @@ def _overlay_drop(value, path, dtype):
 
 def nested_get_expr(
     column: str,
-    root_expr: Union[Column, StructOverlay, ArrayOverlay, None] = None,
+    root_expr: Optional[Pending] = None,
     root_dtype: Optional[DataType] = None,
 ) -> Column:
     """
@@ -334,15 +322,15 @@ def nested_get_expr(
     :return: value expression for the column
     """
 
-    if isinstance(root_expr, StructOverlay) and '[]' not in column:
+    if isinstance(root_expr, PendingStruct) and '[]' not in column:
         value, dtype = _overlay_get(column, root_expr, root_dtype)
-        return overlay_column(value, dtype)
+        return materialize(value, dtype)
 
-    if isinstance(root_expr, ArrayOverlay) and (path := _element_path_of(column)) is not None:
+    if isinstance(root_expr, PendingArrayStruct) and (path := _element_path_of(column)) is not None:
         value, dtype = _array_overlay_get(root_expr, path, _element_dtype(root_dtype))
-        return overlay_column(value, _array_of(dtype))
+        return materialize(value, _array_of(dtype))
 
-    root_expr = overlay_column(root_expr, root_dtype)
+    root_expr = materialize(root_expr, root_dtype)
 
     def field_expr(path):
         parts = path.split('.')
@@ -368,7 +356,7 @@ def nested_get_expr(
 
 def nested_is_not_null_expr(
     column: str,
-    root_expr: Union[Column, StructOverlay, ArrayOverlay, None] = None,
+    root_expr: Optional[Pending] = None,
     root_dtype: Optional[DataType] = None,
 ) -> Column:
     """
@@ -383,17 +371,17 @@ def nested_is_not_null_expr(
 
     if '[]' in column:
         value = None
-        if isinstance(root_expr, ArrayOverlay) and column.count('.') == 0 and column.endswith('[]'):
+        if isinstance(root_expr, PendingArrayStruct) and column.count('.') == 0 and column.endswith('[]'):
             value = root_expr
-        elif isinstance(root_expr, ArrayOverlay) and (path := _element_path_of(column)) is not None:
+        elif isinstance(root_expr, PendingArrayStruct) and (path := _element_path_of(column)) is not None:
             value, _ = _array_overlay_get(root_expr, path, _element_dtype(root_dtype))
-        if isinstance(value, ArrayOverlay):
+        if isinstance(value, PendingArrayStruct):
             return value.is_not_null()
         return fn.transform(nested_get_expr(column, root_expr, root_dtype), fn.isnotnull)
 
-    if isinstance(root_expr, StructOverlay):
+    if isinstance(root_expr, PendingStruct):
         value, _ = _overlay_get(column, root_expr, root_dtype)
-        if isinstance(value, StructOverlay):
+        if isinstance(value, PendingStruct):
             return value.is_not_null()
 
     return fn.isnotnull(nested_get_expr(column, root_expr, root_dtype))
@@ -407,7 +395,7 @@ def _overlay_get(column, root_expr, root_dtype):
     return value, dtype
 
 
-def _array_overlay_set(col_name, val, root_expr, root_dtype) -> Optional[ArrayOverlay]:
+def _array_overlay_set(col_name, val, root_expr, root_dtype) -> Optional[PendingArrayStruct]:
     """
     Assign a field below the root array elements (e.g. "a[].b.c") in an array overlay, or return None when the column
     is not such a field.
@@ -433,22 +421,22 @@ def _array_overlay_set(col_name, val, root_expr, root_dtype) -> Optional[ArrayOv
     if isinstance(val, Column):
         overlay.fields[name] = fn.transform(overlay.base, lambda _: val)
     else:
-        current = overlay_column(overlay.get(name), _array_of(_field_dtype(dtype, name)))
+        current = materialize(overlay.get(name), _array_of(_field_dtype(dtype, name)))
         overlay.fields[name] = fn.transform(current, val)
     return top
 
 
 def nested_set_expr(  # noqa: C901, PLR0911, PLR0915
     col_name: str,
-    val: Union[Column, StructOverlay, Callable[[Column], Column]],
-    root_expr: Union[Column, StructOverlay, ArrayOverlay, None],
+    val: Union[Column, PendingStruct, Callable[[Column], Column]],
+    root_expr: Optional[Pending],
     root_dtype: Optional[DataType],
-) -> Union[Column, StructOverlay, ArrayOverlay]:
+) -> Pending:
     """
     Return the new value for the root column with the nested column set, creating a
     nested structure as needed and driven by a data type tree instead of a DataFrame schema.
     Fields of plain (non-array) structs are kept in a StructOverlay, and direct fields of the root array elements in
-    an ArrayOverlay, both materialized with overlay_column.
+    an ArrayOverlay, both turned into an expression with materialize.
 
     :param col_name: column name, which can be nested (e.g. "a.b.c")
     :param val: value to be assigned to the column
@@ -464,7 +452,7 @@ def nested_set_expr(  # noqa: C901, PLR0911, PLR0915
     if (overlay := _array_overlay_set(col_name, val, root_expr, root_dtype)) is not None:
         return overlay
 
-    root_expr = overlay_column(root_expr, root_dtype)
+    root_expr = materialize(root_expr, root_dtype)
     root, *nested_names = col_name.split('.')
     if is_array_root := root.endswith('[]'):
         root = root[:-2]
@@ -544,9 +532,9 @@ def nested_set_expr(  # noqa: C901, PLR0911, PLR0915
 
 def nested_drop_expr(
     column: str,
-    root_expr: Union[Column, StructOverlay],
+    root_expr: Union[Column, PendingStruct],
     root_dtype: DataType,
-) -> Union[Column, StructOverlay]:
+) -> Union[Column, PendingStruct]:
     """
     Return the new value for the root column with the nested column removed.
 
@@ -560,7 +548,7 @@ def nested_drop_expr(
         return _overlay_drop(root_expr, column.partition('.')[2], root_dtype)
 
     path = _element_path_of(column)
-    if isinstance(root_expr, ArrayOverlay) and path is not None:
+    if isinstance(root_expr, PendingArrayStruct) and path is not None:
         located = _array_overlay_at(root_expr, column.partition('[]')[0], path, root_dtype)
         if located is not None:
             # the rebuilt elements only keep the fields of the data type, which no longer has the dropped one
@@ -569,7 +557,7 @@ def nested_drop_expr(
             overlay.reshaped = True
             return top
 
-    root_expr = overlay_column(root_expr, root_dtype)
+    root_expr = materialize(root_expr, root_dtype)
     if '[].' in column:
         # drop a field from array element structs
         root, *nested = column.split('[].')

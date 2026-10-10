@@ -7,7 +7,7 @@ from pyspark.sql import functions as fn
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, default, extra_forbidden
-from norma.engines.pyspark.utils import dtype_at, format_value, nested_get_expr, nested_set_expr, overlay_column
+from norma.engines.pyspark.utils import dtype_at, format_value, materialize, nested_get_expr, nested_set_expr
 
 if TYPE_CHECKING:
     from norma.schema import Schema
@@ -166,8 +166,9 @@ def _expr_accumulator(df):
     def apply(df):
         if not exprs:
             return df
+
         return df.select(*(
-            overlay_column(exprs[column], dtypes[column]).alias(column) if column in exprs else fn.col(column)
+            materialize(exprs[column], dtypes[column]).alias(column) if column in exprs else fn.col(column)
             for column in df.columns
         ))
 
@@ -196,7 +197,6 @@ def _nullify_invalid_values(df, schema, error_state):
         try:
             dtype = dtype_at(df.schema, root)
         except KeyError:
-            # the column was dropped along the way
             continue
         set_expr(root, _nullify_elements(expr_of(root), flags, dtype.elementType))
 
@@ -205,9 +205,7 @@ def _nullify_invalid_values(df, schema, error_state):
 
 def _nullify_elements(array, flags, element_dtype):
     """
-    Reset the invalid values held by the elements of an array, given the per-element error flags of its nested
-    columns. All flags are zipped with the elements at once: a zip_with per column would nest one lambda per column,
-    and the analyzer resolves a single level of nesting per iteration.
+    Reset the invalid values held by the elements of an array
     """
 
     zipped = fn.arrays_zip(array.alias('_0'), *(flag.alias(f'_{i}') for i, (_, flag) in enumerate(flags, start=1)))
@@ -217,11 +215,10 @@ def _nullify_elements(array, flags, element_dtype):
         for i, (path, _) in enumerate(flags, start=1):
             flag = item[f'_{i}']
             if not path:
-                value = fn.when(~flag, overlay_column(value, element_dtype))
+                value = fn.when(~flag, materialize(value, element_dtype))
                 continue
-            # the element is kept in a struct overlay, so each field is reset without rebuilding its siblings
             value = nested_set_expr(f'_.{path}', lambda x, flag=flag: fn.when(~flag, x), value, element_dtype)
-        return overlay_column(value, element_dtype)
+        return materialize(value, element_dtype)
 
     return fn.transform(zipped, element_of)
 
