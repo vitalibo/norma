@@ -3242,5 +3242,170 @@
         "match": "nested arrays are not supported yet"
       }
     }
+  },
+  {
+    "description": "cast({col1={col2=[{col3=1}, null], col4=2}} as struct), every field of $.col1.col2[] is extra => {col1={col4=2}}, col2 is dropped, error is raised",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": {
+            "col2": [
+              {
+                "col3": 1
+              },
+              null
+            ],
+            "col4": 2
+          }
+        },
+        {
+          "col1": {
+            "col2": null,
+            "col4": 3
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col2",
+                    "type": {
+                      "type": "array",
+                      "containsNull": true,
+                      "elementType": {
+                        "type": "struct",
+                        "fields": [
+                          {
+                            "name": "col3",
+                            "type": "integer"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": "col4",
+                    "type": "integer"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "object",
+            "properties": {
+              "col2": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "col5": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "col4": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": {
+            "col4": 2
+          },
+          "errors": {
+            "col1.col2[]": {
+              "details": [
+                {
+                  "type": "object_type",
+                  "msg": "Input should be a valid object",
+                  "loc": [
+                    1
+                  ]
+                }
+              ],
+              "original": "[{\"col3\":1},null]"
+            },
+            "col1.col2[].col3": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted",
+                  "loc": [
+                    0
+                  ]
+                }
+              ],
+              "original": "[1,null]"
+            }
+          }
+        },
+        {
+          "col1": {
+            "col4": 3
+          },
+          "errors": {
+            "col1.col2": {
+              "details": [
+                {
+                  "type": "array_type",
+                  "msg": "Input should be a valid array",
+                  "loc": null
+                }
+              ],
+              "original": "null"
+            }
+          }
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col1",
+              "type": {
+                "type": "struct",
+                "fields": [
+                  {
+                    "name": "col4",
+                    "type": "integer"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "errors",
+              "type": "!ref #/definitions/errors_loc",
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
   }
 ]

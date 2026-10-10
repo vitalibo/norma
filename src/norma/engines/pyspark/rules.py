@@ -1,7 +1,8 @@
-import inspect  # noqa: I001
+import functools  # noqa: I001
+import inspect
 import json
 import operator
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Iterable, Optional
 
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
@@ -12,19 +13,26 @@ from pyspark.sql.types import (
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    PendingStruct, dtype_at, dtype_drop, dtype_set, format_value, materialize, nested_drop_expr, nested_get_expr,
-    nested_is_not_null_expr, nested_set_expr,
+    PendingStruct, dtype_at, dtype_drop, dtype_set, elementwise, format_value, materialize,
+    nested_drop_expr, nested_get_expr, nested_is_not_null_expr, nested_set_expr,
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
+
+# the type a JSON object is parsed into, before its fields are cast one by one
+_JSON_OBJECT = MapType(StringType(), StringType())
 
 
 class ErrorState(IErrorState):
     """
     Error state for PySpark DataFrame validation.
+
+    :param df: The DataFrame to validate
+    :param error_column: The name of the column to store error information
+    :param with_loc: Whether error details carry the 'loc' field with positions of invalid array items
     """
 
-    def __init__(self, error_column: str, with_loc: bool = False) -> None:
+    def __init__(self, df: DataFrame, error_column: str, with_loc: bool = False) -> None:
         self.error_column = error_column
         self.with_loc = with_loc
         self.names = {}
@@ -32,9 +40,9 @@ class ErrorState(IErrorState):
         self.absent = set()
         self.filled = set()
         self.extras = {}
-        # used when casting a map / JSON object to a struct to tell whether a field was in the original object
-        self.dynamic_keys = {}
+        self.original_objects = {}
         self.exprs, self.details, self.dropped = {}, {}, set()
+        self.resync(df)
 
     def add_errors(self, boolmask: Column, column: str, details=None, **kwargs) -> None:
         """
@@ -73,19 +81,19 @@ class ErrorState(IErrorState):
 
         existing = set(df.columns)
         selection = {name: fn.col(name) for name in df.columns}
-        selection.update({name: materialize(expr, self.dtypes.get(name)) for name, expr in self.exprs.items()})
+        for name, expr in self.exprs.items():
+            selection[name] = materialize(expr, self.dtypes.get(name)).alias(name)
         empty = fn.array()
         for column, details in self.details.items():
             name = self.details_column_for(column)
             values = fn.concat(*(detail.otherwise(empty) for detail in details)).cast(self._details_dtype())
-            if name not in existing:
-                selection[name] = values
-            else:
-                selection[name] = fn.concat(fn.col(name), values)
+            if name in existing:
+                values = fn.concat(fn.col(name), values)
+            selection[name] = values.alias(name)
         for name in self.dropped:
             selection.pop(name, None)
 
-        df = df.select(*(expr.alias(name) for name, expr in selection.items()))
+        df = df.select(*selection.values())
         self.exprs, self.details, self.dropped = {}, {}, set()
         self.resync(df)
         return df
@@ -104,6 +112,17 @@ class ErrorState(IErrorState):
         """
 
         return dtype_at(self._schema_of(column), column)
+
+    def has_column(self, column: str) -> bool:
+        """
+        Return whether a (possibly nested) column exists.
+        """
+
+        try:
+            self.dtype_of(column)
+        except KeyError:
+            return False
+        return True
 
     def set_expr(self, column: str, val, dtype: Optional[DataType] = None) -> None:
         """
@@ -155,14 +174,14 @@ class ErrorState(IErrorState):
             return None
 
         parent, _, name = column.rpartition('.')
-        keys_of = self.dynamic_keys.get(parent)
-        if keys_of is None:
+        objects = self.original_objects.get(parent)
+        if objects is None:
             return None
 
-        return self._elementwise(
+        return elementwise(
             parent,
-            lambda container: fn.coalesce(fn.array_contains(keys_of(container), fn.lit(name)), fn.lit(True)),
-            self.backup_of(parent),
+            lambda container: fn.coalesce(fn.array_contains(fn.map_keys(container), fn.lit(name)), fn.lit(True)),
+            self.exprs.get(objects, fn.col(objects)),
         )
 
     def container_exists(self, column: str) -> Column:
@@ -183,18 +202,26 @@ class ErrorState(IErrorState):
         Creating a void column if it is missing.
         """
 
-        try:
-            self.dtype_of(column)
-        except KeyError:
+        if not self.has_column(column):
             self.absent.add(column)
             self.set_expr(column, fn.lit(None).cast('void'), NullType())
 
-    def details_expr(self, details, loc: Optional[Column] = None) -> Column:
+    def add_extra_keys(self, column: str, keys: Column, original_of, loc_of=None) -> None:
         """
-        Return a details array holding a single error, shaped like the accumulated ones.
+        Record an error for every key of a map / JSON object cast to a struct that does not declare it.
         """
 
-        return fn.array(self._details_struct(details, loc)).cast(self._details_dtype())
+        def details_of(key):
+            loc = None if loc_of is None else loc_of(key)
+            return fn.array(self._details_struct(errors.EXTRA_FORBIDDEN, loc)).cast(self._details_dtype())
+
+        self.extras[column] = fn.map_from_arrays(
+            fn.transform(keys, lambda key: fn.concat(fn.lit(f'{column}.'), key)),
+            fn.transform(keys, lambda key: fn.struct(
+                details_of(key).alias('details'),
+                original_of(key).alias('original'),
+            )),
+        ).cast(self.errors_dtype())
 
     def errors_dtype(self) -> DataType:
         """
@@ -264,73 +291,51 @@ class ErrorState(IErrorState):
     def _root_of(column: str) -> str:
         return column.partition('.')[0].removesuffix('[]')
 
-    @staticmethod
-    def _elementwise(column: str, func: Callable[..., Column], *cols: Column) -> Column:
-        if '[]' not in column:
-            return func(*cols)
-        return fn.transform(*cols, func) if len(cols) == 1 else fn.zip_with(*cols, func)
-
 
 class BaseRule(Rule):
     """
     Base rule class for PySpark DataFrame validation
 
-    :param func: The function to apply to the DataFrame
-    :param kwargs: Additional keyword arguments to pass to the function
+    :param func: The function returning the error mask
+    :param details: The details of the reported errors
     """
 
     accumulates = True
 
-    def __init__(self, func, details=None, **kwargs):
+    def __init__(self, func, details=None):
         self.func = func
         self.details = details
-        self.kwargs = kwargs
 
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         """
         Verify the DataFrame against the rule
         """
 
-        def inspect_params(f, col_expr):
-            signature = inspect.signature(f)
-            params = {}
-            if 'df' in signature.parameters:
-                params['df'] = df
-            if set(signature.parameters) & {'col', 'column'}:
-                params['col' if 'col' in signature.parameters else 'column'] = column
-            if set(signature.parameters) & {'col_expr', 'column_expr'}:
-                params['col_expr' if 'col_expr' in signature.parameters else 'column_expr'] = col_expr
-            if 'error_state' in signature.parameters:
-                params['error_state'] = error_state
-            return params
+        params = inspect.signature(self.func).parameters
+        if '[]' in column and 'df' not in params:
+            error_state.add_errors(fn.transform(error_state.expr_of(column), self.func), column, self.details)
+            return df
 
-        signature = inspect.signature(self.func)
-        if 'df' in signature.parameters:
-            # the rule transforms the DataFrame directly: materialize the pending state first
+        if params.keys() & {'df', 'col', 'column'}:
             df = error_state.flush(df)
-            df = self.func(**inspect_params(self.func, fn.col(column)))
-            error_state.resync(df)
-            return df
 
-        if '__pre_func__' in self.kwargs:
-            pre_func = self.kwargs['__pre_func__']
-            pre_func(**inspect_params(pre_func, None))
+        col_expr = error_state.expr_of(column)
+        values = {
+            'df': df, 'col': column, 'column': column, 'col_expr': col_expr, 'column_expr': col_expr,
+            'error_state': error_state,
+        }
+        result = self.func(**{param: value for param, value in values.items() if param in params})
+        if 'df' in params:
+            # the rule transformed the DataFrame directly
+            error_state.resync(result)
+            return result
 
-        if '[]' not in column:
-            if set(signature.parameters) & {'col', 'column'}:
-                # the rule builds fn.col(name) itself: the name must resolve to the current value
-                df = error_state.flush(df)
-            boolmask = self.func(**inspect_params(self.func, error_state.expr_of(column)))
-            error_state.add_errors(boolmask, column, self.details)
-            return df
-
-        indexes = fn.transform(error_state.expr_of(column), self.func)
-        error_state.add_errors(indexes, column, self.details)
+        error_state.add_errors(result, column, self.details)
         return df
 
 
-def rule(func, **kwargs) -> BaseRule:
-    return BaseRule(func, **kwargs)
+def rule(func, details=None) -> BaseRule:
+    return BaseRule(func, details)
 
 
 class RequiredRule(Rule):
@@ -343,7 +348,7 @@ class RequiredRule(Rule):
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
         presence = error_state.presence_of(column)
         if presence is not None:
-            boolmask = fn.transform(presence, operator.inv) if '[]' in column else ~presence
+            boolmask = elementwise(column, operator.inv, presence)
         elif column in error_state.absent:
             boolmask = error_state.container_exists(column)
         else:
@@ -447,58 +452,62 @@ def less_than_equal(le: Any) -> Rule:
     )
 
 
-def multiple_of(multiple: float) -> Rule:
-    def before(col, error_state):
-        data_type = error_state.dtype_of(col)
-        if not isinstance(data_type, NumericType):
-            raise ValueError('multiple_of rule can only be applied to numeric columns')
+def applies_to(dtype: type[DataType]):
+    """
+    Decorate a rule factory, so that its rules can only be applied to columns of the given data type
+    """
 
+    def decorator(factory):
+        @functools.wraps(factory)
+        def wrapper(*args, **kwargs):
+            instance = factory(*args, **kwargs)
+            verify = instance.verify
+
+            def checked_verify(df, column, error_state):
+                if not isinstance(error_state.dtype_of(column), dtype):
+                    raise ValueError(f'{factory.__name__} rule can only be applied to {dtype.typeName()} columns')
+                return verify(df, column, error_state)
+
+            instance.verify = checked_verify
+            return instance
+
+        return wrapper
+
+    return decorator
+
+
+@applies_to(NumericType)
+def multiple_of(multiple: float) -> Rule:
     if multiple <= 0:
         raise ValueError('multiple_of must be greater than zero')
 
     return rule(
         lambda col_expr: (col_expr < fn.lit(0)) | ((col_expr % fn.lit(multiple)) != fn.lit(0)),
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
-        __pre_func__=before,
     )
 
 
+@applies_to(StringType)
 def min_length(value: int) -> Rule:
-    def before(col, error_state):
-        data_type = error_state.dtype_of(col)
-        if not isinstance(data_type, StringType):
-            raise ValueError('min_length rule can only be applied to string columns')
-
     return rule(
         lambda col_expr: fn.length(col_expr) < value,
         details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before,
     )
 
 
+@applies_to(StringType)
 def max_length(value: int) -> Rule:
-    def before(col, error_state):
-        data_type = error_state.dtype_of(col)
-        if not isinstance(data_type, StringType):
-            raise ValueError('max_length rule can only be applied to string columns')
-
     return rule(
         lambda col_expr: fn.length(col_expr) > value,
         details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before,
     )
 
 
+@applies_to(StringType)
 def pattern(regex: str) -> Rule:
-    def before(col, error_state):
-        data_type = error_state.dtype_of(col)
-        if not isinstance(data_type, StringType):
-            raise ValueError('pattern rule can only be applied to string columns')
-
     return rule(
         lambda col_expr: ~col_expr.rlike(regex),
         details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
-        __pre_func__=before,
     )
 
 
@@ -516,74 +525,53 @@ def notin(values: Iterable[Any]) -> Rule:
     )
 
 
+@applies_to(ArrayType)
 def unique_items() -> Rule:
-    def before(col, error_state):
-        data_type = error_state.dtype_of(col)
-        if not isinstance(data_type, ArrayType):
-            raise ValueError('unique_items rule can only be applied to array columns')
-
     return rule(
         lambda col_expr: fn.size(col_expr) != fn.size(fn.array_distinct(col_expr)),
         details=errors.UNIQUE_ITEMS,
-        __pre_func__=before,
     )
 
 
+@applies_to(ArrayType)
 def max_items(value: int) -> Rule:
-    def before(col, error_state):
-        data_type = error_state.dtype_of(col)
-        if not isinstance(data_type, ArrayType):
-            raise ValueError('max_items rule can only be applied to array columns')
-
     return rule(
         lambda col_expr: fn.array_size(col_expr) > value,
         details=errors.TOO_LONG.format(_type_='Array', max_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before,
     )
 
 
+@applies_to(ArrayType)
 def min_items(value: int) -> Rule:
-    def before(col, error_state):
-        data_type = error_state.dtype_of(col)
-        if not isinstance(data_type, ArrayType):
-            raise ValueError('min_items rule can only be applied to array columns')
-
     return rule(
         lambda col_expr: fn.array_size(col_expr) < value,
         details=errors.TOO_SHORT.format(_type_='Array', min_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before,
     )
 
 
 class ExtraForbiddenRule(Rule):
     """
-    Rule that forbids columns not defined in the schema, moving their values to backup columns
+    Rule reporting a column that the schema does not declare, moving its values to a backup column
     """
 
     accumulates = True
 
-    def __init__(self, allowed: Iterable[str]):
-        self.allowed = allowed
-
     def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        if column in self.allowed:
-            return df
-
         error_state.set_backup(column)
         boolmask = error_state.container_exists(column)
-        error_state.drop_column(column.removesuffix('[]'))
+        error_state.drop_column(column)
         error_state.add_errors(boolmask, column, errors.EXTRA_FORBIDDEN)
         return df
 
 
-def extra_forbidden(allowed: Iterable[str]) -> Rule:
-    return ExtraForbiddenRule(allowed)
+def extra_forbidden() -> Rule:
+    return ExtraForbiddenRule()
 
 
 def int_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: col.cast('integer'),
-        IntegerType,
+        IntegerType(),
         (StringType, NumericType, BooleanType),
         errors.INT_TYPE,
         errors.INT_PARSING,
@@ -594,7 +582,7 @@ def int_parsing(nullable: bool = False) -> Rule:
 def float_parsing(nullable: bool = False):
     return DataTypeRule(
         lambda col: col.cast('float'),
-        FloatType,
+        FloatType(),
         (StringType, NumericType, BooleanType),
         errors.FLOAT_TYPE,
         errors.FLOAT_PARSING,
@@ -605,7 +593,7 @@ def float_parsing(nullable: bool = False):
 def str_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: col.cast('string'),
-        StringType,
+        StringType(),
         (NumericType, BooleanType, DateType, TimestampType),
         errors.STRING_TYPE,
         nullable=nullable,
@@ -615,7 +603,7 @@ def str_parsing(nullable: bool = False) -> Rule:
 def bool_parsing(nullable: bool = False) -> Rule:
     return BooleanTypeRule(
         lambda col: col.cast('boolean'),
-        BooleanType,
+        BooleanType(),
         (NumericType, StringType),
         errors.BOOL_TYPE,
         errors.BOOL_PARSING,
@@ -626,7 +614,7 @@ def bool_parsing(nullable: bool = False) -> Rule:
 def datetime_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: fn.to_timestamp(col),  # noqa: PLW0108
-        TimestampType,
+        TimestampType(),
         (StringType, DateType),
         errors.DATETIME_TYPE,
         errors.DATETIME_PARSING,
@@ -637,7 +625,7 @@ def datetime_parsing(nullable: bool = False) -> Rule:
 def date_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
         lambda col: fn.to_date(fn.to_timestamp(col)),
-        DateType,
+        DateType(),
         (StringType, TimestampType),
         errors.DATE_TYPE,
         errors.DATE_PARSING,
@@ -651,7 +639,7 @@ def time_parsing(nullable: bool = False) -> Rule:
     )
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(time_regex), col),
-        StringType,
+        StringType(),
         (StringType,),
         errors.TIME_TYPE,
         errors.TIME_PARSING,
@@ -663,7 +651,7 @@ def duration_parsing(nullable: bool = False) -> Rule:
     duration_regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(duration_regex), col),
-        StringType,
+        StringType(),
         (StringType,),
         errors.DURATION_TYPE,
         errors.DURATION_PARSING,
@@ -675,7 +663,7 @@ def uuid_parsing(nullable: bool = False) -> Rule:
     uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
     return ComplexTypeRule(
         lambda col: fn.when(fn.lower(col).rlike(uuid_regex), fn.lower(col)),
-        StringType,
+        StringType(),
         (StringType,),
         errors.UUID_TYPE,
         errors.UUID_PARSING,
@@ -687,7 +675,7 @@ def ipv4_address(nullable: bool = False) -> Rule:
     ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(ipv4_regex), col),
-        StringType,
+        StringType(),
         (StringType,),
         errors.IPV4,
         errors.IPV4,
@@ -709,7 +697,7 @@ def ipv6_address(nullable: bool = False) -> Rule:
     )
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(ipv6_regex), col),
-        StringType,
+        StringType(),
         (StringType,),
         errors.IPV6,
         errors.IPV6,
@@ -727,7 +715,7 @@ def uri_parsing(nullable: bool = False) -> Rule:
 
     return ComplexTypeRule(
         lambda col: fn.when(col.rlike(uri_regex), col),
-        StringType,
+        StringType(),
         (StringType,),
         errors.URI_TYPE,
         errors.URI_PARSING,
@@ -745,7 +733,7 @@ def array_parsing(schema, nullable: bool = False) -> Rule:
 
 class DataTypeRule(Rule):
     """
-    Abstract base class for casting to target data type
+    Rule casting a column to the target data type, reporting the values that cannot be cast.
     """
 
     accumulates = True
@@ -769,50 +757,32 @@ class DataTypeRule(Rule):
         if self._is_valid_dtype(data_type):
             return df
 
-        if data_type.typeName() == 'void':
+        if isinstance(data_type, NullType):
             self._mark_fields_absent(column, error_state)
-            error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()), self._target_dtype())
+            error_state.set_expr(column, fn.lit(None).cast(self.dtype), self.dtype)
             return df
 
-        if '[]' in column:
-            return self._verify_array(df, column, data_type, error_state)
-        return self._verify_scalar(df, column, data_type, error_state)
+        return self._verify_cast(df, column, data_type, error_state)
 
-    def _verify_scalar(self, df: DataFrame, column: str, data_type: DataType, error_state: ErrorState) -> DataFrame:
+    def _verify_cast(self, df: DataFrame, column: str, data_type: DataType, error_state: ErrorState) -> DataFrame:
         error_state.set_backup(column)
         if not isinstance(data_type, self.supported_cast_dtypes):
-            error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()), self._target_dtype())
-            error_state.add_errors(fn.lit(True), column, self.type_error_details)
+            mismatch = elementwise(column, lambda _: fn.lit(True), error_state.expr_of(column.partition('[]')[0]))
+            error_state.set_expr(column, fn.lit(None).cast(self.dtype), self.dtype)
+            error_state.add_errors(mismatch, column, self.type_error_details)
             return df
 
-        self._cast_scalar(column, data_type, error_state)
+        self._cast(column, data_type, error_state)
         if not self.parsing_error_details:
             return df
 
-        error_state.add_errors(
-            fn.isnull(error_state.expr_of(column)) & fn.isnotnull(error_state.backup_of(column)),
+        failed = elementwise(
             column,
-            self.parsing_error_details,
+            lambda value, original: fn.isnull(value) & fn.isnotnull(original),
+            error_state.expr_of(column),
+            error_state.backup_of(column),
         )
-        return df
-
-    def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
-        error_state.set_backup(column)
-        if not isinstance(element_type, self.supported_cast_dtypes):
-            indexes = fn.transform(error_state.expr_of(column.split('[]', maxsplit=1)[0]), lambda _: fn.lit(True))
-            error_state.set_expr(column, fn.lit(None).cast(self._target_dtype()), self._target_dtype())
-            error_state.add_errors(indexes, column, self.type_error_details)
-            return df
-
-        self._cast_array(column, element_type, error_state)
-        if not self.parsing_error_details:
-            return df
-
-        actual_values = error_state.expr_of(column)
-        indexes = fn.zip_with(
-            actual_values, error_state.backup_of(column), lambda x, y: fn.isnull(x) & fn.isnotnull(y)
-        )
-        error_state.add_errors(indexes, column, self.parsing_error_details)
+        error_state.add_errors(failed, column, self.parsing_error_details)
         return df
 
     def _mark_fields_absent(self, column: str, error_state: ErrorState) -> None:
@@ -821,170 +791,128 @@ class DataTypeRule(Rule):
     def _flag_nulls(self, column: str, error_state: ErrorState) -> None:
         error_state.set_backup(column)
         expr = error_state.expr_of(column)
-        parent = '' if column.endswith('[]') else column.rpartition('.')[0]
 
-        if '[]' not in column:
-            boolmask = fn.isnull(expr)
-            if parent:
-                boolmask &= error_state.container_exists(column)
-        elif parent:
-            boolmask = fn.zip_with(expr, error_state.container_exists(column), lambda x, y: fn.isnull(x) & y)
+        if column.endswith('[]') or '.' not in column:
+            boolmask = elementwise(column, fn.isnull, expr)
         else:
-            boolmask = fn.transform(expr, fn.isnull)
+            # a null field of a missing parent is not reported
+            boolmask = elementwise(column, lambda x, y: fn.isnull(x) & y, expr, error_state.container_exists(column))
 
         presence = error_state.presence_of(column)
         if presence is not None:
-            boolmask = fn.zip_with(boolmask, presence, operator.and_) if '[]' in column else boolmask & presence
+            boolmask = elementwise(column, operator.and_, boolmask, presence)
 
         error_state.add_errors(boolmask, column, self.type_error_details)
 
-    def _is_valid_dtype(self, data_type) -> bool:
-        return isinstance(data_type, self.dtype)
+    def _is_valid_dtype(self, data_type: DataType) -> bool:
+        return isinstance(data_type, type(self.dtype))
 
-    def _target_dtype(self):
-        return self.dtype()
+    def _cast_result_dtype(self, data_type: DataType) -> DataType:  # noqa: ARG002
+        return self.dtype
 
-    def _cast_result_dtype(self, data_type):  # noqa: ARG002
-        return self._target_dtype()
-
-    def _cast_scalar(self, column, data_type, error_state):
-        error_state.set_expr(column, self.caster(error_state.expr_of(column)), self._cast_result_dtype(data_type))
-
-    def _cast_array(self, column, element_type, error_state):
-        error_state.set_expr(column, self.caster, self._cast_result_dtype(element_type))
+    def _cast(self, column: str, data_type: DataType, error_state: ErrorState) -> None:
+        error_state.set_expr(column, self.caster, self._cast_result_dtype(data_type))
 
 
 class ComplexTypeRule(DataTypeRule):
     """
-    Class for casting to complex string types
+    Rule keeping the strings that match a format: a column is checked even when it already holds strings
     """
 
-    def _is_valid_dtype(self, data_type) -> bool:  # noqa: ARG002
+    def _is_valid_dtype(self, data_type: DataType) -> bool:  # noqa: ARG002
         return False
 
 
 class BooleanTypeRule(DataTypeRule):
     """
-    Class for casting to boolean type
+    Rule casting to boolean type, reading 'on' / 'off' strings as well
     """
 
-    def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-        # special case for string columns where we want to cast 'on'/'off' to boolean
-        def cast_str_as_bool(col):
-            expr = fn.lower(fn.trim(col))
-            expr = fn.when(expr.isin(['on', 'off']), expr == 'on').otherwise(col.cast('boolean'))
-            return expr.cast('boolean')
+    def _cast(self, column: str, data_type: DataType, error_state: ErrorState) -> None:
+        def cast_str(col):
+            value = fn.lower(fn.trim(col))
+            return fn.when(value.isin(['on', 'off']), value == 'on').otherwise(col.cast('boolean')).cast('boolean')
 
-        data_type = error_state.dtype_of(column)
-        if isinstance(data_type, StringType) or (
-            isinstance(data_type, ArrayType) and isinstance(data_type.elementType, StringType)
-        ):
-            self.caster = cast_str_as_bool
-
-        return super().verify(df, column, error_state)
+        error_state.set_expr(
+            column, cast_str if isinstance(data_type, StringType) else self.caster, self._cast_result_dtype(data_type)
+        )
 
 
 class ObjectTypeRule(DataTypeRule):
     """
-    Class for casting to object type
+    Rule casting a map or a JSON string to the struct declared by the schema
     """
 
     def __init__(self, schema, nullable=True):
         super().__init__(
-            None, StructType, (StringType, MapType), errors.OBJECT_TYPE, errors.OBJECT_PARSING, nullable=nullable
+            None, self.parse_struct_type(schema), (StringType, MapType), errors.OBJECT_TYPE, errors.OBJECT_PARSING,
+            nullable=nullable,
         )
-        self.struct_type = self.parse_struct_type(schema)
         self.allow_extra = schema.allow_extra
 
-    def _is_valid_dtype(self, data_type) -> bool:
-        return isinstance(data_type, StructType)
-
-    def _verify_scalar(self, df: DataFrame, column: str, data_type: DataType, error_state: ErrorState) -> DataFrame:
+    def _verify_cast(self, df: DataFrame, column: str, data_type: DataType, error_state: ErrorState) -> DataFrame:
         if isinstance(data_type, StringType):
-            # the json text is parsed once into a service column: an inlined from_json would be evaluated again by
-            # every expression reading one of the fields
             parsed = error_state.parsed_column_for(column)
-            error_state.exprs[parsed] = fn.from_json(error_state.expr_of(column), MapType(StringType(), StringType()))
+            error_state.exprs[parsed] = elementwise(
+                column, lambda text: fn.from_json(text, _JSON_OBJECT), error_state.expr_of(column)
+            )
             df = error_state.flush(df)
 
-        return super()._verify_scalar(df, column, data_type, error_state)
+        return super()._verify_cast(df, column, data_type, error_state)
 
     def _mark_fields_absent(self, column: str, error_state: ErrorState) -> None:
-        for name in self.struct_type.fieldNames():
+        for name in self.dtype.fieldNames():
             error_state.absent.add(f'{column}.{name}')
 
-    def _target_dtype(self):
-        return self.struct_type
-
-    def _cast_result_dtype(self, data_type):
-        # a map cast keeps the map's value type in every struct field
+    def _cast_result_dtype(self, data_type: DataType) -> DataType:
         if isinstance(data_type, MapType):
-            return StructType(
-                [
-                    StructField(name, data_type.valueType, nullable=True, metadata={})
-                    for name in self.struct_type.fieldNames()
-                ]
-            )
-        return self._target_dtype()
+            return StructType([
+                StructField(name, data_type.valueType, nullable=True, metadata={}) for name in self.dtype.fieldNames()
+            ])
+        return self.dtype
 
-    def _cast_scalar(self, column, data_type, error_state):
-        dtype = self._cast_result_dtype(data_type)
+    def _cast(self, column: str, data_type: DataType, error_state: ErrorState) -> None:
         if isinstance(data_type, MapType):
-            error_state.dynamic_keys[column] = fn.map_keys
-            self._flag_extra_keys(column, data_type, error_state)
-            error_state.set_expr(column, self._struct_of(error_state.expr_of(column)), dtype)
-            return
-
-        parsed = fn.col(error_state.parsed_column_for(column))
-        error_state.dynamic_keys[column] = lambda _: fn.map_keys(parsed)
+            objects = error_state.backup_column_for(column)
+        else:
+            objects = error_state.parsed_column_for(column)
+        error_state.original_objects[column] = objects
         self._flag_extra_keys(column, data_type, error_state)
-        error_state.set_expr(column, self._struct_of(parsed), dtype)
 
-    def _cast_array(self, column, element_type, error_state):
-        dtype = self._cast_result_dtype(element_type)
-        if isinstance(element_type, MapType):
-            error_state.dynamic_keys[column] = fn.map_keys
-            self._flag_extra_element_keys(column, element_type, error_state)
+        dtype = self._cast_result_dtype(data_type)
+        if '[]' not in column:
+            value = error_state.expr_of(column) if isinstance(data_type, MapType) else fn.col(objects)
+            error_state.set_expr(column, self._struct_of(value), dtype)
+        elif isinstance(data_type, MapType):
             error_state.set_expr(column, lambda item: self._struct_of(item).materialize(dtype), dtype)
-            return
-
-        error_state.dynamic_keys[column] = fn.json_object_keys
-        self._flag_extra_element_keys(column, element_type, error_state)
-        error_state.set_expr(column, lambda item: self._parse_json(item).materialize(dtype), dtype)
-
-    def _parse_json(self, col_expr: Column) -> PendingStruct:
-        return self._struct_of(fn.from_json(col_expr, MapType(StringType(), StringType())))
+        else:
+            parsed = fn.col(objects)
+            error_state.set_expr(column, lambda _, i: self._struct_of(parsed[i]).materialize(dtype), dtype)
 
     def _struct_of(self, col_expr: Column) -> PendingStruct:
         pending = PendingStruct(col_expr)
-        pending.fields.update({field: col_expr[field] for field in self.struct_type.fieldNames()})
+        pending.fields.update({field: col_expr[field] for field in self.dtype.fieldNames()})
         return pending
 
-    def _flag_extra_keys(self, column, data_type, error_state) -> None:
+    def _flag_extra_keys(self, column: str, data_type: DataType, error_state: ErrorState) -> None:
         if self.allow_extra:
             return
 
-        extras = self._extras_of(fn.col(error_state.backup_column_for(column)), data_type)
-        keys = fn.coalesce(fn.map_keys(extras), fn.array().cast('array<string>'))
-
-        error_state.extras[column] = fn.map_from_arrays(
-            fn.transform(keys, lambda key: fn.concat(fn.lit(f'{column}.'), key)),
-            fn.transform(keys, lambda key: fn.struct(
-                error_state.details_expr(errors.EXTRA_FORBIDDEN).alias('details'),
-                fn.element_at(extras, key).alias('original'),
-            )),
-        ).cast(error_state.errors_dtype())
-
-    def _flag_extra_element_keys(self, column, element_type, error_state) -> None:
-        if self.allow_extra:
+        extras = self._extras_of(column, fn.col(error_state.backup_column_for(column)), data_type)
+        if '[]' not in column:
+            keys = fn.coalesce(fn.map_keys(extras), fn.array().cast('array<string>'))
+            error_state.add_extra_keys(column, keys, lambda key: fn.element_at(extras, key))
             return
 
-        extras = self._extras_of(fn.col(error_state.backup_column_for(column)), element_type, elementwise=True)
         keys = fn.array_distinct(fn.coalesce(
             fn.flatten(
                 fn.transform(extras, lambda item: fn.coalesce(fn.map_keys(item), fn.array().cast('array<string>')))),
             fn.array().cast('array<string>')
         ))
+
+        def original_of(key):
+            values = fn.transform(extras, lambda item: fn.coalesce(fn.element_at(item, key), fn.lit('null')))
+            return fn.concat(fn.lit('['), fn.array_join(values, ','), fn.lit(']'))
 
         def loc_of(key):
             return fn.filter(
@@ -992,22 +920,17 @@ class ObjectTypeRule(DataTypeRule):
                 fn.isnotnull,
             )
 
-        def origin_of(key):
-            values = fn.transform(extras, lambda item: fn.coalesce(fn.element_at(item, key), fn.lit('null')))
-            return fn.concat(fn.lit('['), fn.array_join(values, ','), fn.lit(']'))
+        error_state.add_extra_keys(column, keys, original_of, loc_of)
 
-        error_state.extras[column] = fn.map_from_arrays(
-            fn.transform(keys, lambda key: fn.concat(fn.lit(f'{column}.'), key)),
-            fn.transform(keys, lambda key: fn.struct(
-                error_state.details_expr(errors.EXTRA_FORBIDDEN, loc_of(key)).alias('details'),
-                origin_of(key).alias('original'),
-            )),
-        ).cast(error_state.errors_dtype())
+    def _extras_of(self, column: str, col_expr: Column, value_type: DataType) -> Column:
+        """
+        Return the keys that the struct does not declare with their original values (one map per element for array
+        columns).
+        """
 
-    def _extras_of(self, col_expr: Column, value_type: DataType, elementwise: bool = False) -> Column:
-        allowed = frozenset(self.struct_type.fieldNames())
+        allowed = frozenset(self.dtype.fieldNames())
         if isinstance(value_type, MapType):
-            names = fn.array(*[fn.lit(name) for name in allowed]).cast('array<string>')
+            names = fn.array(*[fn.lit(name) for name in self.dtype.fieldNames()]).cast('array<string>')
 
             def extras_of(item):
                 return fn.transform_values(
@@ -1015,7 +938,7 @@ class ObjectTypeRule(DataTypeRule):
                     lambda _, value: format_value(value, value_type.valueType.typeName())
                 )
 
-            return fn.transform(col_expr, extras_of) if elementwise else extras_of(col_expr)
+            return elementwise(column, extras_of, col_expr)
 
         def _extra_keys(text, allowed_keys):
             try:
@@ -1032,13 +955,13 @@ class ObjectTypeRule(DataTypeRule):
                 if key not in allowed_keys
             }
 
-        if elementwise:
+        if '[]' in column:
             # a python udf cannot be called from inside a higher order function, so the whole array is handed over
-            @fn.udf(returnType=ArrayType(MapType(StringType(), StringType())))
+            @fn.udf(returnType=ArrayType(_JSON_OBJECT))
             def _json_extras(texts):
                 return None if texts is None else [_extra_keys(text, allowed) for text in texts]
         else:
-            @fn.udf(returnType=MapType(StringType(), StringType()))
+            @fn.udf(returnType=_JSON_OBJECT)
             def _json_extras(text):
                 return _extra_keys(text, allowed)
 
@@ -1051,33 +974,23 @@ class ObjectTypeRule(DataTypeRule):
 
 class ArrayTypeRule(DataTypeRule):
     """
-    Class for casting to array type
+    Rule casting a JSON string to the array declared by the schema
     """
 
     def __init__(self, schema, nullable=True):
+        dtype = self.parse_array_type(schema)
         super().__init__(
-            None, ArrayType, (StringType, ArrayType), errors.ARRAY_TYPE, errors.ARRAY_PARSING, nullable=nullable
+            # from_json reads a bare object as a single element array, which the schema did not ask for: only
+            # text that opens as an array is parsed, and anything else is left to the parsing error to report
+            lambda col: fn.when(col.rlike(r'^\s*\['), fn.from_json(col, dtype)),
+            dtype, (StringType, ArrayType), errors.ARRAY_TYPE, errors.ARRAY_PARSING, nullable=nullable,
         )
-        self.struct_type = self.parse_array_type(schema)
-
-    def _verify_array(self, df: DataFrame, column: str, element_type: DataType, error_state: ErrorState) -> DataFrame:
-        raise NotImplementedError('nested arrays are not supported yet')
 
     def _mark_fields_absent(self, column: str, error_state: ErrorState) -> None:
-        element_type = self.struct_type.elementType
+        element_type = self.dtype.elementType
         if isinstance(element_type, StructType):
             for name in element_type.fieldNames():
                 error_state.absent.add(f'{column}[].{name}')
-
-    def _target_dtype(self):
-        return self.struct_type
-
-    def _cast_scalar(self, column, data_type, error_state):
-        # from_json reads a bare object as a single element array, which the schema did not ask for: only
-        # text that opens as an array is parsed, and anything else is left to the parsing error to report
-        expr = error_state.expr_of(column)
-        parsed = fn.when(expr.rlike(r'^\s*\['), fn.from_json(expr, self.struct_type))
-        error_state.set_expr(column, parsed, self._cast_result_dtype(data_type))
 
     @staticmethod
     def parse_array_type(schema) -> ArrayType:

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as fn
+from pyspark.sql.types import StructType
 
 import norma.rules
 from norma.engines.pyspark.rules import ErrorState, default, extra_forbidden
@@ -22,14 +23,13 @@ def validate(schema: Schema, df: DataFrame, error_column: str) -> DataFrame:
     :param error_column: The name of the column to store error information
     """
 
-    error_state = ErrorState(error_column, with_loc=schema.contains_arrays)
-    error_state.resync(df)
     original_cols = df.columns
+    error_state = ErrorState(df, error_column, with_loc=schema.contains_arrays)
 
     df = _validate(df, schema, error_state, original_cols)
     df = error_state.flush(df)
 
-    df = _format_error_details(df, error_state, error_column)
+    df = _format_error_details(df, error_state)
     df = _nullify_invalid_values(df, schema, error_state)
 
     kept_cols = [name for name in schema.columns if name in df.columns]
@@ -38,83 +38,78 @@ def validate(schema: Schema, df: DataFrame, error_column: str) -> DataFrame:
     return df.select(*kept_cols, error_column)
 
 
-def _apply_rule(df, rule, column, error_state):
-    """
-    Apply a single rule to the DataFrame.
-    """
-
-    if isinstance(rule, norma.rules.RuleProxy):
-        rule = getattr(norma.engines.pyspark.rules, rule.name)(**rule.kwargs)
-
-    if getattr(rule, 'accumulates', False):
-        return rule.verify(df, column, error_state)
-
-    df = error_state.flush(df)
-    df = rule.verify(df, column, error_state)
-    error_state.resync(df)
-    return df
-
-
 def _validate(df, schema, error_state, original_cols, parent=''):
     """
     Recursively validate the DataFrame according to the schema
     """
 
-    columns = {
+    names = {
         name for name, column in schema.columns.items()
         if name in original_cols or column.required or column.has_default
     }
     if not schema.allow_extra:
-        columns.update(original_cols)
+        names.update(original_cols)
 
-    for column in sorted(columns):
-        full_column = f'{parent}{column}'
-        error_state.stub_if_absent(full_column)
+    for name in sorted(names):
+        column = f'{parent}{name}'
+        error_state.stub_if_absent(column)
+        if name not in schema.columns:
+            df = _apply_rules(df, [extra_forbidden()], column, error_state)
+            continue
 
-        rules = []
-        if column in schema.columns:
-            if schema.columns[column].has_default:
-                rules.append(default(schema.columns[column].default))
-            rules.extend(schema.columns[column].rules)
-        if not schema.allow_extra:
-            rules.append(extra_forbidden([f'{parent}{o}' for o in schema.columns]))
-
-        for rule in rules:
-            df = _apply_rule(df, rule, full_column, error_state)
+        definition = schema.columns[name]
+        rules = [default(definition.default)] if definition.has_default else []
+        df = _apply_rules(df, [*rules, *definition.rules], column, error_state)
 
         # if there is inner schema, validate recursively
-        if column not in schema.columns or schema.columns[column].inner_schema is None:
+        inner_schema = definition.inner_schema
+        if inner_schema is None:
             continue
-        inner_schema = schema.columns[column].inner_schema
 
-        if schema.columns[column].dtype in {'array', 'list'}:
-            full_column = f'{full_column}[]'
-
-            for rule in inner_schema.rules:
-                df = _apply_rule(df, rule, full_column, error_state)
-
+        if definition.dtype in {'array', 'list'}:
+            column = f'{column}[]'
+            df = _apply_rules(df, inner_schema.rules, column, error_state)
             inner_schema = inner_schema.inner_schema
 
-        dtype = error_state.dtype_of(full_column)
-        if dtype.typeName() != 'struct':
+        dtype = error_state.dtype_of(column)
+        if not isinstance(dtype, StructType):
             continue
 
-        df = _validate(df, inner_schema, error_state, dtype.fieldNames(), f'{full_column}.')
-
-        if not error_state.dtype_of(full_column).fields:
-            error_state.drop_column(full_column.removesuffix('[]'))
+        df = _validate(df, inner_schema, error_state, dtype.fieldNames(), f'{column}.')
+        if not error_state.dtype_of(column).fields:
+            error_state.drop_column(column.removesuffix('[]'))
 
     return df
 
 
-def _format_error_details(df, error_state, error_column) -> DataFrame:
+def _apply_rules(df, rules, column, error_state):
+    """
+    Apply the rules to a column in the DataFrame
+    """
+
+    for rule in rules:
+        if isinstance(rule, norma.rules.RuleProxy):
+            rule = getattr(norma.engines.pyspark.rules, rule.name)(**rule.kwargs)  # noqa: PLW2901
+
+        if getattr(rule, 'accumulates', False):
+            df = rule.verify(df, column, error_state)
+            continue
+
+        df = error_state.flush(df)
+        df = rule.verify(df, column, error_state)
+        error_state.resync(df)
+
+    return df
+
+
+def _format_error_details(df, error_state) -> DataFrame:
     """
     Format the error details in the DataFrame
     """
 
     errors = {
         name: error_state.details_column_for(name)
-        for name in list(error_state.names)
+        for name in error_state.names
         if error_state.details_column_for(name) in df.columns
     }
 
@@ -139,40 +134,7 @@ def _format_error_details(df, error_state, error_column) -> DataFrame:
     if error_state.extras:
         details_map = fn.map_concat(details_map, *error_state.extras.values())
 
-    return df.withColumn(error_column, details_map)
-
-
-def _expr_accumulator(df):
-    """
-    Create a local expression accumulator that composes nested column updates per root column,
-    materializing them with a single projection.
-    """
-
-    dtypes = {field.name: field.dataType for field in df.schema.fields}
-    exprs = {}
-
-    def root_of(path):
-        root = path.split('.')[0]
-        return root.removesuffix('[]')
-
-    def expr_of(path):
-        root = root_of(path)
-        return nested_get_expr(path, exprs.get(root), dtypes.get(root))
-
-    def set_expr(path, val):
-        root = root_of(path)
-        exprs[root] = nested_set_expr(path, val, exprs.get(root), dtypes.get(root))
-
-    def apply(df):
-        if not exprs:
-            return df
-
-        return df.select(*(
-            materialize(exprs[column], dtypes[column]).alias(column) if column in exprs else fn.col(column)
-            for column in df.columns
-        ))
-
-    return expr_of, set_expr, apply
+    return df.withColumn(error_state.error_column, details_map)
 
 
 def _nullify_invalid_values(df, schema, error_state):
@@ -180,40 +142,42 @@ def _nullify_invalid_values(df, schema, error_state):
     Reset invalid values to null after validation
     """
 
-    expr_of, set_expr, apply = _expr_accumulator(df)
-
-    def reset_elements(column, flags):
-        try:
-            dtype = dtype_at(df.schema, column)
-        except KeyError:
-            # the column was dropped along the way, while the error flags of its elements remained
-            return
-        set_expr(column, _nullify_elements(expr_of(column), flags, dtype.elementType))
-
+    error_state.resync(df)
     masks = {}
-    for name, _ in reversed(schema.nested_columns.items()):
+    for name in reversed(schema.nested_columns):
         if name in masks:
-            # the array column comes right after its element columns: its elements are reset first, so that the checks
-            # of the array itself and of its parents wrap them instead of being inlined into every field around them
-            reset_elements(name, masks.pop(name))
-        if name not in error_state.names:
+            # in reversed order an array column comes right after its element columns ("a[].b", "a[]", then "a"), so
+            # its elements are reset here, before the checks of the array itself and of its parents: those checks then
+            # wrap the reset array once, instead of being repeated inside every field of the parent struct
+            _nullify_elements(name, masks.pop(name), error_state)
+        if name not in error_state.names or not error_state.has_column(name):
+            # nothing to reset: no error was reported for the column, or it was dropped along the way
             continue
-        if '[]' not in name and error_state.details_column_for(name) in df.columns:
-            set_expr(name, fn.when(fn.array_size(fn.col(error_state.details_column_for(name))) <= 0, expr_of(name)))
-        elif '[]' in name and error_state.indexes_column_for(name) in df.columns:
-            root, *nested = name.split('[].')
-            path = nested[0] if nested else ''
-            masks.setdefault(root.removesuffix('[]'), []).append((path, fn.col(error_state.indexes_column_for(name))))
 
-    return apply(df)
+        if '[]' not in name:
+            details = error_state.details_column_for(name)
+            if details in df.columns:
+                error_state.set_expr(name, fn.when(fn.array_size(fn.col(details)) <= 0, error_state.expr_of(name)))
+            continue
+
+        indexes = error_state.indexes_column_for(name)
+        if indexes in df.columns:
+            array, _, path = name.partition('[]')
+            masks.setdefault(array, []).append((path.removeprefix('.'), fn.col(indexes)))
+
+    return error_state.flush(df)
 
 
-def _nullify_elements(array, flags, element_dtype):
+def _nullify_elements(column, flags, error_state):
     """
-    Reset the invalid values held by the elements of an array
+    Reset the invalid values held by the elements of an array column
     """
 
-    zipped = fn.arrays_zip(array.alias('_0'), *(flag.alias(f'_{i}') for i, (_, flag) in enumerate(flags, start=1)))
+    element_dtype = error_state.dtype_of(column).elementType
+    zipped = fn.arrays_zip(
+        error_state.expr_of(column).alias('_0'),
+        *(flag.alias(f'_{i}') for i, (_, flag) in enumerate(flags, start=1)),
+    )
 
     def element_of(item):
         value = item['_0']
@@ -225,7 +189,7 @@ def _nullify_elements(array, flags, element_dtype):
             value = nested_set_expr(f'_.{path}', lambda x, flag=flag: fn.when(~flag, x), value, element_dtype)
         return materialize(value, element_dtype)
 
-    return fn.transform(zipped, element_of)
+    error_state.set_expr(column, fn.transform(zipped, element_of))
 
 
 def _make_origin(df, column, error_state):
@@ -237,8 +201,6 @@ def _make_origin(df, column, error_state):
     if backup in df.columns:
         column = backup
 
-    dtype = dtype_at(df.schema, column).typeName()
-
     if '[]' in column:
         return format_value(nested_get_expr(column), 'array')
-    return format_value(fn.col(column), dtype)
+    return format_value(fn.col(column), dtype_at(df.schema, column).typeName())

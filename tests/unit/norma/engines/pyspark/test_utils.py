@@ -98,6 +98,8 @@ def test_nested_get_expr(column, root_expr, expected, spark):
             ('drop field of array element structs', 'f1.f2[].f4'),
             ('drop nested field inside array element structs', 'f1.f2[].f3.f5'),
             ('drop field with array root', 'f1[].f2'),
+            ('drop the last field of array element structs', 'f1[].f2'),
+            ('drop the last field of a struct inside array element structs', 'f1[].f2.f3'),
         ])
     ],
 )

@@ -10,11 +10,7 @@ from pyspark.sql.types import ArrayType, DataType, StructField, StructType
 
 def dtype_at(dtype: DataType, path: str) -> DataType:
     """
-    Navigate a data type tree by a relative path (e.g. "b.c", "b[].c").
-
-    :param dtype: the data type to start navigation from
-    :param path: relative path, where parts ending with "[]" descend into array element types
-    :return: DataType at the given path
+    Return the data type at a path.
     """
 
     if not path:
@@ -32,93 +28,119 @@ def dtype_at(dtype: DataType, path: str) -> DataType:
 
 def dtype_set(dtype: Optional[DataType], path: str, new_dtype: DataType) -> DataType:
     """
-    Return a copy of the data type tree with the type at the nested path replaced (creating missing fields).
-
-    :param dtype: the data type to update (None or non-struct types are treated as an empty struct)
-    :param path: relative path, where parts ending with "[]" descend into array element types
-    :param new_dtype: the data type to set at the given path
-    :return: updated data type tree
+    Return a copy of the data type with the type at a path replaced, creating missing fields.
     """
 
     if not path:
         return new_dtype
 
     part, _, rest = path.partition('.')
-    is_array = part.endswith('[]')
-    name = part[:-2] if is_array else part
-
-    existing = None
-    if isinstance(dtype, StructType) and name in dtype.fieldNames():
-        existing = dtype[name].dataType
-
-    if is_array:
-        elem = existing.elementType if isinstance(existing, ArrayType) else None
-        field_type = ArrayType(dtype_set(elem, rest, new_dtype) if rest else new_dtype)
+    name = part.removesuffix('[]')
+    field_dtype = _field_dtype(dtype, name)
+    if part.endswith('[]'):
+        field_dtype = ArrayType(dtype_set(_element_dtype(field_dtype), rest, new_dtype))
     else:
-        field_type = dtype_set(existing, rest, new_dtype) if rest else new_dtype
+        field_dtype = dtype_set(field_dtype, rest, new_dtype)
 
     fields = list(dtype.fields) if isinstance(dtype, StructType) else []
     for i, field in enumerate(fields):
         if field.name == name:
-            fields[i] = StructField(name, field_type, field.nullable, field.metadata)
+            fields[i] = StructField(name, field_dtype, field.nullable, field.metadata)
             break
     else:
-        fields.append(StructField(name, field_type, nullable=True, metadata={}))
+        fields.append(StructField(name, field_dtype, nullable=True, metadata={}))
 
     return StructType(fields)
 
 
 def dtype_drop(dtype: DataType, path: str) -> DataType:
     """
-    Return a copy of the data type tree with the field at the nested path removed.
-
-    :param dtype: the data type to update
-    :param path: relative path, where parts ending with "[]" descend into array element types
-    :return: updated data type tree
+    Return a copy of the data type without the field at a path.
     """
 
     part, _, rest = path.partition('.')
-    is_array = part.endswith('[]')
-    name = part[:-2] if is_array else part
+    name = part.removesuffix('[]')
 
-    fields = list(dtype.fields)
-    if not rest:
-        return StructType([field for field in fields if field.name != name])
-
-    for i, field in enumerate(fields):
+    fields = []
+    for field in dtype.fields:
         if field.name != name:
-            continue
-        if is_array:
-            inner = field.dataType
-            new_elem = dtype_drop(inner.elementType, rest)
-            fields[i] = StructField(name, ArrayType(new_elem, inner.containsNull), field.nullable, field.metadata)
-        else:
-            fields[i] = StructField(name, dtype_drop(field.dataType, rest), field.nullable, field.metadata)
+            fields.append(field)
+        elif rest:
+            field_dtype = field.dataType
+            if part.endswith('[]'):
+                field_dtype = ArrayType(dtype_drop(field_dtype.elementType, rest), field_dtype.containsNull)
+            else:
+                field_dtype = dtype_drop(field_dtype, rest)
+            fields.append(StructField(name, field_dtype, field.nullable, field.metadata))
 
     return StructType(fields)
 
 
 class PendingStruct:
     """
-    Pending value of a struct that keeps every assigned field apart from its siblings.
+    Struct whose assigned fields are kept apart until materialized.
     """
 
     def __init__(self, base: Optional[Column]) -> None:
+        # the current struct, or None for a struct built from scratch
         self.base = base
         self.fields = {}
 
+    @classmethod
+    def of(cls, value: Optional[Pending], dtype: Optional[DataType]) -> PendingStruct:
+        """
+        Wrap a value into a pending struct.
+        """
+
+        if isinstance(value, PendingStruct):
+            return value
+        # a missing value or a non-struct one is replaced with a struct built from scratch
+        return cls(value if isinstance(dtype, StructType) else None)
+
     def get(self, name: str) -> Pending:
         """
-        Return the pending value of a direct field (an overlay for a struct or array field assigned deeper).
+        Return the current value of a field, pending if assigned deeper.
         """
 
         if name in self.fields:
             return self.fields[name]
         return self.base.getField(name)
 
+    def update(
+        self,
+        path: str,
+        new_value: Callable[[Optional[Pending], Optional[DataType]], Pending],
+        dtype: Optional[DataType],
+    ) -> PendingStruct:
+        """
+        Replace the field at a path with new_value.
+        """
+
+        name, _, rest = path.partition('.')
+        field_dtype = _field_dtype(dtype, name)
+        # a field missing from the data type has no current value
+        current = None
+        if name in self.fields or (field_dtype is not None and self.base is not None):
+            current = self.get(name)
+        self.fields[name] = _update_field(current, field_dtype, rest, new_value)
+        return self
+
+    def drop(self, path: str, dtype: Optional[DataType]) -> PendingStruct:
+        """
+        Drop the field at a path.
+        """
+
+        name, _, rest = path.partition('.')
+        if rest:
+            field_dtype = _field_dtype(dtype, name)
+            self.fields[name] = PendingStruct.of(self.get(name), field_dtype).drop(rest, field_dtype)
+        else:
+            self.fields.pop(name, None)
+        return self
+
     def materialize(self, dtype: Optional[DataType]) -> Column:
         """
-        Materialize the struct with the fields of the given data type, in its order.
+        Build the struct with fields in the data type order.
         """
 
         names = list(dtype.names) if isinstance(dtype, StructType) else []
@@ -128,7 +150,7 @@ class PendingStruct:
 
     def is_not_null(self) -> Column:
         """
-        Return whether the materialized struct is not null, without building the struct itself.
+        Return whether the struct is not null, without building it.
         """
 
         return fn.lit(True) if self.base is None else self.base.isNotNull()
@@ -136,8 +158,7 @@ class PendingStruct:
 
 class PendingArrayStruct:
     """
-    Pending value of an array of structs that keeps every assigned element field as its own array, aligned with the
-    base array.
+    Array of structs whose assigned element fields are kept apart, as arrays aligned with the base array.
     """
 
     def __init__(self, base: Column) -> None:
@@ -146,24 +167,60 @@ class PendingArrayStruct:
         # set once a field is dropped: the elements must then be rebuilt even without any assigned field
         self.reshaped = False
 
+    @classmethod
+    def of(cls, value: Pending, dtype: Optional[DataType]) -> PendingArrayStruct:
+        """
+        Wrap a value into a pending array.
+        """
+
+        return value if isinstance(value, PendingArrayStruct) else cls(materialize(value, dtype))
+
     def get(self, name: str) -> Union[Column, PendingArrayStruct]:
         """
-        Return the pending values of a direct element field, as an array aligned with the base array.
+        Return the values of an element field, as an array aligned with the base.
         """
 
         if name in self.fields:
             return self.fields[name]
         return fn.transform(self.base, lambda x: x.getField(name))
 
+    def assign(
+        self, path: str, val: Union[Column, Callable[[Column], Column]], element_dtype: Optional[DataType],
+    ) -> PendingArrayStruct:
+        """
+        Assign the element field at a path, with a value or a function of the current one.
+        """
+
+        parent, _, name = path.rpartition('.')
+        pending = self._nested(parent)
+        if isinstance(val, Column):
+            pending.fields[name] = fn.transform(pending.base, lambda _: val)
+        else:
+            current = materialize(pending.get(name), _array_of(_field_dtype(element_dtype, path)))
+            pending.fields[name] = fn.transform(current, val)
+        return self
+
+    def drop(self, path: str) -> PendingArrayStruct:
+        """
+        Drop the element field at a path.
+        """
+
+        parent, _, name = path.rpartition('.')
+        pending = self._nested(parent)
+        pending.fields.pop(name, None)
+        # the rebuilt elements only keep the fields of the data type, which no longer has the dropped one
+        pending.reshaped = True
+        return self
+
     def materialize(self, dtype: Optional[DataType]) -> Column:
         """
-        Materialize the array with elements holding the fields of the given data type, in its order.
+        Build the array with element fields in the data type order.
         """
 
         if not self.fields and not self.reshaped:
             return self.base
 
-        element_dtype = dtype.elementType if isinstance(dtype, ArrayType) else None
+        element_dtype = _element_dtype(dtype)
         names = list(element_dtype.names) if isinstance(element_dtype, StructType) else []
         names += [name for name in self.fields if name not in names]
         slots = {name: f'_{i}' for i, name in enumerate((name for name in names if name in self.fields), start=1)}
@@ -184,10 +241,23 @@ class PendingArrayStruct:
 
     def is_not_null(self) -> Column:
         """
-        Return whether each materialized element is not null, without building the elements themselves.
+        Return whether each element is not null, without building the elements.
         """
 
         return fn.transform(self.base, fn.isnotnull)
+
+    def _nested(self, path: str) -> PendingArrayStruct:
+        """
+        Return the pending array of a nested element struct, making every struct along the path pending.
+        """
+
+        pending = self
+        for name in path.split('.') if path else []:
+            nested = pending.fields.get(name)
+            if not isinstance(nested, PendingArrayStruct):
+                nested = pending.fields[name] = PendingArrayStruct(pending.get(name))
+            pending = nested
+        return pending
 
 
 Pending = Union[Column, PendingStruct, PendingArrayStruct]
@@ -195,141 +265,10 @@ Pending = Union[Column, PendingStruct, PendingArrayStruct]
 
 def materialize(value: Optional[Pending], dtype: Optional[DataType]) -> Optional[Column]:
     """
-    Materialize a pending value into an expression.
+    Turn a pending value into an expression.
     """
 
     return value.materialize(dtype) if isinstance(value, (PendingStruct, PendingArrayStruct)) else value
-
-
-def _array_in_struct(column: str) -> Optional[tuple]:
-    """
-    Split a column below an array held by a struct field (e.g. "a.b[].c") into the struct path to the array (e.g. "b")
-    and the column relative to the array, rooted at "_" (e.g. "_[].c"), or return None for any other column.
-    """
-
-    prefix, sep, rest = column.partition('[]')
-    _, _, path = prefix.partition('.')
-    if not sep or not path:
-        return None
-    return path, f'_[]{rest}'
-
-
-def _element_path_of(column: str) -> Optional[list]:
-    """
-    Return the path of a column below the root array elements (e.g. ["b", "c"] for "a[].b.c"), or None for a column
-    that is not inside the root array elements or crosses another array.
-    """
-
-    _, sep, path = column.partition('[].')
-    if not sep or '[]' in path:
-        return None
-    return path.split('.')
-
-
-def _field_dtype(dtype: Optional[DataType], name: str) -> Optional[DataType]:
-    if isinstance(dtype, StructType) and name in dtype.names:
-        return dtype[name].dataType
-    return None
-
-
-def _element_dtype(dtype: Optional[DataType]) -> Optional[DataType]:
-    return dtype.elementType if isinstance(dtype, ArrayType) else None
-
-
-def _array_of(dtype: Optional[DataType]) -> Optional[DataType]:
-    return None if dtype is None else ArrayType(dtype)
-
-
-def _array_overlay_get(overlay: PendingArrayStruct, path: list, element_dtype: Optional[DataType]):
-    """
-    Return the pending values of a field below the elements of an array overlay, as an array aligned with it (or a
-    nested overlay), along with the element data type of that array.
-    """
-
-    value, dtype = overlay, element_dtype
-    for i, part in enumerate(path):
-        if not isinstance(value, PendingArrayStruct):
-            rest = path[i:]
-            value = fn.transform(value, lambda x: functools.reduce(Column.getField, rest, x))  # noqa: B023
-            for name in rest:
-                dtype = _field_dtype(dtype, name)
-            break
-        value, dtype = value.get(part), _field_dtype(dtype, part)
-    return value, dtype
-
-
-def _array_overlay_at(root_expr, root, path: list, root_dtype: Optional[DataType]):
-    """
-    Return the array overlay holding the parent of a field below the root array elements, creating the overlays along
-    the path, along with the root overlay and the element data type of the parent. Return None when a level above the
-    field is not a struct.
-    """
-
-    dtype = _element_dtype(root_dtype)
-    for part in path[:-1]:
-        dtype = _field_dtype(dtype, part)
-        if not isinstance(dtype, StructType):
-            return None
-    if not isinstance(_element_dtype(root_dtype), StructType):
-        return None
-
-    top = root_expr if isinstance(root_expr, PendingArrayStruct) else PendingArrayStruct(
-        root_expr if root_expr is not None else fn.col(root)
-    )
-    overlay, dtype = top, _element_dtype(root_dtype)
-    for part in path[:-1]:
-        nested = overlay.fields.get(part)
-        if not isinstance(nested, PendingArrayStruct):
-            nested = overlay.fields[part] = PendingArrayStruct(materialize(overlay.get(part), None))
-        overlay, dtype = nested, _field_dtype(dtype, part)
-    return top, overlay, dtype
-
-
-def _overlay_of(value: Union[Column, PendingStruct, None], dtype: Optional[DataType]) -> PendingStruct:
-    if isinstance(value, PendingStruct):
-        return value
-    # a missing value or a non-struct one is replaced with a struct built from scratch
-    return PendingStruct(value if isinstance(dtype, StructType) else None)
-
-
-def _overlay_update(value, path, update, dtype):
-    """
-    Replace the field at a struct path (e.g. "b.c") with update(current value, current data type), keeping every struct
-    along the path in a struct overlay.
-    """
-
-    if not path:
-        return update(value, dtype)
-
-    name, _, rest = path.partition('.')
-    overlay = _overlay_of(value, dtype)
-    field_dtype = _field_dtype(dtype, name)
-    current = None
-    if name in overlay.fields or (field_dtype is not None and overlay.base is not None):
-        current = overlay.get(name)
-    overlay.fields[name] = _overlay_update(current, rest, update, field_dtype)
-    return overlay
-
-
-def _overlay_set(value, path, val, dtype):
-    def assign(current, current_dtype):
-        if isinstance(val, (Column, PendingStruct)):
-            return val
-        return val(materialize(current, current_dtype))
-
-    return _overlay_update(value, path, assign, dtype)
-
-
-def _overlay_drop(value, path, dtype):
-    name, _, rest = path.partition('.')
-    overlay = _overlay_of(value, dtype)
-    if not rest:
-        overlay.fields.pop(name, None)
-        return overlay
-
-    if name in overlay.fields or overlay.base is not None:
-        overlay.fields[name] = _overlay_drop(overlay.get(name), rest, _field_dtype(dtype, name))
-    return overlay
 
 
 def nested_get_expr(
@@ -338,50 +277,10 @@ def nested_get_expr(
     root_dtype: Optional[DataType] = None,
 ) -> Column:
     """
-    Expression-level counterpart of fn.col: return the value expression of a nested column
-    navigated from the given root expression, flattening array element values with fn.transform.
-
-    :param column: column name, which can be nested (e.g. "a.b.c", "a.b[].c")
-    :param root_expr: current expression for the root column (falls back to fn.col of the root)
-    :param root_dtype: current data type of the root column (required when root_expr is an overlay)
-    :return: value expression for the column
+    Return the value of a nested column, an array of values below array elements.
     """
 
-    if isinstance(root_expr, PendingStruct) and (split := _array_in_struct(column)) is not None:
-        path, column = split
-        value, dtype = _overlay_get(path, root_expr, root_dtype)
-        return nested_get_expr(column, value, dtype)
-
-    if isinstance(root_expr, PendingStruct) and '[]' not in column:
-        value, dtype = _overlay_get(column.partition('.')[2], root_expr, root_dtype)
-        return materialize(value, dtype)
-
-    if isinstance(root_expr, PendingArrayStruct) and (path := _element_path_of(column)) is not None:
-        value, dtype = _array_overlay_get(root_expr, path, _element_dtype(root_dtype))
-        return materialize(value, _array_of(dtype))
-
-    root_expr = materialize(root_expr, root_dtype)
-
-    def field_expr(path):
-        parts = path.split('.')
-        expr = root_expr if root_expr is not None else fn.col(parts[0])
-        for part in parts[1:]:
-            expr = expr.getField(part)
-        return expr
-
-    def get_nested(x):
-        for part in nested[0].split('.'):
-            x = x[part]
-        return x
-
-    if '[]' not in column:
-        return field_expr(column)
-
-    if column.endswith('[]'):
-        return field_expr(column[:-2])
-
-    root, *nested = column.split('[].')
-    return fn.transform(field_expr(root), get_nested)
+    return materialize(*_resolve(column, root_expr, root_dtype))
 
 
 def nested_is_not_null_expr(
@@ -390,275 +289,102 @@ def nested_is_not_null_expr(
     root_dtype: Optional[DataType] = None,
 ) -> Column:
     """
-    Return whether a nested column is not null (an array of booleans, one per element, for array columns). A pending
-    struct or array is checked through its base, so its fields are not inlined into the check.
-
-    :param column: column name, which can be nested (e.g. "a.b.c", "a[]", "a[].b")
-    :param root_expr: current expression for the root column (falls back to fn.col of the root)
-    :param root_dtype: current data type of the root column (required when root_expr is an overlay)
-    :return: boolean expression
+    Return whether a nested column is not null (per element below array elements).
     """
 
-    if isinstance(root_expr, PendingStruct) and (split := _array_in_struct(column)) is not None:
-        path, column = split
-        value, dtype = _overlay_get(path, root_expr, root_dtype)
-        return nested_is_not_null_expr(column, value, dtype)
-
+    value, dtype = _resolve(column, root_expr, root_dtype)
     if '[]' in column:
-        value = None
-        if isinstance(root_expr, PendingArrayStruct) and column.count('.') == 0 and column.endswith('[]'):
-            value = root_expr
-        elif isinstance(root_expr, PendingArrayStruct) and (path := _element_path_of(column)) is not None:
-            value, _ = _array_overlay_get(root_expr, path, _element_dtype(root_dtype))
         if isinstance(value, PendingArrayStruct):
             return value.is_not_null()
-        return fn.transform(nested_get_expr(column, root_expr, root_dtype), fn.isnotnull)
+        return fn.transform(materialize(value, dtype), fn.isnotnull)
 
-    if isinstance(root_expr, PendingStruct):
-        value, _ = _overlay_get(column.partition('.')[2], root_expr, root_dtype)
-        if isinstance(value, PendingStruct):
-            return value.is_not_null()
-
-    return fn.isnotnull(nested_get_expr(column, root_expr, root_dtype))
+    if isinstance(value, PendingStruct):
+        return value.is_not_null()
+    return fn.isnotnull(materialize(value, dtype))
 
 
-def _overlay_get(path, value, dtype):
-    for part in path.split('.') if path else []:
-        value = value.getField(part) if isinstance(value, Column) else value.get(part)
-        dtype = _field_dtype(dtype, part)
-    return value, dtype
-
-
-def _struct_overlay_set(col_name, val, root_expr, root_dtype) -> Optional[PendingStruct]:
-    """
-    Assign a field below the root struct (e.g. "a.b.c", or "a.b[].c" below an array held by a struct field) in a struct
-    overlay, or return None when the column is not such a field.
-    """
-
-    root, sep, path = col_name.partition('.')
-    if not sep or '[]' in root:
-        return None
-
-    root_expr = root_expr if root_expr is not None else fn.col(root)
-    if (split := _array_in_struct(col_name)) is None:
-        return _overlay_set(root_expr, path, val, root_dtype)
-
-    # the array is set as a struct field like any other, so that its elements are kept pending in turn instead of
-    # rebuilding the whole struct around them
-    path, column = split
-
-    def assign(current, dtype):
-        # a missing array is created from scratch
-        return nested_set_expr(column, val, current, None if current is None else dtype)
-
-    return _overlay_update(root_expr, path, assign, root_dtype)
-
-
-def _array_overlay_set(col_name, val, root_expr, root_dtype) -> Optional[PendingArrayStruct]:
-    """
-    Assign a field below the root array elements (e.g. "a[].b.c") in an array overlay, or return None when the column
-    is not such a field.
-    """
-
-    path = _element_path_of(col_name)
-    if path is None:
-        return None
-
-    parent_dtype = _element_dtype(root_dtype)
-    for part in path[:-1]:
-        parent_dtype = _field_dtype(parent_dtype, part)
-    # a missing field can only take a plain value, as there is nothing to apply a function to
-    name = path[-1]
-    if not isinstance(parent_dtype, StructType) or (name not in parent_dtype.names and not isinstance(val, Column)):
-        return None
-
-    located = _array_overlay_at(root_expr, col_name.partition('[]')[0], path, root_dtype)
-    if located is None:
-        return None
-
-    top, overlay, dtype = located
-    if isinstance(val, Column):
-        overlay.fields[name] = fn.transform(overlay.base, lambda _: val)
-    else:
-        current = materialize(overlay.get(name), _array_of(_field_dtype(dtype, name)))
-        overlay.fields[name] = fn.transform(current, val)
-    return top
-
-
-def nested_set_expr(  # noqa: C901, PLR0911, PLR0915
-    col_name: str,
+def nested_set_expr(
+    column: str,
     val: Union[Column, PendingStruct, Callable[[Column], Column]],
     root_expr: Optional[Pending],
     root_dtype: Optional[DataType],
 ) -> Pending:
     """
-    Return the new value for the root column with the nested column set, creating a
-    nested structure as needed and driven by a data type tree instead of a DataFrame schema.
-    Fields of plain (non-array) structs are kept in a PendingStruct, and fields of array elements in a
-    PendingArrayStruct (whether the array is the root column or a struct field), both turned into an expression with
-    materialize.
-
-    :param col_name: column name, which can be nested (e.g. "a.b.c")
-    :param val: value to be assigned to the column
-    :param root_expr: current value of the root column (None if the column does not exist)
-    :param root_dtype: current data type of the root column (None if the column does not exist)
-    :return: new value for the root column
+    Return the new value of the root column with a nested column set, creating missing structs.
     """
 
-    if (overlay := _struct_overlay_set(col_name, val, root_expr, root_dtype)) is not None:
-        return overlay
+    root, path, elements = _split(column)
 
-    if (overlay := _array_overlay_set(col_name, val, root_expr, root_dtype)) is not None:
-        return overlay
+    def new_value(current, dtype):
+        if elements is None:
+            return val if isinstance(val, (Column, PendingStruct)) else val(materialize(current, dtype))
 
-    root_expr = materialize(root_expr, root_dtype)
-    root, *nested_names = col_name.split('.')
-    if is_array_root := root.endswith('[]'):
-        root = root[:-2]
-
-    exists = root_dtype is not None
-    base = root_expr if root_expr is not None else fn.col(root)
-
-    if not nested_names:
-        if is_array_root:
-            if not exists:
-                return fn.array()
-            fn_val = val
-            if isinstance(val, Column):
-                fn_val = lambda _: val  # noqa: E731
-            return fn.transform(base, fn_val)
-        return val
-
-    def build_struct(fields, nested, dtype, col):
-        is_array = nested[0].endswith('[]')
-
-        struct_cols = []
-        for field in fields:  # noqa: PLR1702
-            if field != nested[0].rstrip('[]'):
-                struct_cols.append(col.getField(field).alias(field))
-                continue
-
-            if len(nested) > 1:
-                field_dtype = dtype_at(dtype, nested[0])
-                nested_fields = field_dtype.names
-
-                if is_array:
-
-                    def build_array(x):
-                        return build_struct(nested_fields, nested[1:], field_dtype, x)  # noqa: B023
-
-                    expr = fn.transform(col.getField(field), build_array)
-                else:
-                    expr = build_struct(nested_fields, nested[1:], field_dtype, col.getField(field))
-                struct_cols.append(expr.alias(field))
-            else:
-                expr = val
-                if is_array:
-                    fn_val = val
-                    if isinstance(val, Column):
-                        fn_val = lambda _: val  # noqa: E731
-                    expr = fn.transform(col.getField(field), fn_val).alias(field)
-                elif not isinstance(val, Column):
-                    expr = val(col.getField(field))
-
-                struct_cols.append(expr.alias(field))
-
-        if nested[0].rstrip('[]') not in fields:
-            expr = val
-            if is_array:
-                expr = fn.array()
-            elif len(nested) > 1:
-                expr = build_struct([], nested[1:], None, col.getField(nested[0]))
-
-            struct_cols.append(expr.alias(nested[0]))
-
-        struct = fn.struct(*struct_cols)
-        return struct if dtype is None else fn.when(col.isNotNull(), struct)
-
-    if root_dtype is not None and root_dtype.typeName() == 'struct':
-        field_names, level_dtype = root_dtype.names, root_dtype
-    elif root_dtype is not None and root_dtype.typeName() == 'array' and root_dtype.elementType.typeName() == 'struct':
-        field_names, level_dtype = root_dtype.elementType.names, root_dtype.elementType
-    else:
-        field_names, level_dtype = [], None
-
-    if is_array_root:
-        if not exists:
+        if dtype is None:
+            # a missing array is created empty
             return fn.array()
-        return fn.transform(base, lambda x: build_struct(field_names, nested_names, level_dtype, x))
-    return build_struct(field_names, nested_names, level_dtype, base)
+
+        if not elements:
+            return fn.transform(materialize(current, dtype), (lambda _: val) if isinstance(val, Column) else val)
+
+        element_dtype = _element_dtype(dtype)
+        parent, _, name = elements.rpartition('.')
+        parent_dtype = _field_dtype(element_dtype, parent)
+        # a missing field is only kept pending with a plain value, as there is nothing to apply a function to
+        if isinstance(parent_dtype, StructType) and (isinstance(val, Column) or name in parent_dtype.names):
+            return PendingArrayStruct.of(current, dtype).assign(elements, val, element_dtype)
+
+        # otherwise, the field is set in every element rebuilt on its own
+        return fn.transform(
+            materialize(current, dtype),
+            lambda x: materialize(nested_set_expr(f'_.{elements}', val, x, element_dtype), element_dtype),
+        )
+
+    return _update_field(fn.col(root) if root_expr is None else root_expr, root_dtype, path, new_value)
 
 
 def nested_drop_expr(
     column: str,
-    root_expr: Union[Column, PendingStruct],
+    root_expr: Pending,
     root_dtype: DataType,
-) -> Union[Column, PendingStruct]:
+) -> Pending:
     """
-    Return the new value for the root column with the nested column removed.
+    Return the new value of the root column with a nested column removed.
+    """
 
-    :param column: column name, which can be nested (e.g. "a.b", "a[].b", "a.b[].c.d")
-    :param root_expr: current value of the root column
-    :param root_dtype: current data type of the root column
-    :return: new value for the root column
+    _, path, elements = _split(column)
+    if elements is None:
+        return PendingStruct.of(root_expr, root_dtype).drop(path, root_dtype)
+
+    def drop(x, x_dtype, names):
+        name, *rest = names
+        if rest:
+            return x.withField(name, drop(x[name], _field_dtype(x_dtype, name), rest))
+        if isinstance(x_dtype, StructType) and x_dtype.names == [name]:
+            # dropFields can't remove the last field of a struct
+            return fn.when(x.isNotNull(), fn.struct())
+        return x.dropFields(name)
+
+    def drop_elements(current, dtype):
+        if isinstance(current, PendingArrayStruct):
+            return current.drop(elements)
+        return fn.transform(materialize(current, dtype), lambda x: drop(x, _element_dtype(dtype), elements.split('.')))
+
+    return _update_field(root_expr, root_dtype, path, drop_elements)
+
+
+def elementwise(column: str, func: Callable[..., Column], *cols: Column) -> Column:
+    """
+    Apply a function to the values of a column, element by element below array elements.
     """
 
     if '[]' not in column:
-        return _overlay_drop(root_expr, column.partition('.')[2], root_dtype)
-
-    if (split := _array_in_struct(column)) is not None:
-        path, column = split
-        return _overlay_update(
-            root_expr, path, lambda current, dtype: nested_drop_expr(column, current, dtype), root_dtype,
-        )
-
-    path = _element_path_of(column)
-    if isinstance(root_expr, PendingArrayStruct) and path is not None:
-        located = _array_overlay_at(root_expr, column.partition('[]')[0], path, root_dtype)
-        if located is not None:
-            # the rebuilt elements only keep the fields of the data type, which no longer has the dropped one
-            top, overlay, _ = located
-            overlay.fields.pop(path[-1], None)
-            overlay.reshaped = True
-            return top
-
-    root_expr = materialize(root_expr, root_dtype)
-    if '[].' in column:
-        # drop a field from array element structs
-        root, *nested = column.split('[].')
-
-        def drop(x, nodes):
-            if len(nodes) <= 1:
-                return x.dropFields(nodes[0])
-
-            return x.withField(nodes[0], drop(x[nodes[0]], nodes[1:]))
-
-        return nested_set_expr(root + '[]', lambda x: drop(x, nested[0].split('.')), root_expr, root_dtype)
-
-    # rebuild parent structs skipping the dropped field
-    _, *nested_names = column.split('.')
-
-    def build_struct(fields, nested, dtype, col):
-        struct_cols = []
-        for field in fields:
-            if field != nested[0]:
-                struct_cols.append(col.getField(field).alias(field))
-                continue
-
-            if len(nested) > 1:
-                field_dtype = dtype_at(dtype, field)
-                struct_cols.append(
-                    build_struct(field_dtype.names, nested[1:], field_dtype, col.getField(field)).alias(field)
-                )
-
-        return fn.struct(*struct_cols)
-
-    return build_struct(root_dtype.names, nested_names, root_dtype, root_expr)
+        return func(*cols)
+    return fn.transform(*cols, func) if len(cols) == 1 else fn.zip_with(*cols, func)
 
 
 def format_value(value: Column, dtype_name: str) -> Column:
     """
-    Render a value as the JSON text reported as the original next to an error.
+    Render a value as JSON text.
     """
 
     null = fn.when(value.isNull(), fn.lit('null'))
@@ -667,3 +393,73 @@ def format_value(value: Column, dtype_name: str) -> Column:
     if dtype_name in {'array', 'map', 'struct'}:
         return null.otherwise(fn.to_json(value, {'ignoreNullFields': 'false'}))
     return null.otherwise(value.cast('string'))
+
+
+def _split(column: str) -> tuple[str, str, Optional[str]]:
+    """
+    Split a column into its root, the path below it and the path below array elements.
+    """
+
+    head, sep, rest = column.partition('[]')
+    root, _, path = head.partition('.')
+    return root, path, rest.removeprefix('.') if sep else None
+
+
+def _resolve(
+    column: str,
+    root_expr: Optional[Pending],
+    root_dtype: Optional[DataType],
+) -> tuple[Pending, Optional[DataType]]:
+    """
+    Return the pending value of a column and its data type (an array of values below array elements).
+    """
+
+    root, path, elements = _split(column)
+    value = fn.col(root) if root_expr is None else root_expr
+    for name in path.split('.') if path else []:
+        value = value.getField(name) if isinstance(value, Column) else value.get(name)
+    dtype = _field_dtype(root_dtype, path)
+    if not elements:
+        return value, dtype
+
+    dtype = _array_of(_field_dtype(_element_dtype(dtype), elements))
+    while elements and isinstance(value, PendingArrayStruct):
+        name, _, elements = elements.partition('.')
+        value = value.get(name)
+    if elements:
+        names = elements.split('.')
+        value = fn.transform(value, lambda x: functools.reduce(Column.getField, names, x))
+    return value, dtype
+
+
+def _update_field(
+    value: Optional[Pending],
+    dtype: Optional[DataType],
+    path: str,
+    new_value: Callable[[Optional[Pending], Optional[DataType]], Pending],
+) -> Pending:
+    """
+    Replace the value at a path with new_value(current value, current data type).
+    """
+
+    if not path:
+        return new_value(value, dtype)
+    return PendingStruct.of(value, dtype).update(path, new_value, dtype)
+
+
+def _field_dtype(dtype: Optional[DataType], path: str) -> Optional[DataType]:
+    """
+    Return the data type at a struct path, or None when missing.
+    """
+
+    for name in path.split('.') if path else []:
+        dtype = dtype[name].dataType if isinstance(dtype, StructType) and name in dtype.names else None
+    return dtype
+
+
+def _element_dtype(dtype: Optional[DataType]) -> Optional[DataType]:
+    return dtype.elementType if isinstance(dtype, ArrayType) else None
+
+
+def _array_of(dtype: Optional[DataType]) -> Optional[DataType]:
+    return None if dtype is None else ArrayType(dtype)

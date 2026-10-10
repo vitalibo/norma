@@ -1,0 +1,16 @@
+{
+  "type": "struct",
+  "fields": [
+    {
+      "name": "f1",
+      "type": {
+        "type": "array",
+        "elementType": {
+          "type": "struct",
+          "fields": []
+        },
+        "containsNull": true
+      }
+    }
+  ]
+}
