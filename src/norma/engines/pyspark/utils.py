@@ -107,9 +107,9 @@ class PendingStruct:
         self.base = base
         self.fields = {}
 
-    def get(self, name: str) -> Union[Column, PendingStruct]:
+    def get(self, name: str) -> Pending:
         """
-        Return the pending value of a direct field (an overlay for a struct field assigned deeper).
+        Return the pending value of a direct field (an overlay for a struct or array field assigned deeper).
         """
 
         if name in self.fields:
@@ -201,6 +201,19 @@ def materialize(value: Optional[Pending], dtype: Optional[DataType]) -> Optional
     return value.materialize(dtype) if isinstance(value, (PendingStruct, PendingArrayStruct)) else value
 
 
+def _array_in_struct(column: str) -> Optional[tuple]:
+    """
+    Split a column below an array held by a struct field (e.g. "a.b[].c") into the struct path to the array (e.g. "b")
+    and the column relative to the array, rooted at "_" (e.g. "_[].c"), or return None for any other column.
+    """
+
+    prefix, sep, rest = column.partition('[]')
+    _, _, path = prefix.partition('.')
+    if not sep or not path:
+        return None
+    return path, f'_[]{rest}'
+
+
 def _element_path_of(column: str) -> Optional[list]:
     """
     Return the path of a column below the root array elements (e.g. ["b", "c"] for "a[].b.c"), or None for a column
@@ -279,11 +292,14 @@ def _overlay_of(value: Union[Column, PendingStruct, None], dtype: Optional[DataT
     return PendingStruct(value if isinstance(dtype, StructType) else None)
 
 
-def _overlay_set(value, path, val, dtype):
+def _overlay_update(value, path, update, dtype):
+    """
+    Replace the field at a struct path (e.g. "b.c") with update(current value, current data type), keeping every struct
+    along the path in a struct overlay.
+    """
+
     if not path:
-        if isinstance(val, (Column, PendingStruct)):
-            return val
-        return val(materialize(value, dtype))
+        return update(value, dtype)
 
     name, _, rest = path.partition('.')
     overlay = _overlay_of(value, dtype)
@@ -291,8 +307,17 @@ def _overlay_set(value, path, val, dtype):
     current = None
     if name in overlay.fields or (field_dtype is not None and overlay.base is not None):
         current = overlay.get(name)
-    overlay.fields[name] = _overlay_set(current, rest, val, field_dtype)
+    overlay.fields[name] = _overlay_update(current, rest, update, field_dtype)
     return overlay
+
+
+def _overlay_set(value, path, val, dtype):
+    def assign(current, current_dtype):
+        if isinstance(val, (Column, PendingStruct)):
+            return val
+        return val(materialize(current, current_dtype))
+
+    return _overlay_update(value, path, assign, dtype)
 
 
 def _overlay_drop(value, path, dtype):
@@ -322,8 +347,13 @@ def nested_get_expr(
     :return: value expression for the column
     """
 
+    if isinstance(root_expr, PendingStruct) and (split := _array_in_struct(column)) is not None:
+        path, column = split
+        value, dtype = _overlay_get(path, root_expr, root_dtype)
+        return nested_get_expr(column, value, dtype)
+
     if isinstance(root_expr, PendingStruct) and '[]' not in column:
-        value, dtype = _overlay_get(column, root_expr, root_dtype)
+        value, dtype = _overlay_get(column.partition('.')[2], root_expr, root_dtype)
         return materialize(value, dtype)
 
     if isinstance(root_expr, PendingArrayStruct) and (path := _element_path_of(column)) is not None:
@@ -369,6 +399,11 @@ def nested_is_not_null_expr(
     :return: boolean expression
     """
 
+    if isinstance(root_expr, PendingStruct) and (split := _array_in_struct(column)) is not None:
+        path, column = split
+        value, dtype = _overlay_get(path, root_expr, root_dtype)
+        return nested_is_not_null_expr(column, value, dtype)
+
     if '[]' in column:
         value = None
         if isinstance(root_expr, PendingArrayStruct) and column.count('.') == 0 and column.endswith('[]'):
@@ -380,19 +415,43 @@ def nested_is_not_null_expr(
         return fn.transform(nested_get_expr(column, root_expr, root_dtype), fn.isnotnull)
 
     if isinstance(root_expr, PendingStruct):
-        value, _ = _overlay_get(column, root_expr, root_dtype)
+        value, _ = _overlay_get(column.partition('.')[2], root_expr, root_dtype)
         if isinstance(value, PendingStruct):
             return value.is_not_null()
 
     return fn.isnotnull(nested_get_expr(column, root_expr, root_dtype))
 
 
-def _overlay_get(column, root_expr, root_dtype):
-    value, dtype = root_expr, root_dtype
-    for part in column.split('.')[1:]:
+def _overlay_get(path, value, dtype):
+    for part in path.split('.') if path else []:
         value = value.getField(part) if isinstance(value, Column) else value.get(part)
         dtype = _field_dtype(dtype, part)
     return value, dtype
+
+
+def _struct_overlay_set(col_name, val, root_expr, root_dtype) -> Optional[PendingStruct]:
+    """
+    Assign a field below the root struct (e.g. "a.b.c", or "a.b[].c" below an array held by a struct field) in a struct
+    overlay, or return None when the column is not such a field.
+    """
+
+    root, sep, path = col_name.partition('.')
+    if not sep or '[]' in root:
+        return None
+
+    root_expr = root_expr if root_expr is not None else fn.col(root)
+    if (split := _array_in_struct(col_name)) is None:
+        return _overlay_set(root_expr, path, val, root_dtype)
+
+    # the array is set as a struct field like any other, so that its elements are kept pending in turn instead of
+    # rebuilding the whole struct around them
+    path, column = split
+
+    def assign(current, dtype):
+        # a missing array is created from scratch
+        return nested_set_expr(column, val, current, None if current is None else dtype)
+
+    return _overlay_update(root_expr, path, assign, root_dtype)
 
 
 def _array_overlay_set(col_name, val, root_expr, root_dtype) -> Optional[PendingArrayStruct]:
@@ -435,8 +494,9 @@ def nested_set_expr(  # noqa: C901, PLR0911, PLR0915
     """
     Return the new value for the root column with the nested column set, creating a
     nested structure as needed and driven by a data type tree instead of a DataFrame schema.
-    Fields of plain (non-array) structs are kept in a StructOverlay, and direct fields of the root array elements in
-    an ArrayOverlay, both turned into an expression with materialize.
+    Fields of plain (non-array) structs are kept in a PendingStruct, and fields of array elements in a
+    PendingArrayStruct (whether the array is the root column or a struct field), both turned into an expression with
+    materialize.
 
     :param col_name: column name, which can be nested (e.g. "a.b.c")
     :param val: value to be assigned to the column
@@ -445,9 +505,8 @@ def nested_set_expr(  # noqa: C901, PLR0911, PLR0915
     :return: new value for the root column
     """
 
-    if '.' in col_name and '[]' not in col_name:
-        root, _, path = col_name.partition('.')
-        return _overlay_set(root_expr if root_expr is not None else fn.col(root), path, val, root_dtype)
+    if (overlay := _struct_overlay_set(col_name, val, root_expr, root_dtype)) is not None:
+        return overlay
 
     if (overlay := _array_overlay_set(col_name, val, root_expr, root_dtype)) is not None:
         return overlay
@@ -546,6 +605,12 @@ def nested_drop_expr(
 
     if '[]' not in column:
         return _overlay_drop(root_expr, column.partition('.')[2], root_dtype)
+
+    if (split := _array_in_struct(column)) is not None:
+        path, column = split
+        return _overlay_update(
+            root_expr, path, lambda current, dtype: nested_drop_expr(column, current, dtype), root_dtype,
+        )
 
     path = _element_path_of(column)
     if isinstance(root_expr, PendingArrayStruct) and path is not None:

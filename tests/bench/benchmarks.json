@@ -642,5 +642,112 @@
         }
       }
     }
+  },
+  {
+    "benchmark": "struct_array",
+    "description": "one struct column with cols string fields and an array of items structs with cols string fields each",
+    "runs": [
+      "cols=2,items=2,schema=true,analyzed_plan=true,physical_plan=true",
+      "cols=4,items=2",
+      "cols=8,items=2",
+      "cols=16,items=2",
+      "cols=32,items=2",
+      "cols=128,items=2,rows=10000"
+    ],
+    "state": {
+      "data": {
+        "!iter(row in 0..{rows})": [
+          {
+            "n0": {
+              "!for(i in 0..{cols})": {
+                "f{i}": "(row + {i}) % 110 - 5"
+              },
+              "a0": [
+                {
+                  "!for(j in 0..{items})": [
+                    {
+                      "!for(i in 0..{cols})": {
+                        "f{i}": "(row + {i} + {j}) % 110 - 5"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "schema": {
+        "type": "struct",
+        "fields": [
+          {
+            "name": "n0",
+            "type": {
+              "type": "struct",
+              "fields": [
+                {
+                  "!for(i in 0..{cols})": [
+                    {
+                      "name": "f{i}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "name": "a0",
+                  "type": {
+                    "type": "array",
+                    "containsNull": true,
+                    "elementType": {
+                      "type": "struct",
+                      "fields": {
+                        "!for(i in 0..{cols})": [
+                          {
+                            "name": "f{i}",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "json_schema": {
+      "type": "object",
+      "properties": {
+        "n0": {
+          "type": "object",
+          "properties": {
+            "!for(i in 0..{cols})": {
+              "f{i}": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            },
+            "a0": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "!for(i in 0..{cols})": {
+                    "f{i}": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 ]

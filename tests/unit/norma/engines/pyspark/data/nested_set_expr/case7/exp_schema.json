@@ -25,7 +25,7 @@
                         {
                           "name": "f4",
                           "type": "string",
-                          "nullable": false
+                          "nullable": true
                         }
                       ]
                     }

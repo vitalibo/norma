@@ -182,8 +182,20 @@ def _nullify_invalid_values(df, schema, error_state):
 
     expr_of, set_expr, apply = _expr_accumulator(df)
 
+    def reset_elements(column, flags):
+        try:
+            dtype = dtype_at(df.schema, column)
+        except KeyError:
+            # the column was dropped along the way, while the error flags of its elements remained
+            return
+        set_expr(column, _nullify_elements(expr_of(column), flags, dtype.elementType))
+
     masks = {}
     for name, _ in reversed(schema.nested_columns.items()):
+        if name in masks:
+            # the array column comes right after its element columns: its elements are reset first, so that the checks
+            # of the array itself and of its parents wrap them instead of being inlined into every field around them
+            reset_elements(name, masks.pop(name))
         if name not in error_state.names:
             continue
         if '[]' not in name and error_state.details_column_for(name) in df.columns:
@@ -192,13 +204,6 @@ def _nullify_invalid_values(df, schema, error_state):
             root, *nested = name.split('[].')
             path = nested[0] if nested else ''
             masks.setdefault(root.removesuffix('[]'), []).append((path, fn.col(error_state.indexes_column_for(name))))
-
-    for root, flags in masks.items():
-        try:
-            dtype = dtype_at(df.schema, root)
-        except KeyError:
-            continue
-        set_expr(root, _nullify_elements(expr_of(root), flags, dtype.elementType))
 
     return apply(df)
 
