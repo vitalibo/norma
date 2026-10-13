@@ -13,13 +13,13 @@ class ErrorState(abc.ABC):
     """
 
     @abc.abstractmethod
-    def add_errors(self, boolmask, column, **kwargs):
+    def add_errors(self, boolmask, column, details):
         """
         Add errors to the error state for a given column
 
         :param boolmask: Boolean expression for the error condition (True values indicate errors)
         :param column: The name of the column where the errors occurred
-        :param kwargs: Additional details about the errors
+        :param details: The details of the errors: type and msg
         """
 
 

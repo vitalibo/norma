@@ -32,19 +32,17 @@ class ErrorState(IErrorState):
         self.parsed = set()
         self.with_loc = with_loc
 
-    def add_errors(self, boolmask, column, **kwargs):
+    def add_errors(self, boolmask, column, details):
         """
         Add errors to the error state for a given column
         """
-
-        details = dict(kwargs.get('details', {}) or kwargs)
 
         if isinstance(boolmask.index, pd.MultiIndex):
             self._add_element_errors(boolmask, column, details)
             return
 
         if self.with_loc:
-            details['loc'] = None
+            details = {**details, 'loc': None}
 
         for index in boolmask[boolmask].index:
             if index not in self.errors:

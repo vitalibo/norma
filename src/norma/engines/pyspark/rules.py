@@ -44,12 +44,11 @@ class ErrorState(IErrorState):
         self.exprs, self.details, self.dropped = {}, {}, set()
         self.resync(df)
 
-    def add_errors(self, boolmask: Column, column: str, details=None, **kwargs) -> None:
+    def add_errors(self, boolmask: Column, column: str, details) -> None:
         """
         Record an error detail expression for a column (True values in the boolmask indicate errors).
         """
 
-        details = dict(details or kwargs)
         if '[]' not in column:
             self.details.setdefault(column, []).append(fn.when(boolmask, fn.array(self._details_struct(details))))
             return
