@@ -39,20 +39,6 @@ class Rule(abc.ABC):
         :return: The DataFrame with validated data of None if errors occurred
         """
 
-    @classmethod
-    def new(cls, func) -> Rule:
-        """
-        Create a new rule from a function
-
-        :param func: The function is to decorate and used as a rule
-        """
-
-        class _DecoratedRule(cls):
-            def verify(self, df: DataFrame, column: str, error_state: ErrorState) -> DataFrame:
-                return func(df, column, error_state)
-
-        return _DecoratedRule()
-
 
 class RuleProxy(Rule):
     """

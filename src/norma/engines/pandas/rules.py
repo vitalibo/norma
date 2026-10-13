@@ -156,31 +156,44 @@ def rule(func, **kwargs) -> BaseRule:
     return BaseRule(func, **kwargs)
 
 
-def required() -> Rule:
-    @Rule.new
-    def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+class RequiredRule(Rule):
+    """
+    Rule reporting the rows where a column that the schema declares is absent
+    """
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         boolmask = error_state.absent_of(column, df.index) & error_state.container_of(column, df.index)
         if boolmask.any():
             error_state.add_errors(boolmask, column, details=errors.MISSING)
 
         return df[column]
 
-    return verify
+
+def required() -> Rule:
+    return RequiredRule()
 
 
-def default(value: Any) -> Rule:
-    @Rule.new
-    def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
+class DefaultRule(Rule):
+    """
+    Rule injecting a static value into the rows where the column is absent
+    """
+
+    def __init__(self, value: Any) -> None:
+        self.value = value
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
         boolmask = error_state.absent_of(column, df.index) & error_state.container_of(column, df.index)
         if not boolmask.any():
             return df[column]
 
-        series = pd.Series(value, index=df.index) if boolmask.all() else df[column].where(~boolmask, value)
+        series = pd.Series(self.value, index=df.index) if boolmask.all() else df[column].where(~boolmask, self.value)
         error_state.set_backup(column, series, overwrite=True)
         error_state.absent[column] = error_state.absent_of(column, df.index) & ~boolmask
         return series
 
-    return verify
+
+def default(value: Any) -> Rule:
+    return DefaultRule(value)
 
 
 def equal_to(eq: Any) -> Rule:
@@ -376,10 +389,16 @@ def duration_parsing(nullable: bool = False) -> Rule:
     )
 
 
-def extra_forbidden(allowed: Iterable[str]) -> Rule:
-    @Rule.new
-    def verify(df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
-        if column in allowed:
+class ExtraForbiddenRule(Rule):
+    """
+    Rule reporting and dropping a column that the schema does not declare
+    """
+
+    def __init__(self, allowed: Iterable[str]) -> None:
+        self.allowed = allowed
+
+    def verify(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> Optional[pd.Series]:
+        if column in self.allowed:
             return df[column]
 
         error_state.add_errors(~error_state.absent_of(column, df.index), column, details=errors.EXTRA_FORBIDDEN)
@@ -388,7 +407,9 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
         df.drop(column, axis=1, inplace=True)  # noqa: PD002
         return None
 
-    return verify
+
+def extra_forbidden(allowed: Iterable[str]) -> Rule:
+    return ExtraForbiddenRule(allowed)
 
 
 def uuid_parsing(nullable: bool = False) -> Rule:
