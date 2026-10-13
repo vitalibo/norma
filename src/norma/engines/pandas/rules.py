@@ -1,9 +1,10 @@
 import abc
+import functools
 import inspect
 import json
 from collections import defaultdict
 from itertools import starmap
-from typing import Any, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 from uuid import UUID
 
 import numpy as np
@@ -143,10 +144,6 @@ class BaseRule(Rule):
         if len(func_params) == 3:
             return self.func(**func_params)
 
-        if '__pre_func__' in self.kwargs:
-            pre_func = self.kwargs['__pre_func__']
-            df = pre_func(**inspect_params(pre_func))
-
         boolmask = self.func(**inspect_params(self.func))
         error_state.add_errors(boolmask, column, details=self.kwargs.get('details', {}) or self.kwargs)
         return df[column]
@@ -238,58 +235,67 @@ def less_than_equal(le: Any) -> Rule:
     )
 
 
-def multiple_of(multiple: float) -> Rule:
-    def before(df, col):
-        if not pd.api.types.is_numeric_dtype(df[col]):
-            raise ValueError('multiple_of rule can only be applied to numeric columns')
-        return df
+def applies_to(kind: str, check: Callable[[pd.Series], bool]):
+    """
+    Decorate a rule factory, so that its rules can only be applied to columns passing the check
+    """
 
+    def decorator(factory):
+        @functools.wraps(factory)
+        def wrapper(*args, **kwargs):
+            instance = factory(*args, **kwargs)
+            verify = instance.verify
+
+            def checked_verify(df, column, error_state):
+                if not check(df[column]):
+                    raise ValueError(f'{factory.__name__} rule can only be applied to {kind} columns')
+                return verify(df, column, error_state)
+
+            instance.verify = checked_verify
+            return instance
+
+        return wrapper
+
+    return decorator
+
+
+def _is_array(series: pd.Series) -> bool:
+    is_array = pd.api.types.is_object_dtype(series) and series.dropna().apply(lambda x: isinstance(x, list)).all()
+    return is_array or series.isna().all()
+
+
+@applies_to('numeric', pd.api.types.is_numeric_dtype)
+def multiple_of(multiple: float) -> Rule:
     if multiple <= 0:
         raise ValueError('multiple_of must be greater than zero')
 
     return rule(
         lambda df, col: (df[col][df[col].notna()] < 0) | (df[col][df[col].notna()] % multiple != 0.0),  # noqa: RUF069
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
-        __pre_func__=before,
     )
 
 
+@applies_to('string', pd.api.types.is_string_dtype)
 def min_length(value: int) -> Rule:
-    def before(df, column):
-        if not pd.api.types.is_string_dtype(df[column]):
-            raise ValueError('min_length rule can only be applied to string columns')
-        return df
-
     return rule(
         lambda df, col: df[col][df[col].notna()].str.len() < value,
         details=errors.STRING_TOO_SHORT.format(min_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before,
     )
 
 
+@applies_to('string', pd.api.types.is_string_dtype)
 def max_length(value: int) -> Rule:
-    def before(df, column):
-        if not pd.api.types.is_string_dtype(df[column]):
-            raise ValueError('max_length rule can only be applied to string columns')
-        return df
-
     return rule(
         lambda df, col: df[col][df[col].notna()].str.len() > value,
         details=errors.STRING_TOO_LONG.format(max_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=before,
     )
 
 
+@applies_to('string', pd.api.types.is_string_dtype)
 def pattern(regex: str) -> Rule:
-    def before(df, column):
-        if not pd.api.types.is_string_dtype(df[column]):
-            raise ValueError('pattern rule can only be applied to string columns')
-        return df
-
     return rule(
         lambda df, col: ~df[col][df[col].notna()].str.match(regex, na=False),
         details=errors.STRING_PATTERN_MISMATCH.format(pattern=regex),
-        __pre_func__=before,
     )
 
 
@@ -307,18 +313,7 @@ def notin(values: Iterable[Any]) -> Rule:
     )
 
 
-def _ensure_array_column(rule_name):
-    def before(df, column):
-        series = df[column]
-        is_array = pd.api.types.is_object_dtype(series) \
-                   and series.dropna().apply(lambda x: isinstance(x, list)).all()
-        if not (is_array or series.isna().all()):
-            raise ValueError(f'{rule_name} rule can only be applied to array columns')
-        return df
-
-    return before
-
-
+@applies_to('array', _is_array)
 def unique_items() -> Rule:
     def has_duplicates(items):
         keys = [json.dumps(item, sort_keys=True, default=str) for item in items]
@@ -327,23 +322,22 @@ def unique_items() -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()].apply(has_duplicates),
         details=errors.UNIQUE_ITEMS,
-        __pre_func__=_ensure_array_column('unique_items'),
     )
 
 
+@applies_to('array', _is_array)
 def max_items(value: int) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()].apply(len) > value,
         details=errors.TOO_LONG.format(_type_='Array', max_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=_ensure_array_column('max_items'),
     )
 
 
+@applies_to('array', _is_array)
 def min_items(value: int) -> Rule:
     return rule(
         lambda df, col: df[col][df[col].notna()].apply(len) < value,
         details=errors.TOO_SHORT.format(_type_='Array', min_length=value, _plural_='s' if value > 1 else ''),
-        __pre_func__=_ensure_array_column('min_items'),
     )
 
 
