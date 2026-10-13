@@ -350,7 +350,9 @@ def time_parsing(nullable: bool = False) -> Rule:
     :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('time_parsing', 1, nullable=nullable)
+    regex = r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$'
+
+    return RuleProxy('time_parsing', 1, regex=regex, nullable=nullable)
 
 
 def duration_parsing(nullable: bool = False) -> Rule:
@@ -360,7 +362,9 @@ def duration_parsing(nullable: bool = False) -> Rule:
     :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('duration_parsing', 1, nullable=nullable)
+    regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
+
+    return RuleProxy('duration_parsing', 1, regex=regex, nullable=nullable)
 
 
 def uuid_parsing(nullable: bool = False) -> Rule:
@@ -370,7 +374,9 @@ def uuid_parsing(nullable: bool = False) -> Rule:
     :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('uuid_parsing', 1, nullable=nullable)
+    regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+
+    return RuleProxy('uuid_parsing', 1, regex=regex, nullable=nullable)
 
 
 def ipv4_address(nullable: bool = False) -> Rule:
@@ -380,7 +386,9 @@ def ipv4_address(nullable: bool = False) -> Rule:
     :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('ipv4_address', 1, nullable=nullable)
+    regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
+
+    return RuleProxy('ipv4_address', 1, regex=regex, nullable=nullable)
 
 
 def ipv6_address(nullable: bool = False) -> Rule:
@@ -390,7 +398,19 @@ def ipv6_address(nullable: bool = False) -> Rule:
     :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('ipv6_address', 1, nullable=nullable)
+    # Regular expression to match valid IPv6 addresses
+    # link: https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
+    regex = (
+        r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:'
+        r'[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0'
+        r'-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}'
+        r'(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7'
+        r'}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4'
+        r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
+        r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
+    )
+
+    return RuleProxy('ipv6_address', 1, regex=regex, nullable=nullable)
 
 
 def uri_parsing(nullable: bool = False) -> Rule:
@@ -400,7 +420,14 @@ def uri_parsing(nullable: bool = False) -> Rule:
     :param nullable: Whether a null value is allowed
     """
 
-    return RuleProxy('uri_parsing', 1, nullable=nullable)
+    regex = (
+        r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
+        r"()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9"
+        r"]|[!$&'()*+,;=:@])+)*)?(\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(\#(?:[a-z0-9-._"
+        r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$"
+    )
+
+    return RuleProxy('uri_parsing', 1, regex=regex, nullable=nullable)
 
 
 def object_parsing(schema, nullable: bool = False) -> Rule:

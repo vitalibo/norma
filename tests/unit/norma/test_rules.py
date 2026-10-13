@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import uuid  # noqa: F401
@@ -10,7 +11,7 @@ import pyspark.sql.functions as fn  # noqa: F401
 import pytest
 from pyxis.pyspark import StructType
 
-from norma import rules  # noqa: F401
+from norma import rules
 from norma.engines.pandas import rules as pandas_rules
 from norma.schema import Column, Schema
 
@@ -147,7 +148,11 @@ def make_test_pandas_api(test_name, case):
         else mock.MagicMock()
     ) as e:
         # when
-        rule = getattr(pandas_rules, test_name)(**case['when']['args'])
+        params = case['when']['args']
+        if 'regex' not in params and 'regex' in inspect.signature(getattr(pandas_rules, test_name)).parameters:
+            # the format rules take the regex the engine-agnostic rule defines
+            params = {**params, 'regex': getattr(rules, test_name)().kwargs['regex']}
+        rule = getattr(pandas_rules, test_name)(**params)
         actual = rule.verify(df, case['when'].get('column', 'col'), error_state)
 
         # then

@@ -13,8 +13,8 @@ from pyspark.sql.types import (
 
 from norma import errors
 from norma.engines.pyspark.utils import (
-    PendingStruct, dtype_at, dtype_drop, dtype_set, elementwise, format_value, materialize,
-    nested_drop_expr, nested_get_expr, nested_is_not_null_expr, nested_set_expr,
+    PendingStruct, dtype_at, dtype_drop, dtype_set, elementwise, format_value, materialize, nested_drop_expr,
+    nested_get_expr, nested_is_not_null_expr, nested_set_expr,
 )
 from norma.rules import ErrorState as IErrorState
 from norma.rules import Rule
@@ -633,12 +633,9 @@ def date_parsing(nullable: bool = False) -> Rule:
     )
 
 
-def time_parsing(nullable: bool = False) -> Rule:
-    time_regex = (
-        r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$'
-    )
-    return ComplexTypeRule(
-        lambda col: fn.when(col.rlike(time_regex), col),
+def time_parsing(regex: str, nullable: bool = False) -> Rule:
+    return StringDerivedTypeRule(
+        lambda col: fn.when(col.rlike(regex), col),
         StringType(),
         (StringType,),
         errors.TIME_TYPE,
@@ -647,10 +644,9 @@ def time_parsing(nullable: bool = False) -> Rule:
     )
 
 
-def duration_parsing(nullable: bool = False) -> Rule:
-    duration_regex = r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$'
-    return ComplexTypeRule(
-        lambda col: fn.when(col.rlike(duration_regex), col),
+def duration_parsing(regex: str, nullable: bool = False) -> Rule:
+    return StringDerivedTypeRule(
+        lambda col: fn.when(col.rlike(regex), col),
         StringType(),
         (StringType,),
         errors.DURATION_TYPE,
@@ -659,10 +655,9 @@ def duration_parsing(nullable: bool = False) -> Rule:
     )
 
 
-def uuid_parsing(nullable: bool = False) -> Rule:
-    uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-    return ComplexTypeRule(
-        lambda col: fn.when(fn.lower(col).rlike(uuid_regex), fn.lower(col)),
+def uuid_parsing(regex: str, nullable: bool = False) -> Rule:
+    return StringDerivedTypeRule(
+        lambda col: fn.when(fn.lower(col).rlike(regex), fn.lower(col)),
         StringType(),
         (StringType,),
         errors.UUID_TYPE,
@@ -671,10 +666,9 @@ def uuid_parsing(nullable: bool = False) -> Rule:
     )
 
 
-def ipv4_address(nullable: bool = False) -> Rule:
-    ipv4_regex = r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$'
-    return ComplexTypeRule(
-        lambda col: fn.when(col.rlike(ipv4_regex), col),
+def ipv4_address(regex: str, nullable: bool = False) -> Rule:
+    return StringDerivedTypeRule(
+        lambda col: fn.when(col.rlike(regex), col),
         StringType(),
         (StringType,),
         errors.IPV4,
@@ -683,20 +677,9 @@ def ipv4_address(nullable: bool = False) -> Rule:
     )
 
 
-def ipv6_address(nullable: bool = False) -> Rule:
-    # Regular expression to match valid IPv6 addresses
-    # link: https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
-    ipv6_regex = (
-        r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:'
-        r'[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0'
-        r'-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}'
-        r'(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7'
-        r'}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4'
-        r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
-        r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
-    )
-    return ComplexTypeRule(
-        lambda col: fn.when(col.rlike(ipv6_regex), col),
+def ipv6_address(regex: str, nullable: bool = False) -> Rule:
+    return StringDerivedTypeRule(
+        lambda col: fn.when(col.rlike(regex), col),
         StringType(),
         (StringType,),
         errors.IPV6,
@@ -705,16 +688,9 @@ def ipv6_address(nullable: bool = False) -> Rule:
     )
 
 
-def uri_parsing(nullable: bool = False) -> Rule:
-    uri_regex = (
-        r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
-        r"()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9"
-        r"]|[!$&'()*+,;=:@])+)*)?(\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(\#(?:[a-z0-9-._"
-        r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$"
-    )
-
-    return ComplexTypeRule(
-        lambda col: fn.when(col.rlike(uri_regex), col),
+def uri_parsing(regex: str, nullable: bool = False) -> Rule:
+    return StringDerivedTypeRule(
+        lambda col: fn.when(col.rlike(regex), col),
         StringType(),
         (StringType,),
         errors.URI_TYPE,
@@ -814,7 +790,7 @@ class DataTypeRule(Rule):
         error_state.set_expr(column, self.caster, self._cast_result_dtype(data_type))
 
 
-class ComplexTypeRule(DataTypeRule):
+class StringDerivedTypeRule(DataTypeRule):
     """
     Rule keeping the strings that match a format: a column is checked even when it already holds strings
     """

@@ -365,22 +365,12 @@ def date_parsing(nullable: bool = False) -> Rule:
     return DatetimeTypeRule('datetime64[D]', errors.DATE_TYPE, errors.DATE_PARSING, nullable)
 
 
-def time_parsing(nullable: bool = False) -> Rule:
-    return RegexStringDerivedTypeRule(
-        r'^(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]{1,6})?(Z|[+-](2[0-3]|[01][0-9]):([0-5][0-9]))?$',
-        errors.TIME_TYPE,
-        errors.TIME_PARSING,
-        nullable,
-    )
+def time_parsing(regex: str, nullable: bool = False) -> Rule:
+    return RegexStringDerivedTypeRule(regex, errors.TIME_TYPE, errors.TIME_PARSING, nullable)
 
 
-def duration_parsing(nullable: bool = False) -> Rule:
-    return RegexStringDerivedTypeRule(
-        r'^-?P(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?$',
-        errors.DURATION_TYPE,
-        errors.DURATION_PARSING,
-        nullable,
-    )
+def duration_parsing(regex: str, nullable: bool = False) -> Rule:
+    return RegexStringDerivedTypeRule(regex, errors.DURATION_TYPE, errors.DURATION_PARSING, nullable)
 
 
 class ExtraForbiddenRule(Rule):
@@ -406,44 +396,20 @@ def extra_forbidden(allowed: Iterable[str]) -> Rule:
     return ExtraForbiddenRule(allowed)
 
 
-def uuid_parsing(nullable: bool = False) -> Rule:
-    return UUIDTypeRule(nullable)
+def uuid_parsing(regex: str, nullable: bool = False) -> Rule:
+    return UUIDTypeRule(regex, nullable)
 
 
-def ipv4_address(nullable: bool = False) -> Rule:
-    return RegexStringDerivedTypeRule(
-        r'^((25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))\.){3}(25[0-5]|2[0-4]\d|(1\d{2}|[1-9]\d|\d))$',
-        errors.IPV4,
-        errors.IPV4,
-        nullable,
-    )
+def ipv4_address(regex: str, nullable: bool = False) -> Rule:
+    return RegexStringDerivedTypeRule(regex, errors.IPV4, errors.IPV4, nullable)
 
 
-def ipv6_address(nullable: bool = False) -> Rule:
-    return RegexStringDerivedTypeRule(
-        r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:'
-        r'[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0'
-        r'-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}'
-        r'(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7'
-        r'}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4'
-        r']|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1'
-        r',4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$',
-        errors.IPV6,
-        errors.IPV6,
-        nullable,
-    )
+def ipv6_address(regex: str, nullable: bool = False) -> Rule:
+    return RegexStringDerivedTypeRule(regex, errors.IPV6, errors.IPV6, nullable)
 
 
-def uri_parsing(nullable: bool = False) -> Rule:
-    return RegexStringDerivedTypeRule(
-        r"^([a-z][a-z0-9+.-]+):(\/\/([^@]+@)?([a-z0-9.\-_~]+)(:\d+)?)?((?:[a-z0-9-._~]|%[a-f0-9]|[!$&'"
-        r"()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9"
-        r"]|[!$&'()*+,;=:@])+)*)?(\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(\#(?:[a-z0-9-._"
-        r"~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?$",
-        errors.URI_TYPE,
-        errors.URI_PARSING,
-        nullable,
-    )
+def uri_parsing(regex: str, nullable: bool = False) -> Rule:
+    return RegexStringDerivedTypeRule(regex, errors.URI_TYPE, errors.URI_PARSING, nullable)
 
 
 def object_parsing(schema, nullable: bool = False) -> Rule:
@@ -785,14 +751,14 @@ class UUIDTypeRule(StringDerivedTypeRule):
     Class for UUID type casting rules
     """
 
-    def __init__(self, nullable: bool = False):
+    def __init__(self, regex: str, nullable: bool = False):
         super().__init__(errors.UUID_TYPE, nullable)
+        self.regex = regex
 
     def cast(self, df: pd.DataFrame, column: str, error_state: ErrorState) -> pd.Series:
-        uuid_regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
         series = self.cast_as_str(df, column, error_state, (str, UUID), errors.UUID_TYPE)
         series = series.str.lower()
-        boolmask = ~series.str.match(uuid_regex, na=False)
+        boolmask = ~series.str.match(self.regex, na=False)
         error_state.add_errors(boolmask & series.notna(), column, details=errors.UUID_PARSING)
         series[boolmask] = None
         return series
