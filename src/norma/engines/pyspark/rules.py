@@ -477,9 +477,6 @@ def applies_to(dtype: type[DataType]):
 
 @applies_to(NumericType)
 def multiple_of(multiple: float) -> Rule:
-    if multiple <= 0:
-        raise ValueError('multiple_of must be greater than zero')
-
     return rule(
         lambda col_expr: (col_expr < fn.lit(0)) | ((col_expr % fn.lit(multiple)) != fn.lit(0)),
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),

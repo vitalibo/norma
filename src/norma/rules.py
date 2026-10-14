@@ -168,6 +168,8 @@ def multiple_of(multiple: float) -> Rule:
         raise ValueError('multiple_of must not be None')
     if not isinstance(multiple, (int, float)):
         raise ValueError('multiple_of must be an integer or a float')
+    if multiple <= 0:
+        raise ValueError('multiple_of must be greater than zero')
 
     return RuleProxy('multiple_of', multiple=multiple)
 

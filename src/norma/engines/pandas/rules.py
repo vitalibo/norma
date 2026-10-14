@@ -264,9 +264,6 @@ def _is_array(series: pd.Series) -> bool:
 
 @applies_to('numeric', pd.api.types.is_numeric_dtype)
 def multiple_of(multiple: float) -> Rule:
-    if multiple <= 0:
-        raise ValueError('multiple_of must be greater than zero')
-
     return rule(
         lambda df, col: (df[col][df[col].notna()] < 0) | (df[col][df[col].notna()] % multiple != 0.0),  # noqa: RUF069
         details=errors.MULTIPLE_OF.format(multiple_of=multiple),
