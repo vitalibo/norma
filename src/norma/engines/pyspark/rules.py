@@ -7,8 +7,8 @@ from typing import Any, Iterable, Optional
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as fn
 from pyspark.sql.types import (
-    ArrayType, BooleanType, DataType, DateType, FloatType, IntegerType, MapType, NullType, NumericType, StringType,
-    StructField, StructType, TimestampType,
+    ArrayType, BooleanType, DataType, DateType, FloatType, IntegerType, LongType, MapType, NullType, NumericType,
+    StringType, StructField, StructType, TimestampType,
 )
 
 from norma import errors
@@ -566,8 +566,8 @@ def extra_forbidden() -> Rule:
 
 def int_parsing(nullable: bool = False) -> Rule:
     return DataTypeRule(
-        lambda col: col.cast('integer'),
-        IntegerType(),
+        lambda col: col.cast('long'),
+        LongType(),
         (StringType, NumericType, BooleanType),
         errors.INT_TYPE,
         errors.INT_PARSING,

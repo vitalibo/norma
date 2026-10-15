@@ -331,7 +331,7 @@
             },
             {
               "name": "age",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "sex",
@@ -916,7 +916,7 @@
             },
             {
               "name": "age",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "sex",

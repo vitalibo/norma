@@ -64,7 +64,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -129,7 +129,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -217,7 +217,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -284,7 +284,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -351,7 +351,74 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
+            },
+            {
+              "name": "errors",
+              "type": "!ref #/definitions/errors",
+              "nullable": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "description": "cast('9007199254740993' as int) => 9007199254740993, beyond 32 bits",
+    "engines": [
+      "pandas",
+      "pyspark"
+    ],
+    "given": {
+      "data": [
+        {
+          "col": "9007199254740993"
+        }
+      ],
+      "schema": {
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "object"
+          }
+        ],
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 9007199254740993,
+          "errors": {}
+        }
+      ],
+      "schema": {
+        "pyspark": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "col",
+              "type": "long"
             },
             {
               "name": "errors",
@@ -410,7 +477,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -487,7 +554,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -546,7 +613,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -605,7 +672,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -681,7 +748,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -756,7 +823,7 @@
           "fields": [
             {
               "name": "col",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -1038,7 +1105,7 @@
                 "fields": [
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1124,7 +1191,7 @@
                 "fields": [
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1208,7 +1275,7 @@
                 "fields": [
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1302,7 +1369,7 @@
                 "fields": [
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1439,7 +1506,7 @@
                             "fields": [
                               {
                                 "name": "col4",
-                                "type": "integer"
+                                "type": "long"
                               }
                             ]
                           }
@@ -1575,7 +1642,7 @@
                             "fields": [
                               {
                                 "name": "col4",
-                                "type": "integer"
+                                "type": "long"
                               }
                             ]
                           }
@@ -1709,7 +1776,7 @@
                             "fields": [
                               {
                                 "name": "col4",
-                                "type": "integer"
+                                "type": "long"
                               }
                             ]
                           }
@@ -1853,7 +1920,7 @@
                             "fields": [
                               {
                                 "name": "col4",
-                                "type": "integer"
+                                "type": "long"
                               }
                             ]
                           }
@@ -1942,7 +2009,7 @@
               "type": {
                 "type": "array",
                 "containsNull": true,
-                "elementType": "integer"
+                "elementType": "long"
               }
             },
             {
@@ -2036,7 +2103,7 @@
               "type": {
                 "type": "array",
                 "containsNull": true,
-                "elementType": "integer"
+                "elementType": "long"
               }
             },
             {
@@ -2132,7 +2199,7 @@
               "type": {
                 "type": "array",
                 "containsNull": true,
-                "elementType": "integer"
+                "elementType": "long"
               }
             },
             {
@@ -2272,7 +2339,7 @@
                           "type": {
                             "type": "array",
                             "containsNull": true,
-                            "elementType": "integer"
+                            "elementType": "long"
                           }
                         }
                       ]
@@ -2476,7 +2543,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -2723,7 +2790,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -2966,7 +3033,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }

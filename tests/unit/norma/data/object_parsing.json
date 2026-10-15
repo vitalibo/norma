@@ -73,7 +73,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -155,7 +155,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -256,7 +256,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -350,7 +350,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -439,7 +439,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -536,7 +536,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -626,7 +626,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -708,7 +708,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -883,7 +883,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -964,7 +964,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1117,7 +1117,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1217,7 +1217,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1360,7 +1360,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1438,7 +1438,7 @@
                 "fields": [
                   {
                     "name": "col1",
-                    "type": "integer"
+                    "type": "long"
                   },
                   {
                     "name": "col2",
@@ -1570,7 +1570,7 @@
                       "fields": [
                         {
                           "name": "col3",
-                          "type": "integer"
+                          "type": "long"
                         },
                         {
                           "name": "col4",
@@ -1675,7 +1675,7 @@
                       "fields": [
                         {
                           "name": "col3",
-                          "type": "integer"
+                          "type": "long"
                         },
                         {
                           "name": "col4",
@@ -1771,7 +1771,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1860,7 +1860,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -2504,7 +2504,7 @@
                                   "fields": [
                                     {
                                       "name": "col4",
-                                      "type": "integer"
+                                      "type": "long"
                                     }
                                   ]
                                 }
@@ -2660,7 +2660,7 @@
                                   "fields": [
                                     {
                                       "name": "col4",
-                                      "type": "integer"
+                                      "type": "long"
                                     }
                                   ]
                                 }
@@ -2826,7 +2826,7 @@
                                   "fields": [
                                     {
                                       "name": "col4",
-                                      "type": "integer"
+                                      "type": "long"
                                     }
                                   ]
                                 }
@@ -2985,7 +2985,7 @@
                     },
                     {
                       "name": "col2",
-                      "type": "integer"
+                      "type": "long"
                     }
                   ]
                 }
@@ -3108,7 +3108,7 @@
                     },
                     {
                       "name": "col2",
-                      "type": "integer"
+                      "type": "long"
                     }
                   ]
                 }
@@ -3216,7 +3216,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -3321,7 +3321,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -3418,7 +3418,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -3524,7 +3524,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     }
                   ]
                 }
@@ -3623,7 +3623,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -3719,7 +3719,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -3897,7 +3897,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -4015,7 +4015,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -4125,7 +4125,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     },
                     {
                       "name": "col2",
@@ -4359,7 +4359,7 @@
                                             },
                                             {
                                               "name": "col7",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -4588,7 +4588,7 @@
                                             },
                                             {
                                               "name": "col7",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -4800,7 +4800,7 @@
                                             },
                                             {
                                               "name": "col7",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -5005,7 +5005,7 @@
                                             },
                                             {
                                               "name": "col7",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -5178,7 +5178,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             },
                                             {
                                               "name": "col7",
@@ -5384,7 +5384,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -5583,7 +5583,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             },
                                             {
                                               "name": "col7",
@@ -5759,7 +5759,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             },
                                             {
                                               "name": "col7",
@@ -6069,7 +6069,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             },
                                             {
                                               "name": "col7",
@@ -6287,7 +6287,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             },
                                             {
                                               "name": "col7",
@@ -6477,7 +6477,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             },
                                             {
                                               "name": "col7",
@@ -6634,7 +6634,7 @@
                   },
                   {
                     "name": "col2",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -6773,7 +6773,7 @@
                 "fields": [
                   {
                     "name": "col4",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -6925,7 +6925,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     }
                   ]
                 },
@@ -7079,7 +7079,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     }
                   ]
                 },
@@ -7245,7 +7245,7 @@
                   "fields": [
                     {
                       "name": "col1",
-                      "type": "integer"
+                      "type": "long"
                     }
                   ]
                 },

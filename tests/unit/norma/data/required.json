@@ -130,7 +130,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -216,7 +216,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -295,7 +295,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -454,7 +454,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -3670,7 +3670,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",

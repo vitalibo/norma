@@ -60,7 +60,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -145,7 +145,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -237,7 +237,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -329,7 +329,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -422,7 +422,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -569,7 +569,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "col3",
@@ -706,7 +706,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -784,7 +784,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -858,7 +858,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -971,7 +971,7 @@
                 "fields": [
                   {
                     "name": "col4",
-                    "type": "integer"
+                    "type": "long"
                   },
                   {
                     "name": "col5",
@@ -1391,7 +1391,7 @@
                 "fields": [
                   {
                     "name": "col3",
-                    "type": "integer"
+                    "type": "long"
                   }
                 ]
               }
@@ -1495,7 +1495,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -2188,7 +2188,7 @@
                         },
                         {
                           "name": "col6",
-                          "type": "integer"
+                          "type": "long"
                         }
                       ]
                     }
@@ -2622,7 +2622,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -2718,7 +2718,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",
@@ -2815,7 +2815,7 @@
             },
             {
               "name": "col2",
-              "type": "integer"
+              "type": "long"
             },
             {
               "name": "errors",

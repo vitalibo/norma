@@ -25,7 +25,7 @@ These types have corresponding engine-specific types:
 |---------|------------|----------------|---------|
 | array   | list       | object         | array   |
 | boolean | bool       | boolean        | boolean |
-| integer | int        | Int64          | integer |
+| integer | int        | Int64          | long    |
 | number  | float      | Float64        | float   |
 | object  | object     | object         | struct  |
 | string  | str        | string[python] | string  |

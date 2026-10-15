@@ -790,7 +790,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
@@ -1014,7 +1014,7 @@
                                           "fields": [
                                             {
                                               "name": "col6",
-                                              "type": "integer"
+                                              "type": "long"
                                             }
                                           ]
                                         }
