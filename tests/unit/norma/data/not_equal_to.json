@@ -217,6 +217,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "int64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -866,40 +874,9 @@
     }
   },
   {
-    "description": "1 <int64> == 2",
+    "description": "2 != 2, error is raised",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 1
-        }
-      ],
-      "dtype": "int64"
-    },
-    "when": {
-      "args": {
-        "ne": 2
-      }
-    },
-    "then": {
-      "data": [
-        1
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "2 <int64> == 2, error is raised",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -907,35 +884,42 @@
           "col": 2
         }
       ],
-      "dtype": "int64"
+      "schema": {
+        "pandas": {
+          "col": "int64"
+        }
+      }
     },
     "when": {
-      "args": {
-        "ne": 2
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "not": {
+              "const": 2
+            }
+          }
+        }
       }
     },
     "then": {
       "data": [
-        2
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "not_equal_to",
-                "msg": "Input should not be equal to 2"
-              }
-            ]
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "not_equal_to",
+                  "msg": "Input should not be equal to 2"
+                }
+              ],
+              "original": "2"
+            }
           }
         }
-      }
+      ]
     }
   },
   {

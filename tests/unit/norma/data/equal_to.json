@@ -211,6 +211,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "int64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -1042,71 +1050,9 @@
     }
   },
   {
-    "description": "null <Int64> == 1, ignored",
+    "description": "2 == 1, error is raised",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": null
-        }
-      ],
-      "dtype": "Int64"
-    },
-    "when": {
-      "args": {
-        "eq": 1
-      }
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "1 <int64> == 1",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 1
-        }
-      ],
-      "dtype": "int64"
-    },
-    "when": {
-      "args": {
-        "eq": 1
-      }
-    },
-    "then": {
-      "data": [
-        1
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "2 <int64> == 1, error is raised",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -1114,35 +1060,40 @@
           "col": 2
         }
       ],
-      "dtype": "int64"
+      "schema": {
+        "pandas": {
+          "col": "int64"
+        }
+      }
     },
     "when": {
-      "args": {
-        "eq": 1
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "const": 1
+          }
+        }
       }
     },
     "then": {
       "data": [
-        2
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "equal_to",
-                "msg": "Input should be equal to 1"
-              }
-            ]
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "equal_to",
+                  "msg": "Input should be equal to 1"
+                }
+              ],
+              "original": "2"
+            }
           }
         }
-      }
+      ]
     }
   },
   {

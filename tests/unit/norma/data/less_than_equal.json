@@ -151,6 +151,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "int64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -271,6 +279,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "int64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -1340,79 +1356,6 @@
       "raises": {
         "type": "ValueError",
         "match": "comparison value must not be None"
-      }
-    }
-  },
-  {
-    "description": "2 <int64> <= 3",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 2
-        }
-      ],
-      "dtype": "int64"
-    },
-    "when": {
-      "args": {
-        "le": 3
-      }
-    },
-    "then": {
-      "data": [
-        2
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "4 <int64> <= 3, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 4
-        }
-      ],
-      "dtype": "int64"
-    },
-    "when": {
-      "args": {
-        "le": 3
-      }
-    },
-    "then": {
-      "data": [
-        4
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "less_than_equal",
-                "msg": "Input should be less than or equal to 3"
-              }
-            ]
-          }
-        }
       }
     }
   },

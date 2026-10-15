@@ -804,49 +804,9 @@
     }
   },
   {
-    "description": "cast(null <object> as datetime) => null, error is raised",
+    "description": "cast('2025-05-27' as datetime) => datetime('2025-05-27 00:00:00')",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": null
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "datetime64[ns, UTC]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "datetime_type",
-                "msg": "Input should be a valid datetime"
-              }
-            ]
-          }
-        }
-      }
-    }
-  },
-  {
-    "description": "cast('2025-05-27' <object> as datetime) => pd.Timestamp('2025-05-27 00:00:00')",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -854,28 +814,36 @@
           "col": "2025-05-27"
         }
       ],
-      "dtype": "object"
+      "schema": {
+        "pandas": {
+          "col": "object"
+        }
+      }
     },
     "when": {
-      "args": {}
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
     },
     "then": {
       "data": [
-        "pd.Timestamp('2025-05-27 00:00:00')"
-      ],
-      "dtype": "datetime64[ns, UTC]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
+        {
+          "col": "2025-05-27 00:00:00+00:00",
+          "errors": {}
+        }
+      ]
     }
   },
   {
-    "description": "cast('2025-05-27 12:34:56' <string[python]> as datetime) => pd.Timestamp('2025-05-27 12:34:56')",
+    "description": "cast('2025-05-27 12:34:56' as datetime) => datetime('2025-05-27 12:34:56')",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -883,28 +851,38 @@
           "col": "2025-05-27 12:34:56"
         }
       ],
-      "dtype": "string[python]"
+      "schema": {
+        "pandas": [
+          {
+            "col": "string[python]"
+          }
+        ]
+      }
     },
     "when": {
-      "args": {}
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
     },
     "then": {
       "data": [
-        "pd.Timestamp('2025-05-27 12:34:56')"
-      ],
-      "dtype": "datetime64[ns, UTC]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
+        {
+          "col": "2025-05-27 12:34:56+00:00",
+          "errors": {}
+        }
+      ]
     }
   },
   {
-    "description": "cast('Tuesday, 27 May 2025 22:01:43' <string[python]> as datetime) => pd.Timestamp('2025-05-27 22:01:43')",
+    "description": "cast('Tuesday, 27 May 2025 22:01:43' as datetime) => datetime('2025-05-27 22:01:43')",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -912,97 +890,36 @@
           "col": "Tuesday, 27 May 2025 22:01:43"
         }
       ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        "pd.Timestamp('2025-05-27 22:01:43')"
-      ],
-      "dtype": "datetime64[ns, UTC]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(pd.Timestamp('2025-05-27 12:34:56') <datetime64[s]> as datetime) => pd.Timestamp('2025-05-27 12:34:56')",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "pd.Timestamp('2025-05-27 12:34:56')"
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
         }
-      ],
-      "dtype": "string[python]"
+      }
     },
     "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        "pd.Timestamp('2025-05-27 12:34:56')"
-      ],
-      "dtype": "datetime64[ns, UTC]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('foo' <string[python]> as datetime) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "foo"
-        }
-      ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "datetime64[ns, UTC]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "details": [
-              {
-                "type": "datetime_parsing",
-                "msg": "Input should be a valid datetime, unable to parse string as a datetime"
-              }
-            ]
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "2025-05-27 22:01:43+00:00",
+          "errors": {}
+        }
+      ]
     }
   },
   {
-    "description": "cast({'foo':'bar'} <object> as datetime) => null, error is raised",
+    "description": "cast({'foo':'bar'} as datetime) => null, error is raised",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -1012,33 +929,40 @@
           }
         }
       ],
-      "dtype": "object"
+      "schema": {
+        "pandas": {
+          "col": "object"
+        }
+      }
     },
     "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "datetime64[ns, UTC]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "details": [
-              {
-                "type": "datetime_type",
-                "msg": "Input should be a valid datetime"
-              }
-            ]
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "datetime_type",
+                  "msg": "Input should be a valid datetime"
+                }
+              ],
+              "original": "{\"foo\":\"bar\"}"
+            }
+          }
+        }
+      ]
     }
   },
   {

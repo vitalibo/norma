@@ -1,18 +1,15 @@
-import inspect
 import json
 import os
 import uuid  # noqa: F401
 from functools import partial
 from unittest import mock
 
-import numpy as np  # noqa: F401
 import pandas as pd
 import pyspark.sql.functions as fn  # noqa: F401
 import pytest
 from pyxis.pyspark import StructType
 
-from norma import rules
-from norma.engines.pandas import rules as pandas_rules
+from norma import rules  # noqa: F401
 from norma.schema import Column, Schema
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -20,23 +17,39 @@ DEFINITIONS_DIR = os.path.join(DATA_DIR, 'definitions')
 REF_PREFIX = '!ref #/definitions/'
 
 
-def make_test(test_name, value):
+def make_test(value):
     @pytest.mark.parametrize(
         ('engine', 'case'),
         [
-            pytest.param(engine, prop, id=f'case #{i} | {engine}: {prop.get("description", "")}')
+            pytest.param(engine, variant, id=f'case #{i} | {name}: {prop.get("description", "")}')
             for i, prop in enumerate(value)
             for engine in prop['engines']
+            for name, variant in schema_variants(engine, prop)
         ],
     )
     def func(spark_session, engine, case):
         {
             'pandas': make_test_pandas,
-            'pandas_api': partial(make_test_pandas_api, test_name),
             'pyspark': partial(make_test_pyspark, spark_session),
         }[engine](case)
 
     return func
+
+
+def schema_variants(engine, case):
+    """
+    Expand a case whose input schema of the engine is a list into one case per schema, sharing the data and the
+    expectations
+    """
+
+    schemas = case['given'].get('schema', {}).get(engine)
+    if not isinstance(schemas, list):
+        yield engine, case
+        return
+
+    for j, schema in enumerate(schemas):
+        given = {**case['given'], 'schema': {**case['given']['schema'], engine: schema}}
+        yield f'{engine}[{j}]', {**case, 'given': given}
 
 
 def resolve_refs(node):
@@ -61,7 +74,7 @@ for root, _, files in os.walk(DATA_DIR):
         test = file.split('.')[0]
         with open(os.path.join(root, file), encoding='utf-8') as f:
             cases = resolve_refs(json.loads(f.read()))
-            globals()[f'test_{test}'] = make_test(test, cases)
+            globals()[f'test_{test}'] = make_test(cases)
 
 
 def make_test_pandas(case):
@@ -70,10 +83,15 @@ def make_test_pandas(case):
             return None
         return str(x)
 
+    def as_value(v):
+        if isinstance(v, dict) and set(v) == {'expr'}:
+            return eval(v['expr'], globals())  # noqa: S307
+        return v
+
     if 'schema' in case['given'] and 'pandas' in case['given']['schema']:
         df = pd.DataFrame(
             {
-                k: pd.Series([v[k] for v in case['given']['data']], dtype=t)
+                k: pd.Series([as_value(v[k]) for v in case['given']['data']], dtype=t)
                 for k, t in case['given']['schema']['pandas'].items()
             }
         )
@@ -118,55 +136,6 @@ def make_test_pyspark(spark_session, case):
 
         assert list(map(json.loads, actual.toJSON().collect())) == case['then']['data']
         assert actual.schema.json() == StructType.from_json(case['then']['schema']['pyspark']).json()
-        return
-
-    assert e.type.__name__ == case['then']['raises']['type']
-
-
-def make_test_pandas_api(test_name, case):
-    def as_data(o):
-        if isinstance(o, dict):
-            return {k: as_data(v) for k, v in o.items()}
-        if isinstance(o, list):
-            return [as_data(v) for v in o]
-        if isinstance(o, str) and (o.startswith(('pd.', 'np.', 'uuid.UUID('))):
-            return eval(o)  # noqa: S307
-        return o
-
-    def as_dtype(o):
-        if o == "<class 'str'>":
-            return str
-        return o
-
-    # given
-    df = pd.DataFrame(as_data(case['given']['data']), dtype=as_dtype(case['given']['dtype']))
-    error_state = pandas_rules.ErrorState(df.index)
-
-    with (
-        pytest.raises(Exception, match=case['then']['raises']['match'])
-        if 'raises' in case['then']
-        else mock.MagicMock()
-    ) as e:
-        # when
-        params = case['when']['args']
-        if 'regex' not in params and 'regex' in inspect.signature(getattr(pandas_rules, test_name)).parameters:
-            # the format rules take the regex the engine-agnostic rule defines
-            params = {**params, 'regex': getattr(rules, test_name)().kwargs['regex']}
-        rule = getattr(pandas_rules, test_name)(**params)
-        actual = rule.verify(df, case['when'].get('column', 'col'), error_state)
-
-        # then
-        if case['then']['data'] is not None:
-            expected = pd.Series(as_data(case['then']['data']), dtype=as_dtype(case['then']['dtype']))
-            assert actual.equals(expected)
-        else:
-            assert actual is None
-        assert error_state.errors == {int(k): v for k, v in case['then']['errors'].items()}
-        for key in set(error_state.masks.keys()).union(set(case['then']['masks'].keys())):
-            try:
-                assert error_state.masks[key].equals(pd.Series(case['then']['masks'][key], dtype=bool))
-            except Exception as e:  # noqa: PERF203
-                raise AssertionError(f'Error in key: {key}') from e
         return
 
     assert e.type.__name__ == case['then']['raises']['type']

@@ -281,6 +281,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "int64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -800,40 +808,9 @@
     }
   },
   {
-    "description": "33 <int64> is multiple of 3",
+    "description": "2 is multiple of 3, error is raised",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 33
-        }
-      ],
-      "dtype": "int64"
-    },
-    "when": {
-      "args": {
-        "multiple": 3
-      }
-    },
-    "then": {
-      "data": [
-        33
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "2 <int64> is not multiple of 3, error is raised",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -841,35 +818,40 @@
           "col": 2
         }
       ],
-      "dtype": "int64"
+      "schema": {
+        "pandas": {
+          "col": "int64"
+        }
+      }
     },
     "when": {
-      "args": {
-        "multiple": 3
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer",
+            "multipleOf": 3
+          }
+        }
       }
     },
     "then": {
       "data": [
-        2
-      ],
-      "dtype": "int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "multiple_of",
-                "msg": "Input should be a multiple of 3"
-              }
-            ]
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "multiple_of",
+                  "msg": "Input should be a multiple of 3"
+                }
+              ],
+              "original": "2"
+            }
           }
         }
-      }
+      ]
     }
   },
   {

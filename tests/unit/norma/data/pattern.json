@@ -466,40 +466,9 @@
     }
   },
   {
-    "description": "'abc' matches '[a-z]+'",
+    "description": "'ab' matches '[0-9]+', error is raised",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "abc"
-        }
-      ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {
-        "regex": "[a-z]+"
-      }
-    },
-    "then": {
-      "data": [
-        "abc"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "'abc' matches '[0-9]+', error is raised",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -507,35 +476,40 @@
           "col": "ab"
         }
       ],
-      "dtype": "string[python]"
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        }
+      }
     },
     "when": {
-      "args": {
-        "regex": "[0-9]+"
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "pattern": "[0-9]+"
+          }
+        }
       }
     },
     "then": {
       "data": [
-        "ab"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "string_pattern_mismatch",
-                "msg": "String should match pattern \"[0-9]+\""
-              }
-            ]
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "string_pattern_mismatch",
+                  "msg": "String should match pattern \"[0-9]+\""
+                }
+              ],
+              "original": "\"ab\""
+            }
           }
         }
-      }
+      ]
     }
   },
   {

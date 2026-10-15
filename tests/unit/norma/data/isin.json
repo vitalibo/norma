@@ -582,43 +582,9 @@
     }
   },
   {
-    "description": "'foo' is in ['foo', 'bar']",
+    "description": "'baz' in ['foo', 'bar'], error is raised",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "foo"
-        }
-      ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {
-        "values": [
-          "foo",
-          "bar"
-        ]
-      }
-    },
-    "then": {
-      "data": [
-        "foo"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "'baz' is not in ['foo', 'bar'], error is raised",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -626,38 +592,43 @@
           "col": "baz"
         }
       ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {
-        "values": [
-          "foo",
-          "bar"
-        ]
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        }
       }
     },
-    "then": {
-      "data": [
-        "baz"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "details": [
-              {
-                "type": "enum",
-                "msg": "Input should be \"foo\" or \"bar\""
-              }
+            "type": "string",
+            "enum": [
+              "foo",
+              "bar"
             ]
           }
         }
       }
+    },
+    "then": {
+      "data": [
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "enum",
+                  "msg": "Input should be \"foo\" or \"bar\""
+                }
+              ],
+              "original": "\"baz\""
+            }
+          }
+        }
+      ]
     }
   },
   {

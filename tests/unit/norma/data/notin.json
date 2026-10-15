@@ -512,9 +512,9 @@
     }
   },
   {
-    "description": "'foo' is not in ['foo', 'bar'], error is raised",
+    "description": "'foo' not in ['foo', 'bar'], error is raised",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -522,44 +522,51 @@
           "col": "foo"
         }
       ],
-      "dtype": "string[python]"
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        }
+      }
     },
     "when": {
-      "args": {
-        "values": [
-          "foo",
-          "bar"
-        ]
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "not": {
+              "enum": [
+                "foo",
+                "bar"
+              ]
+            }
+          }
+        }
       }
     },
     "then": {
       "data": [
-        "foo"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "not_enum",
-                "msg": "Input should not be \"foo\" or \"bar\""
-              }
-            ]
+        {
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "not_enum",
+                  "msg": "Input should not be \"foo\" or \"bar\""
+                }
+              ],
+              "original": "\"foo\""
+            }
           }
         }
-      }
+      ]
     }
   },
   {
-    "description": "'baz' is in ['foo', 'bar']",
+    "description": "'baz' not in ['foo', 'bar']",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -567,27 +574,35 @@
           "col": "baz"
         }
       ],
-      "dtype": "string[python]"
+      "schema": {
+        "pandas": {
+          "col": "string[python]"
+        }
+      }
     },
     "when": {
-      "args": {
-        "values": [
-          "foo",
-          "bar"
-        ]
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "string",
+            "not": {
+              "enum": [
+                "foo",
+                "bar"
+              ]
+            }
+          }
+        }
       }
     },
     "then": {
       "data": [
-        "baz"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
+        {
+          "col": "baz",
+          "errors": {}
+        }
+      ]
     }
   },
   {

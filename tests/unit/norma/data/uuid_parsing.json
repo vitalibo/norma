@@ -341,6 +341,17 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "int16"
+          },
+          {
+            "col": "object"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -1861,9 +1872,9 @@
     }
   },
   {
-    "description": "cast('62ca2b41-b7c0-474c-b138-bf5e3f4283d1' <string[python]> as UUID) => '62ca2b41-b7c0-474c-b138-bf5e3f4283d1'",
+    "description": "cast('62ca2b41-b7c0-474c-b138-bf5e3f4283d1' as UUID) => '62ca2b41-b7c0-474c-b138-bf5e3f4283d1'",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -1871,160 +1882,74 @@
           "col": "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
         }
       ],
-      "dtype": "string[python]"
+      "schema": {
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "object"
+          }
+        ]
+      }
     },
     "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('62ca2b41-b7c0-474c-b138-bf5e3f4283d1' <object> as UUID) => '62ca2b41-b7c0-474c-b138-bf5e3f4283d1'",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(uuid('62ca2b41-b7c0-474c-b138-bf5e3f4283d1') <object> as UUID) => '62ca2b41-b7c0-474c-b138-bf5e3f4283d1'",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "uuid.UUID('62ca2b41-b7c0-474c-b138-bf5e3f4283d1')"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        "62ca2b41-b7c0-474c-b138-bf5e3f4283d1"
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123 <int16> as UUID) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123
-        }
-      ],
-      "dtype": "int16"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "details": [
-              {
-                "type": "uuid_type",
-                "msg": "UUID input should be a string"
-              }
-            ]
+            "type": "string",
+            "format": "uuid"
           }
         }
       }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "62ca2b41-b7c0-474c-b138-bf5e3f4283d1",
+          "errors": {}
+        }
+      ]
     }
   },
   {
-    "description": "cast(123 <object> as UUID) => null, error is raised",
+    "description": "cast(UUID('62ca2b41-b7c0-474c-b138-bf5e3f4283d1') as UUID) => '62ca2b41-b7c0-474c-b138-bf5e3f4283d1'",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
         {
-          "col": 123
+          "col": {
+            "expr": "uuid.UUID('62ca2b41-b7c0-474c-b138-bf5e3f4283d1')"
+          }
         }
       ],
-      "dtype": "object"
+      "schema": {
+        "pandas": {
+          "col": "object"
+        }
+      }
     },
     "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "string[python]",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "details": [
-              {
-                "type": "uuid_type",
-                "msg": "UUID input should be a string"
-              }
-            ]
+            "type": "string",
+            "format": "uuid"
           }
         }
       }
+    },
+    "then": {
+      "data": [
+        {
+          "col": "62ca2b41-b7c0-474c-b138-bf5e3f4283d1",
+          "errors": {}
+        }
+      ]
     }
   }
 ]

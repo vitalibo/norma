@@ -12,9 +12,14 @@
         }
       ],
       "schema": {
-        "pandas": {
-          "col": "string[python]"
-        },
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "Int64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -149,6 +154,35 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "int8"
+          },
+          {
+            "col": "int16"
+          },
+          {
+            "col": "int32"
+          },
+          {
+            "col": "int64"
+          },
+          {
+            "col": "UInt8"
+          },
+          {
+            "col": "float16"
+          },
+          {
+            "col": "float32"
+          },
+          {
+            "col": "float64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -208,6 +242,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Float64"
+          },
+          {
+            "col": "float64"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -267,6 +309,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "object"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -385,6 +435,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "object"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -785,49 +843,9 @@
     }
   },
   {
-    "description": "cast(null <Int64> as integer) => null, error is raised",
+    "description": "cast(-123 as int) => -123",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": null
-        }
-      ],
-      "dtype": "Int64"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "int_type",
-                "msg": "Input should be a valid integer"
-              }
-            ]
-          }
-        }
-      }
-    }
-  },
-  {
-    "description": "cast(-123 <int8> as integer) => -123",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -835,289 +853,35 @@
           "col": -123
         }
       ],
-      "dtype": "int8"
+      "schema": {
+        "pandas": {
+          "col": "int8"
+        }
+      }
     },
     "when": {
-      "args": {}
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col": {
+            "type": "integer"
+          }
+        }
+      }
     },
     "then": {
-      "data": [
-        -123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123 <int8> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
       "data": [
         {
-          "col": 123
+          "col": -123,
+          "errors": {}
         }
-      ],
-      "dtype": "int8"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
+      ]
     }
   },
   {
-    "description": "cast(123 <int16> as integer) => 123",
+    "description": "cast(123.54 as int) => 123, truncated",
     "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123
-        }
-      ],
-      "dtype": "int16"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123 <int32> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123
-        }
-      ],
-      "dtype": "int32"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123 <int64> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123
-        }
-      ],
-      "dtype": "int64"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123 <UInt8> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123
-        }
-      ],
-      "dtype": "UInt8"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123.0 <float16> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123.0
-        }
-      ],
-      "dtype": "float16"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123.0 <float32> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123.0
-        }
-      ],
-      "dtype": "float32"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123.0 <float64> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123.0
-        }
-      ],
-      "dtype": "float64"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123.45 <float64> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123.45
-        }
-      ],
-      "dtype": "float64"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123.54 <float64> as integer) => 123",
-    "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -1125,300 +889,75 @@
           "col": 123.54
         }
       ],
-      "dtype": "float64"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('123' <string[python]> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "123"
+      "schema": {
+        "pandas": {
+          "col": "float64"
         }
-      ],
-      "dtype": "string[python]"
+      }
     },
     "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('123.45' <string[python]> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "123.45"
-        }
-      ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('123' <object> as integer) => 123",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "123"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        123
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(true <boolean> as integer) => 1",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": true
-        }
-      ],
-      "dtype": "boolean"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        1
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('foo' <object> as integer) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "foo"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "details": [
-              {
-                "type": "int_parsing",
-                "msg": "Input should be a valid integer, unable to parse string as an integer"
-              }
-            ]
+            "type": "integer"
           }
         }
       }
+    },
+    "then": {
+      "data": [
+        {
+          "col": 123,
+          "errors": {}
+        }
+      ]
     }
   },
   {
-    "description": "cast('foo' <string[python]> as integer) => null, error is raised",
+    "description": "cast(datetime('2020-01-01') as int) => null, error is raised",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
         {
-          "col": "foo"
+          "col": "2020-01-01"
         }
       ],
-      "dtype": "string[python]"
+      "schema": {
+        "pandas": {
+          "col": "datetime64[ns]"
+        }
+      }
     },
     "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
           "col": {
-            "details": [
-              {
-                "type": "int_parsing",
-                "msg": "Input should be a valid integer, unable to parse string as an integer"
-              }
-            ]
+            "type": "integer"
           }
         }
       }
-    }
-  },
-  {
-    "description": "cast(pd.Timestamp('2020-01-01') <datetime64[ns]> as integer) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
+    },
+    "then": {
       "data": [
         {
-          "col": "pd.Timestamp('2020-01-01')"
-        }
-      ],
-      "dtype": "datetime64[ns]"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "int_type",
-                "msg": "Input should be a valid integer"
-              }
-            ]
+          "col": null,
+          "errors": {
+            "col": {
+              "details": [
+                {
+                  "type": "int_type",
+                  "msg": "Input should be a valid integer"
+                }
+              ],
+              "original": "\"2020-01-01 00:00:00\""
+            }
           }
         }
-      }
-    }
-  },
-  {
-    "description": "cast({foo='bar'} <object> as integer) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": {
-            "foo": "bar"
-          }
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "Int64",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "int_type",
-                "msg": "Input should be a valid integer"
-              }
-            ]
-          }
-        }
-      }
+      ]
     }
   },
   {

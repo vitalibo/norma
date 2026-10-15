@@ -1089,9 +1089,9 @@
     }
   },
   {
-    "description": "column is in the allowed list",
+    "description": "allowed in $., integer columns",
     "engines": [
-      "pandas_api"
+      "pandas"
     ],
     "given": {
       "data": [
@@ -1100,63 +1100,82 @@
           "col2": 2
         }
       ],
-      "dtype": "int64"
-    },
-    "when": {
-      "args": {
-        "allowed": [
-          "col1",
-          "col2"
-        ]
-      },
-      "column": "col2"
-    },
-    "then": {
-      "data": [
-        2
-      ],
-      "dtype": "int64",
-      "masks": {},
-      "errors": {}
-    }
-  },
-  {
-    "description": "column is not in the allowed list, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col1": 1,
-          "col2": 2
+      "schema": {
+        "pandas": {
+          "col1": "int64",
+          "col2": "int64"
         }
-      ],
-      "dtype": "int64"
+      }
     },
     "when": {
-      "args": {
-        "allowed": [
-          "col1"
-        ]
-      },
-      "column": "col2"
-    },
-    "then": {
-      "data": null,
-      "masks": {},
-      "errors": {
-        "0": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "integer"
+          },
           "col2": {
-            "details": [
-              {
-                "type": "extra_forbidden",
-                "msg": "Extra inputs are not permitted"
-              }
-            ]
+            "type": "integer"
           }
         }
       }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": 1,
+          "col2": 2,
+          "errors": {}
+        }
+      ]
+    }
+  },
+  {
+    "description": "forbidden in $., integer columns, error is raised",
+    "engines": [
+      "pandas"
+    ],
+    "given": {
+      "data": [
+        {
+          "col1": 1,
+          "col2": 2
+        }
+      ],
+      "schema": {
+        "pandas": {
+          "col1": "int64",
+          "col2": "int64"
+        }
+      }
+    },
+    "when": {
+      "json_schema": {
+        "type": "object",
+        "properties": {
+          "col1": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "then": {
+      "data": [
+        {
+          "col1": 1,
+          "errors": {
+            "col2": {
+              "details": [
+                {
+                  "type": "extra_forbidden",
+                  "msg": "Extra inputs are not permitted"
+                }
+              ],
+              "original": "2"
+            }
+          }
+        }
+      ]
     }
   },
   {

@@ -12,9 +12,14 @@
         }
       ],
       "schema": {
-        "pandas": {
-          "col": "string[python]"
-        },
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "boolean"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -149,6 +154,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "boolean"
+          },
+          {
+            "col": "bool"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -326,6 +339,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "object"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -562,6 +583,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "object"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -1093,6 +1122,14 @@
         }
       ],
       "schema": {
+        "pandas": [
+          {
+            "col": "Int64"
+          },
+          {
+            "col": "Int32"
+          }
+        ],
         "pyspark": {
           "type": "struct",
           "fields": [
@@ -1396,7 +1433,15 @@
               "type": "string"
             }
           ]
-        }
+        },
+        "pandas": [
+          {
+            "col": "string[python]"
+          },
+          {
+            "col": "object"
+          }
+        ]
       }
     },
     "when": {
@@ -2307,342 +2352,6 @@
           }
         }
       ]
-    }
-  },
-  {
-    "description": "cast(null <boolean> as bool) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": null
-        }
-      ],
-      "dtype": "boolean"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "bool_type",
-                "msg": "Input should be a valid boolean"
-              }
-            ]
-          }
-        }
-      }
-    }
-  },
-  {
-    "description": "cast(true <bool> as bool) => true",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": true
-        }
-      ],
-      "dtype": "bool"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        true
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast(123 <Int32> as bool) => true",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": 123
-        }
-      ],
-      "dtype": "Int32"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        true
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('True' <string[python]> as bool) => true",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "True"
-        }
-      ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        true
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('on' <string[python]> as bool) => true",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "on"
-        }
-      ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        true
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('True' <object> as bool) => true",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "True"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        true
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('on' <object> as bool) => true",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "on"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        true
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          false
-        ]
-      },
-      "errors": {}
-    }
-  },
-  {
-    "description": "cast('foo' <string[python]> as bool) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "bar"
-        }
-      ],
-      "dtype": "string[python]"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "bool_parsing",
-                "msg": "Input should be a valid boolean, unable to interpret input"
-              }
-            ]
-          }
-        }
-      }
-    }
-  },
-  {
-    "description": "cast('foo' <object> as bool) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": "bar"
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "bool_parsing",
-                "msg": "Input should be a valid boolean, unable to interpret input"
-              }
-            ]
-          }
-        }
-      }
-    }
-  },
-  {
-    "description": "cast({foo='bar'} <object> as bool) => null, error is raised",
-    "engines": [
-      "pandas_api"
-    ],
-    "given": {
-      "data": [
-        {
-          "col": {
-            "foo": "bar"
-          }
-        }
-      ],
-      "dtype": "object"
-    },
-    "when": {
-      "args": {}
-    },
-    "then": {
-      "data": [
-        null
-      ],
-      "dtype": "boolean",
-      "masks": {
-        "col": [
-          true
-        ]
-      },
-      "errors": {
-        "0": {
-          "col": {
-            "details": [
-              {
-                "type": "bool_type",
-                "msg": "Input should be a valid boolean"
-              }
-            ]
-          }
-        }
-      }
     }
   },
   {
